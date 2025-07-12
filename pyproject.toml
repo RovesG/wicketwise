@@ -13,9 +13,10 @@ torch = "^2.5.1"
 networkx = "^3.4.1"
 torch-geometric = "^2.6.0"
 pyyaml = "^6.0.1"
+streamlit = "^1.39.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.2.2"
+pytest = "^8.4.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

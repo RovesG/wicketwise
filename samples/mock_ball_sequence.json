@@ -1,0 +1,114 @@
+{
+  "current_ball_features": {
+    "match_id": "12345",
+    "match_date": "2024-08-01",
+    "match_year": 2024,
+    "competition_name": "T20 Blast",
+    "venue_id": "venue_01",
+    "venue_name": "Lords",
+    "home_team_id": "team_a",
+    "home_team_name": "Team A",
+    "away_team_id": "team_b",
+    "away_team_name": "Team B",
+    "batting_team_name": "Team A",
+    "innings": 1,
+    "winner": "Team A",
+    "toss_winner": "Team A",
+    "over": 15,
+    "delivery": 3,
+    "ball": "15.3",
+    "batter_id": "player_1",
+    "bowler_id": "player_2",
+    "nonstriker_id": "player_3",
+    "bowler_style": "right-arm fast",
+    "batting_style": "right-hand bat",
+    "runs": 4,
+    "extras": 0,
+    "noball": 0,
+    "wide": 0,
+    "byes": 0,
+    "legbyes": 0,
+    "dot": 0,
+    "four": 1,
+    "six": 0,
+    "single": 0,
+    "balls_remaining": 27,
+    "batsman_runs_ball": 4,
+    "target_score": 180,
+    "batsman_runs": 45,
+    "bowler_runs_ball": 4,
+    "batsman_balls": 25,
+    "batter_orden": 3
+  },
+  "recent_ball_history": [
+    {
+      "runs_scored": 1,
+      "bowler_type": "right-arm fast",
+      "shot_type": "drive",
+      "dismissal": false
+    },
+    {
+      "runs_scored": 0,
+      "bowler_type": "right-arm fast",
+      "shot_type": "defence",
+      "dismissal": false
+    },
+    {
+      "runs_scored": 2,
+      "bowler_type": "right-arm fast",
+      "shot_type": "pull",
+      "dismissal": false
+    },
+    {
+      "runs_scored": 1,
+      "bowler_type": "right-arm fast",
+      "shot_type": "flick",
+      "dismissal": false
+    },
+    {
+      "runs_scored": 6,
+      "bowler_type": "right-arm fast",
+      "shot_type": "loft",
+      "dismissal": false
+    }
+  ],
+  "gnn_embeddings": {
+    "batter_embedding": [0.15, -0.2, 0.3, -0.1],
+    "bowler_type_embedding": [0.5, 0.1, -0.2, 0.4],
+    "venue_embedding": [-0.3, 0.4, 0.1, 0.2]
+  },
+  "video_signals": {
+    "headStability": 0.95,
+    "backlift": 0.85,
+    "footworkDirection": "forward",
+    "shotCommitment": 0.98,
+    "shotType": "cover_drive",
+    "runningSpeed": 18.5,
+    "nonStrikerReaction": 0.9,
+    "releasePointConsistency": 0.92,
+    "bowlingArmPath": 0.88,
+    "paceProxyFrames": 12.0,
+    "creasePosition": 0.45,
+    "frontArmStability": 0.93,
+    "followThroughMomentum": 0.82,
+    "reactionTime": 0.18,
+    "closingSpeed": 9.0,
+    "pathEfficiency": 0.95,
+    "interceptionType": "none",
+    "handsTechnique": "none",
+    "getToThrowTime": 0.0,
+    "throwAccuracy": 0.0
+  },
+  "market_odds": {
+    "win_odds": {
+      "team_a": 1.5,
+      "team_b": 2.8
+    },
+    "next_ball_odds": {
+      "dot": 2.1,
+      "one": 1.6,
+      "four": 4.5,
+      "six": 8.0
+    }
+  }
+} 
