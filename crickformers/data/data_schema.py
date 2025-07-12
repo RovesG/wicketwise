@@ -6,8 +6,9 @@ This module contains the Pydantic models that define the schema for all data
 structures used in the Crickformers project.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
+import torch
 
 class CurrentBallFeatures(BaseModel):
     """
@@ -125,3 +126,31 @@ class VideoSignals(BaseModel):
     handsTechnique: str
     getToThrowTime: float
     throwAccuracy: float 
+
+
+class MarketOdds(BaseModel):
+    """
+    Represents the live market odds available for betting.
+    """
+    win_odds: Dict[str, float]
+    next_ball_odds: Dict[str, float]
+
+
+class ModelOutput(BaseModel):
+    """
+    Structures the raw output from the Crickformer model.
+    """
+    win_prob: torch.Tensor
+    next_ball_outcome: torch.Tensor
+    odds_mispricing_signal: torch.Tensor
+
+    class Config:
+        arbitrary_types_allowed = True
+
+
+class BettingDecision(BaseModel):
+    """
+    Contains the final betting decision and its justification.
+    """
+    decision: str  # e.g., 'value_bet', 'no_bet', 'risk_alert'
+    details: Dict[str, Any] 
