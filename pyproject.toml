@@ -1,11 +1,15 @@
 [tool.poetry]
-name = "wicketwise"
+name = "crickformers"
 version = "0.1.0"
 description = "T20 ball-by-ball cricket data prediction"
-authors = ["Your Name <you@example.com>"]
+authors = ["Shamus Rae <shamus@phi1618.io>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
+pydantic = "^2.5.3"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
