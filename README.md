@@ -53,3 +53,7 @@ crickformers/
 ├── notebooks/          # Experiments and ablation analysis
 └── README.md
 ``` 
+
+This will start a local web server and open the dashboard in your browser. You can then interact with the UI, load the sample data, and see the model's predictions and the agent's decisions.
+
+I will now commit the new UI and sample data to the repository. 

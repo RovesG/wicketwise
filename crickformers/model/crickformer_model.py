@@ -34,7 +34,13 @@ class CrickformerModel(nn.Module):
         self.sequence_encoder = BallHistoryEncoder(**sequence_config)
         self.static_context_encoder = StaticContextEncoder(**static_config)
         self.gnn_attention = MultiHeadGraphAttention(
-            embed_dim=gnn_embedding_dim, num_heads=4
+            query_dim=128,  # From static context encoder
+            batter_dim=128,
+            bowler_dim=128,
+            venue_dim=64,
+            nhead=4,
+            attention_dim=128,
+            dropout=0.1
         )
         self.fusion_layer = CrickformerFusionLayer(**fusion_config)
 
@@ -52,26 +58,53 @@ class CrickformerModel(nn.Module):
         """
         Defines the forward pass of the model.
         """
-        # Ensure all expected keys are present, providing zero tensors for missing ones
-        required_keys = [
-            "recent_ball_history",
-            "static_features",
-            "gnn_embeddings",
-            "video_signals",
-        ]
-        for key in required_keys:
-            if key not in inputs:
-                # This is a simplification; dimensions should be handled more robustly
-                inputs[key] = torch.zeros(1, 1, device=self.device)
+        # Extract inputs
+        recent_ball_history = inputs.get("recent_ball_history")
+        numeric_features = inputs.get("numeric_features")
+        categorical_features = inputs.get("categorical_features")
+        video_features = inputs.get("video_features")
+        video_mask = inputs.get("video_mask")
+        gnn_embeddings = inputs.get("gnn_embeddings")
+        
+        # Handle missing inputs with appropriate defaults
+        batch_size = recent_ball_history.shape[0] if recent_ball_history is not None else 1
+        device = self.device
+        
+        if recent_ball_history is None:
+            recent_ball_history = torch.zeros(batch_size, 5, 6, device=device)
+        if numeric_features is None:
+            numeric_features = torch.zeros(batch_size, 15, device=device)
+        if categorical_features is None:
+            categorical_features = torch.zeros(batch_size, 4, dtype=torch.long, device=device)
+        if video_features is None:
+            video_features = torch.zeros(batch_size, 99, device=device)
+        if video_mask is None:
+            video_mask = torch.zeros(batch_size, 1, device=device)
+        if gnn_embeddings is None:
+            gnn_embeddings = torch.zeros(batch_size, 1, 320, device=device)  # 128+128+64
 
-        sequence_embedding = self.sequence_encoder(inputs["recent_ball_history"])
-        static_embedding = self.static_context_encoder(inputs["static_features"])
-        gnn_embedding, _ = self.gnn_attention(
-            query=static_embedding.unsqueeze(1),
-            key=inputs["gnn_embeddings"],
-            value=inputs["gnn_embeddings"],
+        # Forward pass through components
+        sequence_embedding = self.sequence_encoder(recent_ball_history)
+        
+        static_embedding = self.static_context_encoder(
+            numeric_features=numeric_features,
+            categorical_features=categorical_features,
+            video_features=video_features,
+            video_mask=video_mask
         )
-        gnn_embedding = gnn_embedding.squeeze(1)
+        
+        # Split GNN embeddings: 128 + 128 + 64 + 64 = 384
+        batter_emb = gnn_embeddings[:, 0, :128]
+        bowler_emb = gnn_embeddings[:, 0, 128:256]
+        venue_emb = gnn_embeddings[:, 0, 256:320]
+        # Note: ignoring edge embeddings for now (320:384)
+        
+        gnn_embedding = self.gnn_attention(
+            query=static_embedding,
+            batter_embedding=batter_emb,
+            bowler_type_embedding=bowler_emb,
+            venue_embedding=venue_emb
+        )
 
         fused_vector = self.fusion_layer(
             sequence_vector=sequence_embedding,

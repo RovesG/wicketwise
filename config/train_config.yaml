@@ -1,0 +1,92 @@
+# Crickformer Training Configuration
+# Author: Assistant, Last Modified: 2024
+
+# Training Parameters
+batch_size: 32
+num_epochs: 10
+learning_rate: 1e-4
+log_interval: 100
+
+# Loss Weights for Multi-Task Learning
+loss_weights:
+  win_prob: 1.0        # Win probability prediction
+  outcome: 1.0         # Next ball outcome prediction
+  mispricing: 0.5      # Odds mispricing detection
+
+# Model Architecture Configuration
+model:
+  sequence_encoder:
+    input_dim: 5         # Ball history feature dimension
+    hidden_dim: 128      # LSTM hidden dimension
+    num_layers: 2        # Number of LSTM layers
+    dropout: 0.1         # Dropout rate
+    
+  static_context_encoder:
+    input_dim: 19        # 15 numeric + 4 categorical features
+    hidden_dim: 128      # Hidden layer dimension
+    output_dim: 128      # Output embedding dimension
+    dropout: 0.1         # Dropout rate
+    
+  fusion_layer:
+    input_dim: 128       # Input dimension from encoders
+    hidden_dim: 256      # Hidden layer dimension
+    output_dim: 128      # Final embedding dimension
+    dropout: 0.1         # Dropout rate
+    
+  prediction_heads:
+    win_probability:
+      input_dim: 128     # Input from fusion layer
+      hidden_dim: 64     # Hidden layer dimension
+      dropout: 0.1       # Dropout rate
+      
+    next_ball_outcome:
+      input_dim: 128     # Input from fusion layer
+      hidden_dim: 64     # Hidden layer dimension
+      num_classes: 7     # 0,1,2,3,4,6,wicket
+      dropout: 0.1       # Dropout rate
+      
+    odds_mispricing:
+      input_dim: 128     # Input from fusion layer
+      hidden_dim: 64     # Hidden layer dimension
+      dropout: 0.1       # Dropout rate
+
+# Dataset Configuration
+dataset:
+  history_length: 5      # Number of recent balls to include
+  load_video: true       # Load video signals
+  load_embeddings: true  # Load GNN embeddings
+  load_market_odds: true # Load market odds data
+  
+# Optimization Configuration
+optimizer:
+  type: "adam"           # Optimizer type
+  weight_decay: 1e-5     # L2 regularization
+  
+# Learning Rate Scheduling
+scheduler:
+  type: "reduce_on_plateau"
+  factor: 0.5            # Reduction factor
+  patience: 3            # Epochs to wait before reducing
+  min_lr: 1e-6           # Minimum learning rate
+  
+# Regularization
+regularization:
+  gradient_clip_norm: 1.0  # Gradient clipping max norm
+  
+# Hardware Configuration
+hardware:
+  device: "auto"         # auto, cpu, cuda
+  num_workers: 2         # DataLoader workers
+  pin_memory: true       # Pin memory for faster GPU transfer
+  
+# Logging Configuration
+logging:
+  log_level: "INFO"      # Logging level
+  save_interval: 1000    # Save model every N steps
+  eval_interval: 500     # Evaluate every N steps
+  
+# Model Saving
+checkpointing:
+  save_best: true        # Save best model based on validation loss
+  save_last: true        # Save last model
+  monitor: "val_loss"    # Metric to monitor for best model 
