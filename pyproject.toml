@@ -8,6 +8,7 @@ authors = ["Shamus Rae <shamus@phi1618.io>"]
 python = "^3.9"
 pydantic = "^2.5.3"
 numpy = "^1.26.4"
+torch = "^2.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
