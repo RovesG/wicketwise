@@ -1,0 +1,2 @@
+match_id,ball_id,decision,odds,stake,result,pnl,bankroll
+test_match,1.1,no_bet,3.0,0.0,no_bet,0.0,1000.0

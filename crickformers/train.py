@@ -38,62 +38,49 @@ def load_config(config_path: str) -> Dict[str, Any]:
 
 
 def collate_fn(batch):
-    """
-    Custom collate function to handle CrickformerDataset outputs.
+    """Custom collate function for DataLoader."""
+    # Separate inputs and targets
+    inputs = {}
+    targets = {}
     
-    Args:
-        batch: List of sample dictionaries from CrickformerDataset
-        
-    Returns:
-        Dictionary with batched tensors and mock targets
-    """
-    # Stack all tensor components
-    batched = {}
-    for key in batch[0].keys():
-        batched[key] = torch.stack([sample[key] for sample in batch])
+    # Stack inputs
+    for key in batch[0]["inputs"].keys():
+        inputs[key] = torch.stack([sample["inputs"][key] for sample in batch])
     
-    # Create mock targets for training
-    # In production, these would come from actual labels
-    batch_size = len(batch)
-    
-    # Mock targets based on current ball features
-    # Win probability target (0-1)
-    win_prob_targets = torch.sigmoid(torch.randn(batch_size, 1))
-    
-    # Next ball outcome target (7 classes: 0,1,2,3,4,6,wicket)
-    outcome_targets = torch.randint(0, 7, (batch_size,))
-    
-    # Odds mispricing target (binary: value bet or not)
-    mispricing_targets = torch.bernoulli(torch.full((batch_size, 1), 0.1))
+    # Stack targets
+    for key in batch[0]["targets"].keys():
+        targets[key] = torch.stack([sample["targets"][key] for sample in batch])
     
     return {
-        "inputs": {
-            "recent_ball_history": batched["ball_history"],
-            "numeric_features": batched["numeric_ball_features"],
-            "categorical_features": batched["categorical_ball_features"].long(),
-            "video_features": batched["video_features"],
-            "video_mask": batched["video_mask"],
-            "gnn_embeddings": batched["gnn_embeddings"].unsqueeze(1)  # Add seq dim
-        },
-        "targets": {
-            "win_prob": win_prob_targets,
-            "outcome": outcome_targets,
-            "mispricing": mispricing_targets
-        },
-        "masks": {
-            "video_mask": batched["video_mask"],
-            "market_odds_mask": batched["market_odds_mask"]
-        }
+        "inputs": inputs,
+        "targets": targets
+    }
+
+
+def create_targets(sample: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+    """Create training targets from sample data."""
+    # Extract win probability from market odds
+    win_prob = sample["market_odds"][0] if sample["market_odds_mask"][0] > 0 else 0.5
+    
+    # Create mock outcome target (would be real in production)
+    outcome = torch.randint(0, 7, (1,)).item()
+    
+    # Create mock mispricing target (would be calculated from odds analysis)
+    mispricing = torch.rand(1).item() > 0.5
+    
+    return {
+        "win_prob": torch.tensor(win_prob, dtype=torch.float32),
+        "outcome": torch.tensor(outcome, dtype=torch.long),
+        "mispricing": torch.tensor(float(mispricing), dtype=torch.float32)
     }
 
 
 class CrickformerTrainer:
-    """Main trainer class for Crickformer model."""
+    """Trainer class for Crickformer model."""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        logger.info(f"Using device: {self.device}")
         
         # Training parameters
         self.batch_size = config.get("batch_size", 32)
@@ -114,39 +101,92 @@ class CrickformerTrainer:
         self.train_loader = None
         self.val_loader = None
         
-        # Metrics tracking
+        # Training state
         self.running_loss = 0.0
         self.step_count = 0
         
-    def setup_dataset(self, data_path: str, use_csv: bool = True):
-        """Setup dataset and data loaders."""
+    def setup_dataset(self, data_path: str, use_csv: bool = True, train_matches_path: Optional[str] = None, val_matches_path: Optional[str] = None):
+        """Setup dataset and data loaders with optional match-level filtering."""
         logger.info(f"Loading dataset from: {data_path}")
         
-        if use_csv:
-            # Use CSV adapter for real data
-            dataset = CrickformerDataset(
-                data_root=data_path,
-                use_csv_adapter=True,
-                csv_config=CSVDataConfig(),
-                history_length=5,
-                load_video=True,
-                load_embeddings=True,
-                load_market_odds=True
-            )
+        if train_matches_path and val_matches_path:
+            # Use match-level splits
+            logger.info("Using match-level train/validation splits")
+            logger.info(f"Train matches file: {train_matches_path}")
+            logger.info(f"Validation matches file: {val_matches_path}")
+            
+            if use_csv:
+                # Create separate datasets for train and validation
+                train_dataset = CrickformerDataset(
+                    data_root=data_path,
+                    use_csv_adapter=True,
+                    csv_config=CSVDataConfig(),
+                    history_length=5,
+                    load_video=True,
+                    load_embeddings=True,
+                    load_market_odds=True,
+                    match_id_list_path=train_matches_path
+                )
+                
+                val_dataset = CrickformerDataset(
+                    data_root=data_path,
+                    use_csv_adapter=True,
+                    csv_config=CSVDataConfig(),
+                    history_length=5,
+                    load_video=True,
+                    load_embeddings=True,
+                    load_market_odds=True,
+                    match_id_list_path=val_matches_path
+                )
+            else:
+                # Directory structure mode with filtering
+                train_dataset = CrickformerDataset(
+                    data_root=data_path,
+                    use_csv_adapter=False,
+                    history_length=5,
+                    match_id_list_path=train_matches_path
+                )
+                
+                val_dataset = CrickformerDataset(
+                    data_root=data_path,
+                    use_csv_adapter=False,
+                    history_length=5,
+                    match_id_list_path=val_matches_path
+                )
+            
+            logger.info(f"Training dataset: {len(train_dataset):,} samples from {len(train_dataset.get_match_ids())} matches")
+            logger.info(f"Validation dataset: {len(val_dataset):,} samples from {len(val_dataset.get_match_ids())} matches")
+            
         else:
-            # Use directory structure
-            dataset = CrickformerDataset(
-                data_root=data_path,
-                use_csv_adapter=False,
-                history_length=5
-            )
-        
-        logger.info(f"Dataset loaded: {len(dataset):,} samples from {len(dataset.get_match_ids())} matches")
-        
-        # Split dataset
-        train_size = int(0.8 * len(dataset))
-        val_size = len(dataset) - train_size
-        train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+            # Use random splitting (original behavior)
+            logger.info("Using random sample-level train/validation split (80/20)")
+            logger.warning("⚠️  Random splitting may cause data leakage. Consider using match-level splits with --train-matches and --val-matches")
+            
+            if use_csv:
+                # Use CSV adapter for real data
+                dataset = CrickformerDataset(
+                    data_root=data_path,
+                    use_csv_adapter=True,
+                    csv_config=CSVDataConfig(),
+                    history_length=5,
+                    load_video=True,
+                    load_embeddings=True,
+                    load_market_odds=True
+                )
+            else:
+                # Use directory structure
+                dataset = CrickformerDataset(
+                    data_root=data_path,
+                    use_csv_adapter=False,
+                    history_length=5
+                )
+            
+            logger.info(f"Dataset loaded: {len(dataset):,} samples from {len(dataset.get_match_ids())} matches")
+            
+            # Split dataset
+            train_size = int(0.8 * len(dataset))
+            val_size = len(dataset) - train_size
+            train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
         
         # Create data loaders
         self.train_loader = DataLoader(
@@ -384,6 +424,18 @@ def main():
         default=True,
         help="Use CSV data adapter (default: True)"
     )
+    parser.add_argument(
+        "--train-matches",
+        type=str,
+        default=None,
+        help="Path to CSV file containing match IDs for training (e.g., train_matches.csv)"
+    )
+    parser.add_argument(
+        "--val-matches",
+        type=str,
+        default=None,
+        help="Path to CSV file containing match IDs for validation (e.g., val_matches.csv)"
+    )
     
     args = parser.parse_args()
     
@@ -407,7 +459,7 @@ def main():
     trainer = CrickformerTrainer(config)
     
     # Setup dataset and model
-    trainer.setup_dataset(args.data_path, use_csv=args.use_csv)
+    trainer.setup_dataset(args.data_path, use_csv=args.use_csv, train_matches_path=args.train_matches, val_matches_path=args.val_matches)
     trainer.setup_model()
     
     # Train the model

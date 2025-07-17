@@ -49,7 +49,8 @@ class CrickformerDataset(Dataset):
         load_embeddings: bool = True,
         load_market_odds: bool = True,
         use_csv_adapter: bool = False,
-        csv_config: Optional[CSVDataConfig] = None
+        csv_config: Optional[CSVDataConfig] = None,
+        match_id_list_path: Optional[str] = None
     ):
         """
         Initialize CrickformerDataset.
@@ -66,6 +67,7 @@ class CrickformerDataset(Dataset):
             load_market_odds: Whether to load market odds
             use_csv_adapter: Whether to use CSV data format
             csv_config: Configuration for CSV adapter
+            match_id_list_path: Optional path to CSV file containing match IDs to filter by
         """
         self.data_root = Path(data_root)
         self.manifest_file = manifest_file
@@ -76,6 +78,12 @@ class CrickformerDataset(Dataset):
         self.load_embeddings = load_embeddings
         self.load_market_odds = load_market_odds
         self.use_csv_adapter = use_csv_adapter
+        self.match_id_list_path = match_id_list_path
+        
+        # Load match filter list if provided
+        self.match_filter_list = None
+        if self.match_id_list_path:
+            self.match_filter_list = self._load_match_filter_list(self.match_id_list_path)
         
         # Set default GNN dimensions
         self.gnn_dims = gnn_dims or {
@@ -93,6 +101,43 @@ class CrickformerDataset(Dataset):
             self.csv_adapter = None
             self._load_directory_samples()
     
+    def _load_match_filter_list(self, match_id_list_path: str) -> List[str]:
+        """
+        Load match IDs from CSV file for filtering.
+        
+        Args:
+            match_id_list_path: Path to CSV file containing match IDs
+            
+        Returns:
+            List of match IDs to filter by
+            
+        Raises:
+            FileNotFoundError: If the filter file doesn't exist
+            ValueError: If the CSV file doesn't have the expected format
+        """
+        import pandas as pd
+        
+        filter_path = Path(match_id_list_path)
+        if not filter_path.exists():
+            raise FileNotFoundError(f"Match filter file not found: {filter_path}")
+        
+        try:
+            # Load CSV file
+            df = pd.read_csv(filter_path)
+            
+            # Check if 'match_id' column exists
+            if 'match_id' not in df.columns:
+                raise ValueError(f"CSV file must contain 'match_id' column. Found columns: {list(df.columns)}")
+            
+            # Extract match IDs and remove duplicates
+            match_ids = df['match_id'].dropna().unique().tolist()
+            
+            logger.info(f"Loaded {len(match_ids)} match IDs from filter file: {filter_path}")
+            return match_ids
+            
+        except Exception as e:
+            raise ValueError(f"Error loading match filter file {filter_path}: {e}")
+
     def _load_csv_samples(self):
         """Load samples using CSV adapter"""
         self.samples = []
@@ -117,8 +162,22 @@ class CrickformerDataset(Dataset):
                     'index': i
                 })
         
-        logger.info(f"Loaded {len(self.samples)} samples from CSV data")
-    
+        # Apply match filtering if filter list is provided
+        if self.match_filter_list:
+            original_count = len(self.samples)
+            self.samples = [
+                sample for sample in self.samples 
+                if sample['match_id'] in self.match_filter_list
+            ]
+            filtered_count = len(self.samples)
+            unique_matches = len(set(sample['match_id'] for sample in self.samples))
+            
+            logger.info(f"Applied match filtering: {original_count} → {filtered_count} samples")
+            logger.info(f"Filtered to {unique_matches} matches from {len(self.match_filter_list)} requested matches")
+        else:
+            unique_matches = len(set(sample['match_id'] for sample in self.samples))
+            logger.info(f"Loaded {len(self.samples)} samples from {unique_matches} matches (no filtering applied)")
+
     def _load_directory_samples(self):
         """Load samples from directory structure (original implementation)"""
         self.samples = []
@@ -151,7 +210,21 @@ class CrickformerDataset(Dataset):
                             'current_features_path': str(ball_file)
                         })
         
-        logger.info(f"Loaded {len(self.samples)} samples from directory structure")
+        # Apply match filtering if filter list is provided
+        if self.match_filter_list:
+            original_count = len(self.samples)
+            self.samples = [
+                sample for sample in self.samples 
+                if sample['match_id'] in self.match_filter_list
+            ]
+            filtered_count = len(self.samples)
+            unique_matches = len(set(sample['match_id'] for sample in self.samples))
+            
+            logger.info(f"Applied match filtering: {original_count} → {filtered_count} samples")
+            logger.info(f"Filtered to {unique_matches} matches from {len(self.match_filter_list)} requested matches")
+        else:
+            unique_matches = len(set(sample['match_id'] for sample in self.samples))
+            logger.info(f"Loaded {len(self.samples)} samples from {unique_matches} matches (no filtering applied)")
     
     def __len__(self) -> int:
         return len(self.samples)
@@ -402,10 +475,8 @@ class CrickformerDataset(Dataset):
     
     def get_match_ids(self) -> List[str]:
         """Get list of unique match IDs in the dataset"""
-        if self.use_csv_adapter:
-            return self.csv_adapter.get_match_ids()
-        else:
-            return list(set(sample['match_id'] for sample in self.samples))
+        # Always use the filtered samples to get match IDs
+        return list(set(sample['match_id'] for sample in self.samples))
     
     def filter_by_match(self, match_ids: List[str]) -> 'CrickformerDataset':
         """Create a new dataset filtered to specific matches"""

@@ -1,0 +1,301 @@
+{
+  "timestamp": "2025-07-17T13:00:29.801680",
+  "system_info": {
+    "nvplay_records": 500,
+    "decimal_records": 500,
+    "similarity_threshold": 0.8,
+    "fingerprint_length": 15
+  },
+  "benchmark_results": {
+    "fingerprint_extraction": [
+      {
+        "sample_size": 100,
+        "nvplay_fingerprints": 1,
+        "decimal_fingerprints": 2,
+        "extraction_time": 0.004236936569213867,
+        "records_per_second": 23601.958246581507
+      },
+      {
+        "sample_size": 500,
+        "nvplay_fingerprints": 3,
+        "decimal_fingerprints": 8,
+        "extraction_time": 0.006765127182006836,
+        "records_per_second": 73908.44052863437
+      },
+      {
+        "sample_size": 1000,
+        "nvplay_fingerprints": 5,
+        "decimal_fingerprints": 13,
+        "extraction_time": 0.009943962097167969,
+        "records_per_second": 100563.53697132444
+      },
+      {
+        "sample_size": 2000,
+        "nvplay_fingerprints": 9,
+        "decimal_fingerprints": 22,
+        "extraction_time": 0.021163225173950195,
+        "records_per_second": 94503.55432884583
+      }
+    ],
+    "similarity_calculation": {
+      "num_comparisons": 1000,
+      "calculation_time": 0.13648271560668945,
+      "comparisons_per_second": 7326.935103502489,
+      "avg_similarity": 0.7077203820962649,
+      "std_similarity": 0.3717312531041617,
+      "min_similarity": 0.3241629833849513,
+      "max_similarity": 1.4352500000000004
+    },
+    "match_finding": [
+      {
+        "sample_size": 100,
+        "threshold": 0.3,
+        "num_matches": 2,
+        "match_time": 0.01970195770263672,
+        "avg_similarity": 0.37761984667083054,
+        "high_confidence": 0,
+        "medium_confidence": 0,
+        "low_confidence": 2
+      },
+      {
+        "sample_size": 100,
+        "threshold": 0.4,
+        "num_matches": 1,
+        "match_time": 0.018162012100219727,
+        "avg_similarity": 0.43107670995670977,
+        "high_confidence": 0,
+        "medium_confidence": 0,
+        "low_confidence": 1
+      },
+      {
+        "sample_size": 100,
+        "threshold": 0.5,
+        "num_matches": 0,
+        "match_time": 0.018254995346069336,
+        "avg_similarity": 0,
+        "high_confidence": 0,
+        "medium_confidence": 0,
+        "low_confidence": 0
+      },
+      {
+        "sample_size": 100,
+        "threshold": 0.6,
+        "num_matches": 0,
+        "match_time": 0.019011974334716797,
+        "avg_similarity": 0,
+        "high_confidence": 0,
+        "medium_confidence": 0,
+        "low_confidence": 0
+      },
+      {
+        "sample_size": 100,
+        "threshold": 0.7,
+        "num_matches": 0,
+        "match_time": 0.01810288429260254,
+        "avg_similarity": 0,
+        "high_confidence": 0,
+        "medium_confidence": 0,
+        "low_confidence": 0
+      },
+      {
+        "sample_size": 100,
+        "threshold": 0.8,
+        "num_matches": 0,
+        "match_time": 0.018046140670776367,
+        "avg_similarity": 0,
+        "high_confidence": 0,
+        "medium_confidence": 0,
+        "low_confidence": 0
+      },
+      {
+        "sample_size": 500,
+        "threshold": 0.3,
+        "num_matches": 24,
+        "match_time": 0.14508891105651855,
+        "avg_similarity": 0.7077203820962646,
+        "high_confidence": 6,
+        "medium_confidence": 1,
+        "low_confidence": 17
+      },
+      {
+        "sample_size": 500,
+        "threshold": 0.4,
+        "num_matches": 21,
+        "match_time": 0.14386987686157227,
+        "avg_similarity": 0.7621191761003853,
+        "high_confidence": 6,
+        "medium_confidence": 1,
+        "low_confidence": 14
+      },
+      {
+        "sample_size": 500,
+        "threshold": 0.5,
+        "num_matches": 16,
+        "match_time": 0.1473829746246338,
+        "avg_similarity": 0.8504227472750816,
+        "high_confidence": 6,
+        "medium_confidence": 1,
+        "low_confidence": 9
+      },
+      {
+        "sample_size": 500,
+        "threshold": 0.6,
+        "num_matches": 7,
+        "match_time": 0.1434791088104248,
+        "avg_similarity": 1.2348873942907264,
+        "high_confidence": 6,
+        "medium_confidence": 1,
+        "low_confidence": 0
+      },
+      {
+        "sample_size": 500,
+        "threshold": 0.7,
+        "num_matches": 6,
+        "match_time": 0.1423659324645996,
+        "avg_similarity": 1.3352732494842472,
+        "high_confidence": 6,
+        "medium_confidence": 0,
+        "low_confidence": 0
+      },
+      {
+        "sample_size": 500,
+        "threshold": 0.8,
+        "num_matches": 6,
+        "match_time": 0.14382314682006836,
+        "avg_similarity": 1.3352732494842472,
+        "high_confidence": 6,
+        "medium_confidence": 0,
+        "low_confidence": 0
+      },
+      {
+        "sample_size": 1000,
+        "threshold": 0.3,
+        "num_matches": 24,
+        "match_time": 0.14528417587280273,
+        "avg_similarity": 0.7077203820962646,
+        "high_confidence": 6,
+        "medium_confidence": 1,
+        "low_confidence": 17
+      },
+      {
+        "sample_size": 1000,
+        "threshold": 0.4,
+        "num_matches": 21,
+        "match_time": 0.146575927734375,
+        "avg_similarity": 0.7621191761003853,
+        "high_confidence": 6,
+        "medium_confidence": 1,
+        "low_confidence": 14
+      },
+      {
+        "sample_size": 1000,
+        "threshold": 0.5,
+        "num_matches": 16,
+        "match_time": 0.1452178955078125,
+        "avg_similarity": 0.8504227472750816,
+        "high_confidence": 6,
+        "medium_confidence": 1,
+        "low_confidence": 9
+      },
+      {
+        "sample_size": 1000,
+        "threshold": 0.6,
+        "num_matches": 7,
+        "match_time": 0.1451551914215088,
+        "avg_similarity": 1.2348873942907264,
+        "high_confidence": 6,
+        "medium_confidence": 1,
+        "low_confidence": 0
+      },
+      {
+        "sample_size": 1000,
+        "threshold": 0.7,
+        "num_matches": 6,
+        "match_time": 0.14625191688537598,
+        "avg_similarity": 1.3352732494842472,
+        "high_confidence": 6,
+        "medium_confidence": 0,
+        "low_confidence": 0
+      },
+      {
+        "sample_size": 1000,
+        "threshold": 0.8,
+        "num_matches": 6,
+        "match_time": 0.14671921730041504,
+        "avg_similarity": 1.3352732494842472,
+        "high_confidence": 6,
+        "medium_confidence": 0,
+        "low_confidence": 0
+      }
+    ],
+    "name_matching": {
+      "total_tests": 10,
+      "total_time": 0.00011277198791503906,
+      "avg_similarity": 0.9873260869565218,
+      "perfect_matches": 9,
+      "good_matches": 10,
+      "detailed_results": [
+        {
+          "name1": "JR Philippe",
+          "name2": "Josh Philippe",
+          "similarity": 1.0,
+          "cricket_similarity": 1.0
+        },
+        {
+          "name1": "SM Elliott",
+          "name2": "Sam Elliott",
+          "similarity": 1.0,
+          "cricket_similarity": 1.0
+        },
+        {
+          "name1": "JM Vince",
+          "name2": "James Vince",
+          "similarity": 1.0,
+          "cricket_similarity": 1.0
+        },
+        {
+          "name1": "Mohammed Shami",
+          "name2": "M Shami",
+          "similarity": 1.0,
+          "cricket_similarity": 1.0
+        },
+        {
+          "name1": "AB de Villiers",
+          "name2": "A de Villiers",
+          "similarity": 0.8732608695652174,
+          "cricket_similarity": 0.6
+        },
+        {
+          "name1": "MS Dhoni",
+          "name2": "Mahendra Singh Dhoni",
+          "similarity": 1.0,
+          "cricket_similarity": 1.0
+        },
+        {
+          "name1": "V Kohli",
+          "name2": "Virat Kohli",
+          "similarity": 1.0,
+          "cricket_similarity": 1.0
+        },
+        {
+          "name1": "R Ashwin",
+          "name2": "Ravichandran Ashwin",
+          "similarity": 1.0,
+          "cricket_similarity": 1.0
+        },
+        {
+          "name1": "DJ Bravo",
+          "name2": "Dwayne Bravo",
+          "similarity": 1.0,
+          "cricket_similarity": 1.0
+        },
+        {
+          "name1": "CH Gayle",
+          "name2": "Chris Gayle",
+          "similarity": 1.0,
+          "cricket_similarity": 1.0
+        }
+      ]
+    }
+  }
+}
