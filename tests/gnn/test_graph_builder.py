@@ -49,9 +49,10 @@ def test_graph_edge_creation_and_attributes(mock_match_data):
     # Test 'faced' edge
     assert G.has_edge("player_A", "player_B")
     # Multiple 'faced' events between the same players should result in one edge
-    # NetworkX updates edge attributes on addition, so the last 'runs' value will be stored.
+    # Enhanced implementation now aggregates runs across multiple balls
     assert G.get_edge_data("player_A", "player_B")["edge_type"] == "faced"
-    assert G.get_edge_data("player_A", "player_B")["runs"] == 1
+    assert G.get_edge_data("player_A", "player_B")["runs"] == 5  # 4 + 1 = 5
+    assert G.get_edge_data("player_A", "player_B")["balls_faced"] == 2
 
     # Test 'dismissed_by' edge
     assert G.has_edge("player_B", "player_C")

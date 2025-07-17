@@ -1,4 +1,4 @@
-# Purpose: Tests for the CricketGNNTrainer.
+# Purpose: Tests for the CricketGNNTrainer with multi-hop capabilities.
 # Author: Shamus Rae, Last Modified: 2024-07-30
 
 import torch
@@ -34,7 +34,7 @@ def test_gnn_trainer_initialization(tiny_mock_graph):
         assert trainer.data is not None
         assert trainer.data.num_nodes == 3
         assert trainer.data.num_edges == 3
-        assert trainer.model.conv2.out_channels == 32
+        assert trainer.model.layers[-1].out_channels == 32
     except Exception as e:
         pytest.fail(f"CricketGNNTrainer initialization failed: {e}")
 
