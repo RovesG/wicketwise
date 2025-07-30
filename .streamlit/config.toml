@@ -1,0 +1,10 @@
+[server]
+# Set maximum file upload size to 1024 MB for large cricket data files
+maxUploadSize = 1024
+
+# Optional: Increase other limits if needed
+maxMessageSize = 1024
+
+[browser]
+# Automatically open browser when running locally
+gatherUsageStats = false 

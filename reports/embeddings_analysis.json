@@ -1,0 +1,14 @@
+{
+  "total_embeddings": 18,
+  "embedding_dimension": 128,
+  "statistics": {
+    "mean": -13.955900192260742,
+    "std": 7.675909519195557,
+    "min": -38.98036193847656,
+    "max": 10.960613250732422
+  },
+  "quality_metrics": {
+    "l2_norm_mean": 167.8972625732422,
+    "cosine_similarity_mean": 0.9921173453330994
+  }
+}

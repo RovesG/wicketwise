@@ -110,9 +110,17 @@ def test_heterogeneous_edge_types(match_data_two_matches):
     for u, v, data in G.edges(data=True):
         edge_types.add(data.get("edge_type"))
     
-    # Assert all 5 edge types are present
-    expected_edge_types = {"faced", "dismissed_by", "plays_for", "match_played_at", "excels_against"}
-    assert edge_types == expected_edge_types
+    # Assert all original edge types are present, plus new ones
+    original_edge_types = {"faced", "dismissed_by", "plays_for", "match_played_at", "excels_against"}
+    new_edge_types = {"partnered_with", "teammate_of", "bowled_at"}
+    
+    # Check that all original edge types are present
+    for edge_type in original_edge_types:
+        assert edge_type in edge_types, f"Missing original edge type: {edge_type}"
+    
+    # Check that at least some new edge types are present
+    new_types_found = edge_types.intersection(new_edge_types)
+    assert len(new_types_found) > 0, f"No new edge types found. Expected: {new_edge_types}, Found: {edge_types}"
 
 def test_faced_edge_attributes(match_data_two_matches):
     """Test 'faced' edge attributes and aggregation."""

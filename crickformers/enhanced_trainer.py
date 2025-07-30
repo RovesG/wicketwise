@@ -599,6 +599,79 @@ class EnhancedTrainer:
             }
         }, save_path)
         logger.info("Enhanced model saved successfully")
+    
+    def train_with_monitoring(self, train_dataset: list, val_dataset: list, num_epochs: int = 5, batch_size: int = 16) -> Dict[str, Any]:
+        """
+        Train the model with enhanced monitoring using provided datasets.
+        
+        Args:
+            train_dataset: Training dataset samples
+            val_dataset: Validation dataset samples
+            num_epochs: Number of training epochs
+            batch_size: Batch size for training
+            
+        Returns:
+            Training results and metrics
+        """
+        logger.info(f"Starting enhanced training with monitoring for {num_epochs} epochs")
+        
+        # Setup model if not already done
+        if not hasattr(self, 'model') or self.model is None:
+            self.setup_model()
+        
+        # Create data loaders from provided datasets
+        from torch.utils.data import DataLoader
+        
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            drop_last=True
+        )
+        
+        val_loader = DataLoader(
+            val_dataset,
+            batch_size=batch_size,
+            shuffle=False,
+            drop_last=False
+        )
+        
+        # Store original loaders
+        original_train_loader = getattr(self, 'train_loader', None)
+        original_val_loader = getattr(self, 'val_loader', None)
+        
+        # Set new loaders
+        self.train_loader = train_loader
+        self.val_loader = val_loader
+        
+        # Update training configuration
+        self.num_epochs = num_epochs
+        self.batch_size = batch_size
+        
+        # Execute training
+        try:
+            self.train()
+            
+            # Generate training summary
+            training_results = {
+                "status": "completed",
+                "epochs": num_epochs,
+                "batch_size": batch_size,
+                "train_samples": len(train_dataset),
+                "val_samples": len(val_dataset),
+                "device": str(self.device),
+                "drift_detection_enabled": self.use_drift_detection,
+                "confidence_estimation_enabled": self.use_confidence_estimation
+            }
+            
+            return training_results
+            
+        finally:
+            # Restore original loaders
+            if original_train_loader is not None:
+                self.train_loader = original_train_loader
+            if original_val_loader is not None:
+                self.val_loader = original_val_loader
 
 
 def main():

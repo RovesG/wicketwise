@@ -1,0 +1,135 @@
+{
+  "pipeline_summary": {
+    "timestamp": "2025-07-17T17:00:02.432474",
+    "device": "cpu",
+    "config": {
+      "batch_size": 32,
+      "num_epochs": 10,
+      "learning_rate": "1e-4",
+      "log_interval": 100,
+      "loss_weights": {
+        "win_prob": 1.0,
+        "outcome": 1.0,
+        "mispricing": 0.5
+      },
+      "model": {
+        "sequence_encoder": {
+          "input_dim": 5,
+          "hidden_dim": 128,
+          "num_layers": 2,
+          "dropout": 0.1
+        },
+        "static_context_encoder": {
+          "input_dim": 19,
+          "hidden_dim": 128,
+          "output_dim": 128,
+          "dropout": 0.1
+        },
+        "fusion_layer": {
+          "input_dim": 128,
+          "hidden_dim": 256,
+          "output_dim": 128,
+          "dropout": 0.1
+        },
+        "prediction_heads": {
+          "win_probability": {
+            "input_dim": 128,
+            "hidden_dim": 64,
+            "dropout": 0.1
+          },
+          "next_ball_outcome": {
+            "input_dim": 128,
+            "hidden_dim": 64,
+            "num_classes": 7,
+            "dropout": 0.1
+          },
+          "odds_mispricing": {
+            "input_dim": 128,
+            "hidden_dim": 64,
+            "dropout": 0.1
+          }
+        }
+      },
+      "dataset": {
+        "history_length": 5,
+        "load_video": true,
+        "load_embeddings": true,
+        "load_market_odds": true
+      },
+      "optimizer": {
+        "type": "adam",
+        "weight_decay": "1e-5"
+      },
+      "scheduler": {
+        "type": "reduce_on_plateau",
+        "factor": 0.5,
+        "patience": 3,
+        "min_lr": "1e-6"
+      },
+      "regularization": {
+        "gradient_clip_norm": 1.0
+      },
+      "hardware": {
+        "device": "auto",
+        "num_workers": 2,
+        "pin_memory": true
+      },
+      "logging": {
+        "log_level": "INFO",
+        "save_interval": 1000,
+        "eval_interval": 500
+      },
+      "checkpointing": {
+        "save_best": true,
+        "save_last": true,
+        "monitor": "val_loss"
+      }
+    }
+  },
+  "knowledge_graph": {
+    "status": "completed",
+    "summary": {
+      "total_nodes": 18,
+      "total_edges": 42,
+      "node_types": {
+        "batter": 5,
+        "bowler": 6,
+        "venue": 1,
+        "team": 2,
+        "match": 2,
+        "phase": 2
+      },
+      "edge_types": {
+        "batter_vs_bowler": 14,
+        "plays_at_venue": 5,
+        "performs_in_phase": 7,
+        "partnership": 1,
+        "bowls_at_venue": 6,
+        "bowls_in_phase": 9
+      },
+      "density": 0.13725490196078433,
+      "is_connected": false
+    }
+  },
+  "gnn_training": {
+    "status": "completed",
+    "temporal_decay_stats": {
+      "min_weight": 1.0,
+      "max_weight": 1.0,
+      "mean_weight": 1.0,
+      "std_weight": 0.0,
+      "num_edges": 42,
+      "alpha": 0.01
+    }
+  },
+  "enhanced_training": {
+    "status": "completed",
+    "drift_detection_enabled": false,
+    "confidence_estimation_enabled": false
+  },
+  "model_artifacts": {
+    "knowledge_graph": "models/cricket_knowledge_graph.pkl",
+    "gnn_embeddings": "models/gnn_embeddings.pt",
+    "trained_model": "models/crickformer_enhanced.pt"
+  }
+}

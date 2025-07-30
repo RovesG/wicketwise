@@ -470,12 +470,16 @@ class EnhancedGraphBuilder:
     
     def export_graph(self, filepath: str):
         """Export graph to file."""
-        nx.write_gpickle(self.graph, filepath)
+        import pickle
+        with open(filepath, 'wb') as f:
+            pickle.dump(self.graph, f)
         logger.info(f"Graph exported to {filepath}")
     
     def load_graph(self, filepath: str):
         """Load graph from file."""
-        self.graph = nx.read_gpickle(filepath)
+        import pickle
+        with open(filepath, 'rb') as f:
+            self.graph = pickle.load(f)
         logger.info(f"Graph loaded from {filepath}")
     
     def get_graph_summary(self) -> Dict[str, Any]:
