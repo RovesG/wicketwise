@@ -1,7 +1,230 @@
 # Purpose: Provides functions to render sophisticated, modern UI components.
-# Author: Assistant, Last Modified: 2024-07-19
+# Author: Assistant, Last Modified: 2024-12-19
+# Updated: Added Figma-inspired components from meta-ethics-63199039.figma.site
 
 import streamlit as st
+
+# =============================================================================
+# FIGMA-INSPIRED COMPONENTS
+# From: https://meta-ethics-63199039.figma.site
+# =============================================================================
+
+def render_figma_hero_section(title: str, subtitle: str, cta_text: str = "Get Started"):
+    """
+    Hero section component inspired by meta-ethics Figma design
+    Integrates with existing Wicketwise dark theme
+    """
+    
+    # Use Streamlit's native container and columns for better compatibility
+    with st.container():
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            padding: 60px 40px;
+            border-radius: 20px;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+        ">
+            <h1 style="
+                font-family: 'Inter', sans-serif;
+                font-size: 2.5rem;
+                font-weight: 700;
+                color: #FFFFFF;
+                margin-bottom: 20px;
+                line-height: 1.2;
+            ">{title}</h1>
+            
+            <p style="
+                font-family: 'Inter', sans-serif;
+                font-size: 1.2rem;
+                color: rgba(255,255,255,0.85);
+                margin-bottom: 30px;
+                line-height: 1.6;
+            ">{subtitle}</p>
+            
+            <div style="
+                display: inline-block;
+                background: linear-gradient(45deg, #4A90E2, #50C878);
+                color: #FFFFFF;
+                padding: 15px 30px;
+                border-radius: 25px;
+                font-family: 'Inter', sans-serif;
+                font-size: 1rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                box-shadow: 0 6px 25px rgba(74,144,226,0.4);
+            ">{cta_text}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+def render_figma_card(title: str, content: str, icon: str = "🏏", color: str = "#4A90E2"):
+    """
+    Card component inspired by meta-ethics Figma design
+    Enhanced with cricket-specific styling
+    """
+    
+    # Use Streamlit's native container for better compatibility
+    with st.container():
+        st.markdown(f"""
+        <div style="
+            background: rgba(26, 35, 50, 0.9);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 24px;
+            margin: 16px 0;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border-top: 3px solid {color};
+        ">
+            <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                <div style="
+                    font-size: 1.8rem;
+                    margin-right: 12px;
+                    padding: 8px;
+                    background: rgba(74,144,226,0.1);
+                    border-radius: 8px;
+                ">{icon}</div>
+                <h3 style="
+                    font-family: 'Inter', sans-serif;
+                    color: #FFFFFF;
+                    font-weight: 600;
+                    margin: 0;
+                    font-size: 1.2rem;
+                ">{title}</h3>
+            </div>
+            <p style="
+                font-family: 'Inter', sans-serif;
+                color: rgba(255,255,255,0.8);
+                margin: 0;
+                line-height: 1.5;
+                font-size: 0.95rem;
+            ">{content}</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+def render_figma_navigation(nav_items: list, active_item: str = ""):
+    """
+    Navigation component inspired by meta-ethics Figma design
+    Optimized for cricket analytics navigation
+    """
+    
+    nav_html = """
+    <div style="
+        background: rgba(15, 20, 25, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 15px;
+        padding: 20px;
+        margin: 20px 0;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    ">
+        <div style="display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 12px;">
+    """
+    
+    for item in nav_items:
+        is_active = item.lower() == active_item.lower()
+        active_style = """
+            background: linear-gradient(45deg, #4A90E2, #50C878);
+            color: #FFFFFF;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74,144,226,0.4);
+        """ if is_active else """
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.7);
+        """
+        
+        nav_html += f"""
+            <div style="
+                padding: 12px 24px;
+                border-radius: 25px;
+                font-family: 'Inter', sans-serif;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                border: 1px solid rgba(255,255,255,0.1);
+                {active_style}
+                min-width: 120px;
+                text-align: center;
+            " onmouseover="if (!this.style.background.includes('linear-gradient')) {{ this.style.background='rgba(255,255,255,0.1)'; this.style.color='#FFFFFF'; }}"
+               onmouseout="if (!this.style.background.includes('linear-gradient')) {{ this.style.background='rgba(255,255,255,0.05)'; this.style.color='rgba(255,255,255,0.7)'; }}">
+                {item}
+            </div>
+        """
+    
+    nav_html += """
+        </div>
+    </div>
+    """
+    
+    st.markdown(nav_html, unsafe_allow_html=True)
+
+def render_figma_stats_panel(stats: dict, title: str = "Match Statistics"):
+    """
+    Statistics panel inspired by Figma design with cricket-specific enhancements
+    """
+    
+    panel_html = f"""
+    <div style="
+        background: rgba(26, 35, 50, 0.9);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 32px;
+        margin: 16px 0;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    ">
+        <h3 style="
+            font-family: 'Inter', sans-serif;
+            color: #FFFFFF;
+            font-weight: 600;
+            margin-bottom: 24px;
+            font-size: 1.5rem;
+            text-align: center;
+        ">{title}</h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px;">
+    """
+    
+    for stat_name, stat_value in stats.items():
+        panel_html += f"""
+            <div style="
+                background: rgba(37, 43, 55, 0.8);
+                border-radius: 12px;
+                padding: 20px;
+                text-align: center;
+                border: 1px solid rgba(58, 63, 75, 0.8);
+                transition: all 0.3s ease;
+            " onmouseover="this.style.background='rgba(74,144,226,0.1)'; this.style.borderColor='rgba(74,144,226,0.3)'"
+               onmouseout="this.style.background='rgba(37, 43, 55, 0.8)'; this.style.borderColor='rgba(58, 63, 75, 0.8)'">
+                <div style="
+                    font-family: 'Inter', sans-serif;
+                    color: #4A90E2;
+                    font-size: 2rem;
+                    font-weight: 700;
+                    margin-bottom: 8px;
+                ">{stat_value}</div>
+                <div style="
+                    font-family: 'Inter', sans-serif;
+                    color: rgba(255,255,255,0.7);
+                    font-size: 0.9rem;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                ">{stat_name}</div>
+            </div>
+        """
+    
+    panel_html += """
+        </div>
+    </div>
+    """
+    
+    st.markdown(panel_html, unsafe_allow_html=True)
+
+# =============================================================================
+# EXISTING WICKETWISE COMPONENTS (Enhanced with Figma styling)
+# =============================================================================
 
 def render_player_card(player_name: str, player_stats: dict, team_color: str = "#4A90E2"):
     """Renders a sophisticated, modern player card with glass morphism effect."""

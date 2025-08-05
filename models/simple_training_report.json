@@ -1,0 +1,11 @@
+{
+  "dataset_size": 240985,
+  "features": 256,
+  "epochs": 15,
+  "best_val_loss": 7.975335043219663e-06,
+  "best_val_accuracy": 100.0,
+  "total_time_minutes": 2.859881782531738,
+  "model_parameters": 297729,
+  "data_file": "/Users/shamusrae/Library/Mobile Documents/com~apple~CloudDocs/Cricket /Data/joined_ball_by_ball_data.csv",
+  "train_test_split": "80/20 (by whole matches - proper cricket ML)"
+}

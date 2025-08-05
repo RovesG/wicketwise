@@ -71,7 +71,7 @@ class CrickformerModel(nn.Module):
         device = self.device
         
         if recent_ball_history is None:
-            recent_ball_history = torch.zeros(batch_size, 5, 6, device=device)
+            recent_ball_history = torch.zeros(batch_size, 5, 128, device=device)  # Updated to 128 dimensions
         if numeric_features is None:
             numeric_features = torch.zeros(batch_size, 15, device=device)
         if categorical_features is None:

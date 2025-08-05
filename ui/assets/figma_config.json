@@ -1,0 +1,32 @@
+{
+  "design_tokens": {
+    "colors": {
+      "primary": "#4A90E2",
+      "secondary": "#50C878",
+      "background": "#0F1419",
+      "surface": "#252B37",
+      "text_primary": "#FFFFFF",
+      "text_secondary": "#B8BCC8"
+    },
+    "typography": {
+      "font_family": "Inter, sans-serif",
+      "sizes": {
+        "h1": "2.5rem",
+        "h2": "2rem",
+        "h3": "1.5rem",
+        "body": "1rem"
+      }
+    },
+    "spacing": {
+      "sm": "8px",
+      "md": "16px",
+      "lg": "24px",
+      "xl": "32px"
+    }
+  },
+  "component_mapping": {
+    "hero_section": "render_figma_hero_section",
+    "card": "render_figma_card",
+    "button": "render_figma_button"
+  }
+}

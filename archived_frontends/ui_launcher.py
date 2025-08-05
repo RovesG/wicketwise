@@ -8,8 +8,18 @@ import io
 from admin_tools import admin_tools
 from chat_tools import handle_chat_query
 from chat_agent import ask_llm_with_tools
-from streamlit_option_menu import option_menu
-from streamlit_extras.add_vertical_space import add_vertical_space
+try:
+    from streamlit_option_menu import option_menu
+    OPTION_MENU_AVAILABLE = True
+except ImportError:
+    st.warning("streamlit_option_menu not available, using fallback navigation")
+    OPTION_MENU_AVAILABLE = False
+    
+try:
+    from streamlit_extras.add_vertical_space import add_vertical_space
+    VERTICAL_SPACE_AVAILABLE = True
+except ImportError:
+    VERTICAL_SPACE_AVAILABLE = False
 
 # Import the new theme and style modules
 from ui_theme import set_streamlit_theme
@@ -92,24 +102,34 @@ def main():
     # --- Sidebar Navigation ---
     with st.sidebar:
         st.title("🏏 WicketWise AI")
-        add_vertical_space(1)
+        if VERTICAL_SPACE_AVAILABLE:
+            add_vertical_space(1)
         
         # Modern, icon-based navigation menu
-        selected = option_menu(
-            menu_title=None,  # Hides the default menu title
-            options=["Live Match", "Match Simulator", "Admin Panel"],
-            icons=["bar-chart-line-fill", "shuffle", "sliders"],  # Bootstrap icons
-            menu_icon="cast",  # Optional
-            default_index=0,
-            styles={
-                "container": {"padding": "0!important", "background-color": "#001e3c"},
-                "icon": {"color": "white", "font-size": "20px"},
-                "nav-link": {"font-size": "16px", "text-align": "left", "margin":"0px", "--hover-color": "#c8712d"},
-                "nav-link-selected": {"background-color": "#003366"},
-            }
-        )
+        if OPTION_MENU_AVAILABLE:
+            selected = option_menu(
+                menu_title=None,  # Hides the default menu title
+                options=["Live Match", "Match Simulator", "Admin Panel"],
+                icons=["bar-chart-line-fill", "shuffle", "sliders"],  # Bootstrap icons
+                menu_icon="cast",  # Optional
+                default_index=0,
+                styles={
+                    "container": {"padding": "0!important", "background-color": "#001e3c"},
+                    "icon": {"color": "white", "font-size": "20px"},
+                    "nav-link": {"font-size": "16px", "text-align": "left", "margin":"0px", "--hover-color": "#c8712d"},
+                    "nav-link-selected": {"background-color": "#003366"},
+                }
+            )
+        else:
+            # Fallback to standard selectbox
+            selected = st.selectbox(
+                "Choose a view:",
+                ["Live Match", "Match Simulator", "Admin Panel"],
+                index=0
+            )
         
-        add_vertical_space(5) # Pushes the footer down
+        if VERTICAL_SPACE_AVAILABLE:
+            add_vertical_space(5)  # Pushes the footer down
 
     # --- View Routing ---
     if selected == "Live Match":

@@ -1,0 +1,12 @@
+# Figma exports
+figma_exports/
+*.fig
+
+# Large assets
+*.psd
+*.sketch
+*.ai
+
+# Temporary files
+*.tmp
+*.cache

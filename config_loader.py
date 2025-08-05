@@ -74,13 +74,13 @@ class ConfigLoader:
             csv_files = list(samples_dir.glob("*.csv"))
             sample_files.extend([str(f) for f in csv_files])
         
-        # Add default mock sample files
+        # Add real data files instead of samples
         if not sample_files:
+            real_data_path = "/Users/shamusrae/Library/Mobile Documents/com~apple~CloudDocs/Cricket /Data"
             sample_files = [
-                "samples/test_match.csv",
-                "samples/evaluation_data.csv",
-                "samples/live_match_data.csv",
-                "samples/historical_matches.csv"
+                f"{real_data_path}/joined_ball_by_ball_data.csv",  # 240K+ real records
+                f"{real_data_path}/nvplay_data_v3.csv",           # Ball-by-ball data
+                f"{real_data_path}/decimal_data_v3.csv"           # Betting data
             ]
         
         return sorted(sample_files)

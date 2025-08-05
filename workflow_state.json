@@ -1,0 +1,8 @@
+{
+  "step_1_data_loaded": true,
+  "step_2_knowledge_graph": true,
+  "step_3_gnn_trained": true,
+  "step_4_main_model": true,
+  "last_updated": 1754400356.178096,
+  "current_step": 5
+}

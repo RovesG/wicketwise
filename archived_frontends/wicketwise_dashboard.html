@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WicketWise Cricket Analytics Dashboard</title>
+    <link rel="stylesheet" href="wicketwise_styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body class="min-h-screen bg-background p-6 space-y-3">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <span class="text-primary-foreground font-medium">W</span>
+            </div>
+            <h1 class="text-2xl font-medium">WicketWise</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span class="text-sm text-muted-foreground">Live</span>
+            </div>
+            <div class="text-sm text-muted-foreground">
+                Portfolio: <span class="font-medium text-red-600">-$61</span>
+            </div>
+            <button id="adminButton" class="px-3 py-1 bg-secondary text-secondary-foreground rounded-md text-sm hover:bg-accent cursor-pointer">
+                <i data-lucide="settings" class="w-4 h-4 inline mr-1"></i>
+                Admin
+            </button>
+        </div>
+    </div>
+
+    <!-- Live Match Overview - Ultra Compact -->
+    <div class="bg-gradient-to-r from-blue-50 to-purple-50 border-2 rounded-lg p-3">
+        <div class="flex items-center justify-between space-x-6">
+            <!-- Match Score -->
+            <div class="flex items-center space-x-4">
+                <span class="bg-destructive text-destructive-foreground animate-pulse text-xs px-2 py-1 rounded">LIVE</span>
+                <div class="flex items-center space-x-2">
+                    <span class="font-medium text-sm">RCB</span>
+                    <span class="text-xl font-bold">156/4</span>
+                    <span class="text-xs text-muted-foreground">(17.2 ov)</span>
+                </div>
+            </div>
+
+            <!-- Win Probability -->
+            <div class="flex items-center space-x-3 min-w-40">
+                <span class="text-xs text-muted-foreground">RCB Win:</span>
+                <div class="flex-1">
+                    <div class="w-full bg-gray-200 rounded-full h-1.5">
+                        <div class="bg-green-600 h-1.5 rounded-full" style="width: 67%"></div>
+                    </div>
+                </div>
+                <span class="text-xs font-bold text-green-600">67%</span>
+            </div>
+
+            <!-- Key Stats -->
+            <div class="flex items-center space-x-4 text-xs">
+                <div>
+                    <span class="text-muted-foreground">Target:</span>
+                    <span class="font-medium ml-1">189</span>
+                </div>
+                <div>
+                    <span class="text-muted-foreground">RRR:</span>
+                    <span class="font-bold text-red-600 ml-1">8.45</span>
+                </div>
+                <span class="bg-secondary text-secondary-foreground text-xs py-0 px-2 rounded">Death Overs</span>
+            </div>
+
+            <!-- Last 6 Balls -->
+            <div class="flex items-center space-x-1">
+                <span class="text-xs text-muted-foreground">Last 6:</span>
+                <div class="w-4 h-4 rounded-full bg-blue-400 flex items-center justify-center text-white text-xs font-bold">1</div>
+                <div class="w-4 h-4 rounded-full bg-orange-400 flex items-center justify-center text-white text-xs font-bold">4</div>
+                <div class="w-4 h-4 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs font-bold">0</div>
+                <div class="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold">6</div>
+                <div class="w-4 h-4 rounded-full bg-blue-400 flex items-center justify-center text-white text-xs font-bold">2</div>
+                <div class="w-4 h-4 rounded-full bg-blue-400 flex items-center justify-center text-white text-xs font-bold">1</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Row - Video and Betting Portfolio -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Video Streaming Panel -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Live Video Stream</h3>
+            </div>
+            <div class="card-content">
+                <div class="bg-black rounded-lg aspect-video flex items-center justify-center text-white">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <i data-lucide="play" class="w-8 h-8"></i>
+                        </div>
+                        <p>Live Stream: RCB vs MI</p>
+                        <p class="text-sm text-gray-300">Ball-by-ball coverage</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Betting Portfolio -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Betting Portfolio</h3>
+                <span class="text-red-600 font-medium">-$61 Total</span>
+            </div>
+            <div class="card-content space-y-3">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div class="flex justify-between items-center">
+                        <span class="font-medium">RCB to Win</span>
+                        <span class="text-red-600">-$25</span>
+                    </div>
+                    <div class="text-sm text-muted-foreground">Stake: $50 @ 1.80 odds</div>
+                </div>
+                <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div class="flex justify-between items-center">
+                        <span class="font-medium">Over 180.5 runs</span>
+                        <span class="text-green-600">+$18</span>
+                    </div>
+                    <div class="text-sm text-muted-foreground">Stake: $30 @ 1.90 odds</div>
+                </div>
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <div class="flex justify-between items-center">
+                        <span class="font-medium">Kohli 50+ runs</span>
+                        <span class="text-gray-600">Pending</span>
+                    </div>
+                    <div class="text-sm text-muted-foreground">Stake: $20 @ 2.40 odds</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Left Column - Player Cards -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Current Batter -->
+            <div class="card hover:shadow-lg transition-shadow">
+                <div class="card-header">
+                    <h3 class="card-title flex items-center justify-between">
+                        Current Batter
+                        <span class="badge-outline">RCB</span>
+                    </h3>
+                </div>
+                <div class="card-content space-y-4">
+                    <!-- Player Info -->
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
+                            <span class="font-medium">VK</span>
+                        </div>
+                        <div>
+                            <div class="font-medium">Virat Kohli</div>
+                            <div class="text-sm text-muted-foreground">RCB</div>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold">45</div>
+                            <div class="text-xs text-muted-foreground">Runs</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold">128.57</div>
+                            <div class="text-xs text-muted-foreground">Strike Rate</div>
+                        </div>
+                    </div>
+
+                    <!-- Last 6 Balls -->
+                    <div class="space-y-2">
+                        <div class="text-sm font-medium">Last 6 Balls</div>
+                        <div class="flex space-x-1">
+                            <div class="w-6 h-6 rounded-full bg-orange-400 flex items-center justify-center text-white text-xs font-bold">4</div>
+                            <div class="w-6 h-6 rounded-full bg-blue-400 flex items-center justify-center text-white text-xs font-bold">1</div>
+                            <div class="w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs font-bold">0</div>
+                            <div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold">6</div>
+                            <div class="w-6 h-6 rounded-full bg-blue-400 flex items-center justify-center text-white text-xs font-bold">2</div>
+                            <div class="w-6 h-6 rounded-full bg-blue-400 flex items-center justify-center text-white text-xs font-bold">1</div>
+                        </div>
+                    </div>
+
+                    <!-- Form Vector -->
+                    <div class="space-y-2">
+                        <div class="text-sm font-medium">Recent Form (Last 5 matches)</div>
+                        <div class="flex items-end space-x-1 h-16">
+                            <div class="bg-blue-500 rounded-t-sm flex-1 flex items-end justify-center text-xs text-white pb-1" style="height: 53px;">89</div>
+                            <div class="bg-blue-500 rounded-t-sm flex-1 flex items-end justify-center text-xs text-white pb-1" style="height: 34px;">23</div>
+                            <div class="bg-blue-500 rounded-t-sm flex-1 flex items-end justify-center text-xs text-white pb-1" style="height: 50px;">67</div>
+                            <div class="bg-blue-500 rounded-t-sm flex-1 flex items-end justify-center text-xs text-white pb-1" style="height: 40px;">34</div>
+                            <div class="bg-blue-500 rounded-t-sm flex-1 flex items-end justify-center text-xs text-white pb-1" style="height: 47px;">45</div>
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="flex flex-wrap gap-1">
+                        <span class="badge-secondary">Good vs spin</span>
+                        <span class="badge-secondary">Death over specialist</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Bowler -->
+            <div class="card hover:shadow-lg transition-shadow">
+                <div class="card-header">
+                    <h3 class="card-title flex items-center justify-between">
+                        Current Bowler
+                        <span class="badge-outline">MI</span>
+                    </h3>
+                </div>
+                <div class="card-content space-y-4">
+                    <!-- Player Info -->
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
+                            <span class="font-medium">JB</span>
+                        </div>
+                        <div>
+                            <div class="font-medium">Jasprit Bumrah</div>
+                            <div class="text-sm text-muted-foreground">MI</div>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="text-center">
+                            <div class="text-lg font-bold">3.2</div>
+                            <div class="text-xs text-muted-foreground">Overs</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-lg font-bold">18</div>
+                            <div class="text-xs text-muted-foreground">Runs</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-lg font-bold">2</div>
+                            <div class="text-xs text-muted-foreground">Wickets</div>
+                        </div>
+                    </div>
+
+                    <!-- Economy -->
+                    <div class="space-y-2">
+                        <div class="text-sm font-medium">Economy Rate</div>
+                        <div class="flex items-center space-x-2">
+                            <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: 56%"></div>
+                            </div>
+                            <span class="text-sm font-bold">5.29</span>
+                        </div>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="flex flex-wrap gap-1">
+                        <span class="badge-secondary">2x dismissed Kohli</span>
+                        <span class="badge-secondary">Death specialist</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Column - Betting & AI -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Betting Signal Panel -->
+            <div class="card border-l-4 border-l-green-500">
+                <div class="card-header">
+                    <h3 class="card-title flex items-center justify-between">
+                        Betting Signals
+                        <div class="flex space-x-1">
+                            <span class="badge-outline text-xs">High Liquidity</span>
+                            <span class="badge-secondary text-xs">Sharp Movement</span>
+                        </div>
+                    </h3>
+                </div>
+                <div class="card-content space-y-4">
+                    <!-- Market Odds -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <div class="text-sm font-medium">RCB Win</div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg font-bold">1.45</span>
+                                <span class="text-sm text-muted-foreground">(69%)</span>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="text-sm font-medium">MI Win</div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg font-bold">2.75</span>
+                                <span class="text-sm text-muted-foreground">(36%)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Model Probability -->
+                    <div class="space-y-2">
+                        <div class="text-sm font-medium">Model Probability</div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center">
+                                <div class="text-xl font-bold text-green-600">67%</div>
+                                <div class="text-xs text-muted-foreground">RCB</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-xl font-bold">33%</div>
+                                <div class="text-xs text-muted-foreground">MI</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mispricing -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium">Mispricing</span>
+                        <div class="flex items-center space-x-1 px-2 py-1 rounded-full text-white bg-green-500">
+                            <i data-lucide="trending-up" class="w-4 h-4"></i>
+                            <span class="text-xs font-medium">Value</span>
+                        </div>
+                    </div>
+
+                    <!-- Suggested Action -->
+                    <div class="space-y-2">
+                        <div class="text-sm font-medium">Suggested Action</div>
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <div class="flex items-center justify-between">
+                                <span class="font-medium text-green-800">Back RCB</span>
+                                <span class="badge-outline bg-green-100 text-green-800 border-green-300">Value Bet</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Confidence -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium">Confidence</span>
+                            <span class="text-sm font-bold">72%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full" style="width: 72%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Insight Console -->
+            <div class="card border-l-4 border-l-purple-500">
+                <div class="card-header">
+                    <h3 class="card-title flex items-center space-x-2">
+                        <i data-lucide="brain" class="w-5 h-5 text-purple-500"></i>
+                        <span>AI Insights</span>
+                    </h3>
+                </div>
+                <div class="card-content space-y-4">
+                    <!-- Tactical Recommendations -->
+                    <div class="space-y-3">
+                        <div class="text-sm font-medium">Top Recommendations</div>
+                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="target" class="w-4 h-4"></i>
+                                <span class="text-sm">Bring in left-arm spinner vs Kohli</span>
+                            </div>
+                            <span class="badge-outline text-xs text-green-600">85%</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="trending-up" class="w-4 h-4"></i>
+                                <span class="text-sm">Move fine leg to deep square</span>
+                            </div>
+                            <span class="badge-outline text-xs text-orange-600">72%</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="brain" class="w-4 h-4"></i>
+                                <span class="text-sm">Bowl wide yorkers outside off</span>
+                            </div>
+                            <span class="badge-outline text-xs text-green-600">91%</span>
+                        </div>
+                    </div>
+
+                    <!-- Field Placement -->
+                    <div class="space-y-2">
+                        <div class="text-sm font-medium">Suggested Field</div>
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <span class="text-sm text-blue-800">Attacking field with slip and gully</span>
+                        </div>
+                    </div>
+
+                    <!-- Next Ball Prediction -->
+                    <div class="space-y-2">
+                        <div class="text-sm font-medium">Next Ball Prediction</div>
+                        <div class="flex items-center justify-between p-2 bg-orange-50 rounded-lg">
+                            <span class="text-sm text-orange-800">Single to long-on</span>
+                            <span class="badge-outline text-xs text-orange-600">68%</span>
+                        </div>
+                    </div>
+
+                    <!-- AI Commentary -->
+                    <div class="space-y-2">
+                        <div class="text-sm font-medium">AI Commentary</div>
+                        <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                            <p class="text-sm text-purple-800 italic">Now might be the time to bring the leg-spinner on. Kohli has struggled against left-arm spin in the death overs this season.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Query & Chart -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Knowledge Graph Query -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Knowledge Graph Query</h3>
+                    </div>
+                    <div class="card-content space-y-4">
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium">Ask about cricket patterns</label>
+                            <input type="text" placeholder="e.g. How does Kohli perform vs left-arm spin?" class="w-full p-2 border border-input rounded-md bg-input-background">
+                        </div>
+                        <button class="w-full bg-primary text-primary-foreground p-2 rounded-md">
+                            Query Knowledge Graph
+                        </button>
+                        <div class="bg-muted rounded-lg p-3">
+                            <div class="text-sm font-medium mb-2">Recent Insights</div>
+                            <div class="space-y-2 text-sm">
+                                <div>• Kohli averages 28.4 vs left-arm spin in death overs</div>
+                                <div>• RCB has won 67% of matches when scoring 180+</div>
+                                <div>• Bumrah's economy rate drops to 4.8 in final 3 overs</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Win Probability Chart -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title flex items-center space-x-2">
+                            <i data-lucide="trending-up" class="w-5 h-5 text-blue-500"></i>
+                            <span>Win Probability</span>
+                        </h3>
+                    </div>
+                    <div class="card-content space-y-4">
+                        <!-- Chart placeholder -->
+                        <div class="h-48 bg-gray-50 rounded-lg flex items-center justify-center">
+                            <div class="text-center text-muted-foreground">
+                                <i data-lucide="line-chart" class="w-12 h-12 mx-auto mb-2"></i>
+                                <p>Win Probability Chart</p>
+                                <p class="text-sm">RCB 67% - MI 33%</p>
+                            </div>
+                        </div>
+
+                        <!-- Legend -->
+                        <div class="flex items-center justify-center space-x-6">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                <span class="text-sm">RCB Win %</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                                <span class="text-sm">MI Win %</span>
+                            </div>
+                        </div>
+
+                        <!-- Key Events -->
+                        <div class="space-y-2">
+                            <div class="text-sm font-medium">Key Events</div>
+                            <div class="space-y-1 text-xs">
+                                <div class="flex items-center justify-between">
+                                    <span>Over 2: Early wicket</span>
+                                    <span class="text-muted-foreground">MI favored</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span>Over 15: Big over</span>
+                                    <span class="text-muted-foreground">RCB favored</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Market vs Model -->
+                        <div class="bg-gray-50 rounded-lg p-3 space-y-2">
+                            <div class="text-sm font-medium">Market vs Model</div>
+                            <div class="grid grid-cols-2 gap-4 text-xs">
+                                <div>
+                                    <div class="text-muted-foreground">Market Odds</div>
+                                    <div>RCB: 1.45 | MI: 2.75</div>
+                                </div>
+                                <div>
+                                    <div class="text-muted-foreground">Model Win %</div>
+                                    <div>RCB: 67% | MI: 33%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div id="adminModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-7xl h-full max-h-[90vh] flex flex-col">
+            <!-- Modal Header -->
+            <div class="p-6 border-b flex items-center justify-between flex-shrink-0">
+                <div>
+                    <h2 class="text-2xl font-medium flex items-center space-x-2">
+                        <i data-lucide="settings" class="w-6 h-6"></i>
+                        <span>WicketWise System Administration</span>
+                    </h2>
+                    <p class="text-muted-foreground mt-1">Configure API keys, data sources, knowledge graph, AI training, and monitor system status.</p>
+                </div>
+                <button id="closeAdminModal" class="p-2 hover:bg-gray-100 rounded-lg flex-shrink-0">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- Admin Tabs -->
+            <div class="flex-1 flex flex-col min-h-0">
+                <!-- Tab Navigation -->
+                <div class="flex-shrink-0 px-6 border-b">
+                    <nav class="flex space-x-8 overflow-x-auto">
+                        <button class="admin-tab active py-3 px-2 border-b-2 border-primary font-medium text-primary whitespace-nowrap" data-tab="api-keys">
+                            <i data-lucide="key" class="w-4 h-4 inline mr-2"></i>
+                            API Keys
+                        </button>
+                        <button class="admin-tab py-3 px-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground whitespace-nowrap" data-tab="data-sources">
+                            <i data-lucide="database" class="w-4 h-4 inline mr-2"></i>
+                            Data Sources
+                        </button>
+                        <button class="admin-tab py-3 px-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground whitespace-nowrap" data-tab="knowledge-graph">
+                            <i data-lucide="brain" class="w-4 h-4 inline mr-2"></i>
+                            Knowledge Graph
+                        </button>
+                        <button class="admin-tab py-3 px-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground whitespace-nowrap" data-tab="ai-training">
+                            <i data-lucide="brain" class="w-4 h-4 inline mr-2"></i>
+                            AI Training
+                        </button>
+                        <button class="admin-tab py-3 px-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground whitespace-nowrap" data-tab="system-status">
+                            <i data-lucide="check-circle" class="w-4 h-4 inline mr-2"></i>
+                            System Status
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <!-- API Keys Tab -->
+                    <div id="api-keys" class="tab-content">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title flex items-center space-x-2">
+                                    <i data-lucide="key" class="w-5 h-5"></i>
+                                    <span>API Configuration</span>
+                                </h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                    <div class="space-y-3">
+                                        <label class="text-sm font-medium">OpenAI API Key</label>
+                                        <input type="password" placeholder="sk-..." class="w-full p-3 border border-input rounded-md bg-input-background font-mono text-sm">
+                                        <p class="text-sm text-muted-foreground">Used for AI insights and tactical recommendations</p>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <label class="text-sm font-medium">Gemini API Key</label>
+                                        <input type="password" placeholder="AI..." class="w-full p-3 border border-input rounded-md bg-input-background font-mono text-sm">
+                                        <p class="text-sm text-muted-foreground">Alternative AI model for diverse insights</p>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <label class="text-sm font-medium">Claude API Key</label>
+                                        <input type="password" placeholder="sk-ant-..." class="w-full p-3 border border-input rounded-md bg-input-background font-mono text-sm">
+                                        <p class="text-sm text-muted-foreground">Advanced reasoning for complex scenarios</p>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <label class="text-sm font-medium">Betfair API Key</label>
+                                        <input type="password" placeholder="betting-api-key..." class="w-full p-3 border border-input rounded-md bg-input-background font-mono text-sm">
+                                        <p class="text-sm text-muted-foreground">Live betting odds and market data</p>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <label class="text-sm font-medium">Weather API Key</label>
+                                        <input type="password" placeholder="weather-key..." class="w-full p-3 border border-input rounded-md bg-input-background font-mono text-sm">
+                                        <p class="text-sm text-muted-foreground">Weather conditions affecting match outcomes</p>
+                                    </div>
+                                </div>
+                                <div class="mt-6">
+                                    <button class="bg-primary text-primary-foreground px-4 py-2 rounded-md">Save API Keys</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data Sources Tab -->
+                    <div id="data-sources" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title flex items-center space-x-2">
+                                    <i data-lucide="database" class="w-5 h-5"></i>
+                                    <span>Data Source Configuration</span>
+                                </h3>
+                            </div>
+                            <div class="card-content space-y-6">
+                                <div class="space-y-3">
+                                    <label class="text-sm font-medium">Historic Data Path</label>
+                                    <input type="text" placeholder="/path/to/historic/cricket/data" class="w-full p-3 border border-input rounded-md bg-input-background">
+                                    <p class="text-sm text-muted-foreground">Location of historical match data files</p>
+                                </div>
+                                <div class="space-y-3">
+                                    <label class="text-sm font-medium">Video Storage Path</label>
+                                    <input type="text" placeholder="/path/to/video/storage" class="w-full p-3 border border-input rounded-md bg-input-background">
+                                    <p class="text-sm text-muted-foreground">Directory for match video files and clips</p>
+                                </div>
+                                <div class="mt-6">
+                                    <button class="bg-primary text-primary-foreground px-4 py-2 rounded-md">Update Data Paths</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Knowledge Graph Tab -->
+                    <div id="knowledge-graph" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title flex items-center space-x-2">
+                                    <i data-lucide="brain" class="w-5 h-5"></i>
+                                    <span>Knowledge Graph Management</span>
+                                </h3>
+                            </div>
+                            <div class="card-content space-y-6">
+                                <div class="space-y-4">
+                                    <p class="text-muted-foreground">Build and maintain the cricket knowledge graph for enhanced AI insights.</p>
+                                    <div class="flex items-center space-x-4">
+                                        <button id="buildKnowledgeGraph" class="bg-blue-600 text-white px-4 py-2 rounded-md">
+                                            <i data-lucide="play" class="w-4 h-4 inline mr-2"></i>
+                                            Build Knowledge Graph
+                                        </button>
+                                        <div class="text-sm text-muted-foreground">Last built: 2 hours ago</div>
+                                    </div>
+                                    <div id="knowledgeGraphProgress" class="space-y-2 hidden">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm font-medium">Building Knowledge Graph</span>
+                                            <span class="text-sm text-muted-foreground" id="kgProgressText">0%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div id="kgProgressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Training Tab -->
+                    <div id="ai-training" class="tab-content hidden">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title flex items-center space-x-2">
+                                    <i data-lucide="brain" class="w-5 h-5"></i>
+                                    <span>AI Model Training</span>
+                                </h3>
+                            </div>
+                            <div class="card-content space-y-6">
+                                <div class="space-y-4">
+                                    <p class="text-muted-foreground">Train AI models on latest cricket data for improved predictions.</p>
+                                    <div class="flex items-center space-x-4">
+                                        <button id="startAITraining" class="bg-purple-600 text-white px-4 py-2 rounded-md">
+                                            <i data-lucide="play" class="w-4 h-4 inline mr-2"></i>
+                                            Start AI Training
+                                        </button>
+                                        <div class="text-sm text-muted-foreground">Last trained: 4 hours ago</div>
+                                    </div>
+                                    <div id="aiTrainingProgress" class="space-y-2 hidden">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm font-medium">Training AI Models</span>
+                                            <span class="text-sm text-muted-foreground" id="aiProgressText">0%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div id="aiProgressBar" class="bg-purple-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Status Tab -->
+                    <div id="system-status" class="tab-content hidden">
+                        <div class="space-y-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title flex items-center space-x-2">
+                                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                                        <span>API Connections</span>
+                                    </h3>
+                                </div>
+                                <div class="card-content">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg min-w-0">
+                                            <div class="flex items-center space-x-2 min-w-0">
+                                                <i data-lucide="check-circle" class="w-4 h-4 text-green-500 flex-shrink-0"></i>
+                                                <span class="font-medium truncate">OpenAI</span>
+                                            </div>
+                                            <span class="text-sm text-green-600 flex-shrink-0 ml-2">Connected</span>
+                                        </div>
+                                        <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg min-w-0">
+                                            <div class="flex items-center space-x-2 min-w-0">
+                                                <i data-lucide="alert-circle" class="w-4 h-4 text-red-500 flex-shrink-0"></i>
+                                                <span class="font-medium truncate">Gemini</span>
+                                            </div>
+                                            <span class="text-sm text-red-600 flex-shrink-0 ml-2">Disconnected</span>
+                                        </div>
+                                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg min-w-0">
+                                            <div class="flex items-center space-x-2 min-w-0">
+                                                <i data-lucide="check-circle" class="w-4 h-4 text-green-500 flex-shrink-0"></i>
+                                                <span class="font-medium truncate">Claude</span>
+                                            </div>
+                                            <span class="text-sm text-green-600 flex-shrink-0 ml-2">Connected</span>
+                                        </div>
+                                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg min-w-0">
+                                            <div class="flex items-center space-x-2 min-w-0">
+                                                <i data-lucide="check-circle" class="w-4 h-4 text-green-500 flex-shrink-0"></i>
+                                                <span class="font-medium truncate">Betfair</span>
+                                            </div>
+                                            <span class="text-sm text-green-600 flex-shrink-0 ml-2">Connected</span>
+                                        </div>
+                                        <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg min-w-0">
+                                            <div class="flex items-center space-x-2 min-w-0">
+                                                <i data-lucide="alert-circle" class="w-4 h-4 text-yellow-500 flex-shrink-0"></i>
+                                                <span class="font-medium truncate">Weather</span>
+                                            </div>
+                                            <span class="text-sm text-yellow-600 flex-shrink-0 ml-2">Error</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title flex items-center space-x-2">
+                                        <i data-lucide="database" class="w-5 h-5"></i>
+                                        <span>Data Status</span>
+                                    </h3>
+                                </div>
+                                <div class="card-content">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg min-w-0">
+                                            <div class="flex items-center space-x-2 min-w-0">
+                                                <i data-lucide="check-circle" class="w-4 h-4 text-green-500 flex-shrink-0"></i>
+                                                <span class="font-medium truncate">Historic Data</span>
+                                            </div>
+                                            <span class="text-sm text-green-600 flex-shrink-0 ml-2">Loaded</span>
+                                        </div>
+                                        <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg min-w-0">
+                                            <div class="flex items-center space-x-2 min-w-0">
+                                                <i data-lucide="clock" class="w-4 h-4 text-yellow-500 flex-shrink-0"></i>
+                                                <span class="font-medium truncate">Knowledge Graph</span>
+                                            </div>
+                                            <span class="text-sm text-yellow-600 flex-shrink-0 ml-2">Building</span>
+                                        </div>
+                                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg min-w-0">
+                                            <div class="flex items-center space-x-2 min-w-0">
+                                                <i data-lucide="check-circle" class="w-4 h-4 text-green-500 flex-shrink-0"></i>
+                                                <span class="font-medium truncate">AI Model</span>
+                                            </div>
+                                            <span class="text-sm text-green-600 flex-shrink-0 ml-2">Trained</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Admin Panel functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const adminButton = document.getElementById('adminButton');
+            const adminModal = document.getElementById('adminModal');
+            const closeModalButton = document.getElementById('closeAdminModal');
+            const adminTabs = document.querySelectorAll('.admin-tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            // Open admin modal
+            adminButton.addEventListener('click', function() {
+                adminModal.classList.remove('hidden');
+                lucide.createIcons(); // Re-initialize icons in modal
+            });
+            
+            // Close admin modal
+            closeModalButton.addEventListener('click', function() {
+                adminModal.classList.add('hidden');
+            });
+            
+            // Close modal when clicking outside (on the dark overlay)
+            adminModal.addEventListener('click', function(e) {
+                if (e.target === adminModal) {
+                    adminModal.classList.add('hidden');
+                }
+            });
+            
+            // Prevent modal from closing when clicking inside the modal content
+            const modalContent = adminModal.querySelector('.bg-white');
+            modalContent.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+            
+            // Close modal with ESC key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !adminModal.classList.contains('hidden')) {
+                    adminModal.classList.add('hidden');
+                }
+            });
+            
+            // Tab switching
+            adminTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
+                    
+                    // Update tab buttons
+                    adminTabs.forEach(t => {
+                        t.classList.remove('active', 'border-primary', 'text-primary');
+                        t.classList.add('border-transparent', 'text-muted-foreground');
+                    });
+                    this.classList.add('active', 'border-primary', 'text-primary');
+                    this.classList.remove('border-transparent', 'text-muted-foreground');
+                    
+                    // Update tab content
+                    tabContents.forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                    document.getElementById(targetTab).classList.remove('hidden');
+                });
+            });
+            
+            // Knowledge Graph building simulation
+            document.getElementById('buildKnowledgeGraph').addEventListener('click', function() {
+                const progressDiv = document.getElementById('knowledgeGraphProgress');
+                const progressBar = document.getElementById('kgProgressBar');
+                const progressText = document.getElementById('kgProgressText');
+                
+                progressDiv.classList.remove('hidden');
+                this.disabled = true;
+                this.textContent = 'Building...';
+                
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 10;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(interval);
+                        this.disabled = false;
+                        this.innerHTML = '<i data-lucide="play" class="w-4 h-4 inline mr-2"></i>Build Knowledge Graph';
+                        lucide.createIcons();
+                        setTimeout(() => progressDiv.classList.add('hidden'), 2000);
+                    }
+                    progressBar.style.width = progress + '%';
+                    progressText.textContent = Math.round(progress) + '%';
+                }, 500);
+            });
+            
+            // AI Training simulation
+            document.getElementById('startAITraining').addEventListener('click', function() {
+                const progressDiv = document.getElementById('aiTrainingProgress');
+                const progressBar = document.getElementById('aiProgressBar');
+                const progressText = document.getElementById('aiProgressText');
+                
+                progressDiv.classList.remove('hidden');
+                this.disabled = true;
+                this.textContent = 'Training...';
+                
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 5;
+                    if (progress >= 100) {
+                        progress = 100;
+                        clearInterval(interval);
+                        this.disabled = false;
+                        this.innerHTML = '<i data-lucide="play" class="w-4 h-4 inline mr-2"></i>Start AI Training';
+                        lucide.createIcons();
+                        setTimeout(() => progressDiv.classList.add('hidden'), 2000);
+                    }
+                    progressBar.style.width = progress + '%';
+                    progressText.textContent = Math.round(progress) + '%';
+                }, 1000);
+            });
+            
+            // Animate probability bars
+            const probabilityBars = document.querySelectorAll('.h-1\\.5 > div, .h-2 > div');
+            probabilityBars.forEach(bar => {
+                const width = bar.style.width;
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.transition = 'width 1s ease-out';
+                    bar.style.width = width;
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>

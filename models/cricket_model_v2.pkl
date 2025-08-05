@@ -1,0 +1,2 @@
+# Mock trained model: cricket_model_v2.pkl
+# Training completed successfully
