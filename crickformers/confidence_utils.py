@@ -63,7 +63,7 @@ def predict_with_uncertainty(
             elif isinstance(inputs, tuple):
                 pred = model(*inputs)
             elif isinstance(inputs, dict):
-                pred = model(**inputs)
+                pred = model(inputs)  # Pass dict directly to CrickformerModel.forward(inputs)
             else:
                 raise ValueError(f"Unsupported input type: {type(inputs)}")
             

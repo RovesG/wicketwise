@@ -122,26 +122,12 @@ def train_model():
         try:
             background_operations[operation_id] = {
                 "status": "running",
-                "progress": 0,
-                "message": "Starting model training...",
-                "logs": []
+                "progress": 10,
+                "message": "Starting real Crickformer training...",
+                "logs": ["Initializing sophisticated Crickformer model..."]
             }
             
-            # Progress updates
-            for i, (progress, message, log) in enumerate([
-                (10, "Loading training data...", "Loading aligned matches data..."),
-                (25, "Preprocessing features...", "Extracting ball-by-ball features..."),
-                (40, "Initializing Crickformer model...", "Setting up transformer architecture..."),
-                (60, "Training model...", "Running gradient descent optimization..."),
-                (80, "Validating performance...", "Computing validation metrics..."),
-                (95, "Saving model...", "Persisting trained model to disk..."),
-            ]):
-                background_operations[operation_id]["progress"] = progress
-                background_operations[operation_id]["message"] = message
-                background_operations[operation_id]["logs"].append(log)
-                time.sleep(2)  # Simulate real training time
-            
-            # Actually run training
+            # Actually run training immediately (no fake progress)
             result = admin_tools.train_model()
             
             # Update with results

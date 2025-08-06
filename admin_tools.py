@@ -639,20 +639,51 @@ class AdminTools:
                     
                     ball_history.append(feature_vector)
                 
-                # Create mock targets
+                # Create targets with correct key names and shapes for enhanced trainer
                 targets = {
-                    'win_probability': torch.tensor([float(row.get('win_prob', 0.5)) if 'win_prob' in row else 0.5], dtype=torch.float32),
-                    'next_ball_outcome': torch.tensor([min(int(float(row.get('runs', 0))), 6)], dtype=torch.long),  # Clamp to 0-6
-                    'odds_mispricing': torch.tensor([0.0], dtype=torch.float32),  # Mock value
+                    'win_prob': torch.tensor([float(row.get('win_prob', 0.5)) if 'win_prob' in row else 0.5], dtype=torch.float32),
+                    'next_ball_outcome': torch.tensor(min(int(float(row.get('runs', 0))), 6), dtype=torch.long),  # Scalar for CrossEntropyLoss
+                    'mispricing': torch.tensor([0.0], dtype=torch.float32),  # Mock value - corrected key name for enhanced trainer
                 }
                 
+                # Extract categorical features from the CSV row
+                categorical_features = {
+                    'batter': str(row.get('batter', row.get('batsman', 'unknown_batter'))),
+                    'bowler': str(row.get('bowler', 'unknown_bowler')),
+                    'venue': str(row.get('venue', row.get('Venue', 'unknown_venue'))),
+                    'team_batting': str(row.get('team_batting', row.get('battingteam', 'unknown_team'))),
+                    'team_bowling': str(row.get('team_bowling', row.get('Bowling Team', 'unknown_team'))),
+                }
+                
+                # Extract numeric features (15 features for static context encoder)
+                numeric_features = torch.tensor([
+                    float(row.get('runs', 0)),
+                    float(row.get('over', 0)),
+                    float(row.get('delivery', 1)),
+                    float(row.get('score', 0)),
+                    float(row.get('wickets', 0)),
+                    float(row.get('ballsremaining', 120)),
+                    float(row.get('target', 150)),
+                    float(row.get('av_runs_bat', 25)),
+                    float(row.get('av_runs_bowl', 25)),
+                    float(row.get('avr', 6.5)),
+                    float(row.get('pressure', 0)),
+                    float(row.get('win_prob', 0.5)),
+                    float(row.get('dot', 0)),
+                    float(row.get('four', 0)),
+                    float(row.get('six', 0)),
+                ], dtype=torch.float32)
+
                 # Create the entry
                 entry = {
                     'inputs': {
                         'current_ball_features': torch.tensor(list(current_ball.values()), dtype=torch.float32),
-                        'recent_ball_history': torch.tensor([ball_history], dtype=torch.float32),  # Shape: [1, 5, 128] - FIXED field name!
-                        'gnn_embeddings': torch.randn(4, 128),  # Mock GNN embeddings (batter, bowler, venue, team)
-                        'video_signals': torch.randn(10),  # Mock video features
+                        'recent_ball_history': torch.tensor(ball_history, dtype=torch.float32),  # Shape: [5, 128]
+                        'categorical_features': categorical_features,  # String categorical features
+                        'numeric_features': numeric_features,  # 15-dimensional numeric features 
+                        'gnn_embeddings': torch.randn(1, 384),  # Mock GNN embeddings: batter(128) + bowler(128) + venue(64) + team(64) = 384
+                        'video_features': torch.randn(10),  # Video features (renamed from video_signals)
+                        'video_mask': torch.ones(1),  # Video features are always present (mock)
                         'market_odds': torch.tensor([1.5, 2.0, 1.8], dtype=torch.float32),  # Mock odds
                     },
                     'targets': targets

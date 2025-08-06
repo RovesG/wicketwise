@@ -89,10 +89,34 @@ class EnhancedTrainer:
         }
         
         static_encoder_config = model_config.get("static_context_encoder", {})
+        
+        # Define categorical features with reasonable vocabulary sizes and embedding dimensions
+        categorical_vocab_sizes = {
+            "batter": 1000,        # Approximate number of unique batters
+            "bowler": 500,         # Approximate number of unique bowlers  
+            "venue": 100,          # Approximate number of unique venues
+            "team_batting": 50,    # Approximate number of unique teams
+            "team_bowling": 50,    # Approximate number of unique teams
+        }
+        
+        categorical_embedding_dims = {
+            "batter": 32,          # Embedding dimension for batters
+            "bowler": 32,          # Embedding dimension for bowlers
+            "venue": 16,           # Embedding dimension for venues
+            "team_batting": 16,    # Embedding dimension for batting teams
+            "team_bowling": 16,    # Embedding dimension for bowling teams
+        }
+        
+        # Initialize categorical encoders (string to integer mapping)
+        self.categorical_encoders = {}
+        self.categorical_vocab_sizes = categorical_vocab_sizes  # Store for use in collate function
+        for feature_name in categorical_vocab_sizes.keys():
+            self.categorical_encoders[feature_name] = {}
+        
         static_config = {
-            "numeric_dim": static_encoder_config.get("input_dim", 19),
-            "categorical_vocab_sizes": model_config.get("categorical_vocab_sizes", {}),
-            "categorical_embedding_dims": model_config.get("categorical_embedding_dims", {}),
+            "numeric_dim": 15,  # Match the 15 numeric features we extract from CSV data
+            "categorical_vocab_sizes": categorical_vocab_sizes,
+            "categorical_embedding_dims": categorical_embedding_dims,
             "video_dim": model_config.get("video_dim", 10),  # Match our mock video signals
             "hidden_dims": [static_encoder_config.get("hidden_dim", 128)],
             "context_dim": static_encoder_config.get("output_dim", 128),
@@ -337,34 +361,30 @@ class EnhancedTrainer:
         )
         
         # Create data loaders
-        def simple_collate_fn(batch):
-            features, win_probs, outcomes = zip(*batch)
-            batch_size = len(features)
-            feature_tensor = torch.stack(features)
+        def crickformer_collate_fn(batch):
+            """Collate function for Crickformer dataset entries."""
+            # batch is a list of dataset entries from admin_tools._create_crickformer_dataset_entries
+            batch_inputs = {}
+            batch_targets = {}
             
-            # Reshape features to match model expectations
-            # Model expects: recent_ball_history [batch_size, 5, 128], numeric_features [batch_size, 15], etc.
+            # Extract all inputs and targets
+            for key in batch[0]['inputs'].keys():
+                if key == 'recent_ball_history':
+                    # Stack ball history: [batch_size, 5, 128] 
+                    batch_inputs[key] = torch.stack([item['inputs'][key] for item in batch])
+                elif key in ['gnn_embeddings']:
+                    # Keep these as they are (2D tensors)
+                    batch_inputs[key] = torch.stack([item['inputs'][key] for item in batch])
+                else:
+                    # Stack 1D tensors: current_ball_features, video_signals, market_odds
+                    batch_inputs[key] = torch.stack([item['inputs'][key] for item in batch])
             
-            # Create mock ball history (5 recent balls, 128 features each)
-            recent_ball_history = feature_tensor[:, :640].reshape(batch_size, 5, 128) if feature_tensor.shape[1] >= 640 else torch.zeros(batch_size, 5, 128)
-            
-            # Create numeric features (15 features)
-            numeric_features = feature_tensor[:, :15] if feature_tensor.shape[1] >= 15 else torch.zeros(batch_size, 15)
-            
-            # Create categorical features (4 features, integer type)
-            categorical_features = torch.zeros(batch_size, 4, dtype=torch.long)
+            for key in batch[0]['targets'].keys():
+                batch_targets[key] = torch.stack([item['targets'][key] for item in batch])
             
             return {
-                "inputs": {
-                    "recent_ball_history": recent_ball_history,
-                    "numeric_features": numeric_features,
-                    "categorical_features": categorical_features,
-                    # Let model use defaults for video_features, video_mask, gnn_embeddings
-                },
-                "targets": {
-                    "win_prob": torch.stack(win_probs),
-                    "next_ball_outcome": torch.stack(outcomes)
-                }
+                "inputs": batch_inputs,
+                "targets": batch_targets
             }
         
         self.train_loader = DataLoader(
@@ -372,7 +392,7 @@ class EnhancedTrainer:
             batch_size=self.batch_size,
             shuffle=True,
             drop_last=True,
-            collate_fn=simple_collate_fn
+            collate_fn=crickformer_collate_fn
         )
         
         self.val_loader = DataLoader(
@@ -380,7 +400,7 @@ class EnhancedTrainer:
             batch_size=self.batch_size,
             shuffle=False,
             drop_last=False,
-            collate_fn=simple_collate_fn
+            collate_fn=crickformer_collate_fn
         )
         
         logger.info(f"Simple dataset setup complete - Train: {len(self.train_loader)} batches, Val: {len(self.val_loader)} batches")
@@ -635,14 +655,14 @@ class EnhancedTrainer:
                 )
                 
                 # Calculate confidence scores
-                for i in range(len(mean_pred["win_prob"])):
+                for i in range(len(mean_pred["win_probability"])):
                     conf_score = calculate_confidence_score(
-                        mean_pred["win_prob"][i].item(),
-                        std_pred["win_prob"][i].item()
+                        mean_pred["win_probability"][i].item(),
+                        std_pred["win_probability"][i].item()
                     )
                     confidence_scores.append(conf_score)
                 
-                predictions.extend(outputs["win_prob"].cpu().numpy())
+                predictions.extend(outputs["win_probability"].cpu().numpy())
                 targets_list.extend(targets["win_prob"].cpu().numpy())
         
         # Calculate metrics
@@ -722,6 +742,10 @@ class EnhancedTrainer:
     def create_monitoring_plots(self, save_dir: str = "monitoring_plots"):
         """Create comprehensive monitoring plots."""
         Path(save_dir).mkdir(exist_ok=True)
+        
+        # Set matplotlib to use non-GUI backend to prevent threading issues
+        import matplotlib
+        matplotlib.use('Agg')  # Use non-interactive backend
         
         # Set up the plotting style
         plt.style.use('seaborn-v0_8')
@@ -927,18 +951,76 @@ class EnhancedTrainer:
         # Create data loaders from provided datasets
         from torch.utils.data import DataLoader
         
+        # Define collate function for Crickformer entries
+        def crickformer_collate_fn(batch):
+            """Collate function for Crickformer dataset entries."""
+            batch_inputs = {}
+            batch_targets = {}
+            
+            # Extract all inputs and targets
+            for key in batch[0]['inputs'].keys():
+                if key == 'recent_ball_history':
+                    # Stack ball history: [batch_size, 5, 128] 
+                    batch_inputs[key] = torch.stack([item['inputs'][key] for item in batch])
+                elif key == 'categorical_features':
+                    # Handle categorical features - convert strings to integers
+                    # The static encoder expects shape [batch_size, num_categorical_features]
+                    batch_size = len(batch)
+                    cat_feature_names = list(batch[0]['inputs'][key].keys())
+                    num_cat_features = len(cat_feature_names)
+                    
+                    # Create tensor to hold all categorical features
+                    categorical_tensor = torch.zeros(batch_size, num_cat_features, dtype=torch.long)
+                    
+                    for cat_idx, cat_feature in enumerate(cat_feature_names):
+                        # Convert string categorical features to integer indices
+                        for batch_idx, item in enumerate(batch):
+                            cat_value = item['inputs'][key][cat_feature]
+                            # Get or create integer index for this categorical value
+                            if cat_value not in self.categorical_encoders[cat_feature]:
+                                new_idx = len(self.categorical_encoders[cat_feature])
+                                # Ensure we don't exceed vocabulary size - use actual vocab size from config
+                                vocab_size = self.categorical_vocab_sizes.get(cat_feature, 1000)
+                                if new_idx < vocab_size:
+                                    self.categorical_encoders[cat_feature][cat_value] = new_idx
+                                else:
+                                    # Use index 0 for unknown/overflow values
+                                    self.categorical_encoders[cat_feature][cat_value] = 0
+                            categorical_tensor[batch_idx, cat_idx] = self.categorical_encoders[cat_feature][cat_value]
+                    
+                    batch_inputs[key] = categorical_tensor
+                elif key in ['gnn_embeddings']:
+                    # Keep these as they are (2D tensors)
+                    batch_inputs[key] = torch.stack([item['inputs'][key] for item in batch])
+                elif key in ['video_mask']:
+                    # Stack 1D mask tensors
+                    batch_inputs[key] = torch.stack([item['inputs'][key] for item in batch])
+                else:
+                    # Stack 1D tensors: current_ball_features, numeric_features, video_features, market_odds
+                    batch_inputs[key] = torch.stack([item['inputs'][key] for item in batch])
+            
+            for key in batch[0]['targets'].keys():
+                batch_targets[key] = torch.stack([item['targets'][key] for item in batch])
+            
+            return {
+                "inputs": batch_inputs,
+                "targets": batch_targets
+            }
+
         train_loader = DataLoader(
             train_dataset,
             batch_size=batch_size,
             shuffle=True,
-            drop_last=True
+            drop_last=True,
+            collate_fn=crickformer_collate_fn
         )
         
         val_loader = DataLoader(
             val_dataset,
             batch_size=batch_size,
             shuffle=False,
-            drop_last=False
+            drop_last=False,
+            collate_fn=crickformer_collate_fn
         )
         
         # Store original loaders

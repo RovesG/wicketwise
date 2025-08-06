@@ -53,10 +53,11 @@ class WinProbabilityHead(nn.Module):
             latent_vector: The latent state from the fusion layer.
                            Shape: [batch_size, latent_dim]
         Returns:
-            A single raw logit for the win probability.
+            Win probability between 0 and 1 (sigmoid applied to logits).
             Shape: [batch_size, 1]
         """
-        return self.network(latent_vector)
+        logits = self.network(latent_vector)
+        return torch.sigmoid(logits)  # Convert logits to probabilities [0,1] for BCELoss
 
 
 class OddsMispricingHead(nn.Module):
@@ -78,7 +79,8 @@ class OddsMispricingHead(nn.Module):
             latent_vector: The latent state from the fusion layer.
                            Shape: [batch_size, latent_dim]
         Returns:
-            A single raw logit for the mispricing classification.
+            Mispricing probability between 0 and 1 (sigmoid applied to logits).
             Shape: [batch_size, 1]
         """
-        return self.network(latent_vector) 
+        logits = self.network(latent_vector)
+        return torch.sigmoid(logits)  # Convert logits to probabilities [0,1] for BCELoss 
