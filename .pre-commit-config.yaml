@@ -1,0 +1,13 @@
+# Purpose: Pre-commit hooks for linting/formatting
+# Author: Phi1618 Cricket AI Team, Last Modified: 2025-08-10
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        language_version: python3
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.5.5
+    hooks:
+      - id: ruff
+        args: ["--fix"]

@@ -57,3 +57,41 @@ crickformers/
 This will start a local web server and open the dashboard in your browser. You can then interact with the UI, load the sample data, and see the model's predictions and the agent's decisions.
 
 I will now commit the new UI and sample data to the repository. 
+
+---
+
+## ▶️ Run the WicketWise UI (Figma build)
+
+The current UI is a Figma-derived static page served alongside the Flask admin API.
+
+- Backend API: Flask on port 5001
+- UI: Static server on port 8000
+
+### Quick start
+
+```bash
+# one-time setup (no Streamlit)
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# start both backend (5001) and UI server (8000)
+bash start.sh
+
+# open the correct UI
+open "http://127.0.0.1:8000/wicketwise_admin_fixed.html"  # macOS
+# or visit in your browser
+# http://127.0.0.1:8000/wicketwise_admin_fixed.html
+
+# backend health check
+curl http://127.0.0.1:5001/api/health
+```
+
+Notes:
+- Port 5001 is API-only; `/` returns 404 by design in this branch.
+- The page `wicketwise_admin_fixed.html` contains the main dashboard (fake video window, player cards, KG query) and admin flows.
+
+### Repo hygiene
+- Use `.env.example` to create your `.env` (do not commit secrets)
+- Outputs go under `artifacts/` (gitignored); caches under `models/aggregates/`
+- Run pre-commit locally: `pre-commit install && pre-commit run -a`
+- CI runs `pytest -q` on PRs

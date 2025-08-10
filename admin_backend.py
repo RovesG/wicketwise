@@ -36,71 +36,67 @@ def health_check():
 @app.route('/api/build-knowledge-graph', methods=['POST'])
 def build_knowledge_graph():
     """Build cricket knowledge graph using real EnhancedGraphBuilder"""
-    
+
     def run_build():
         """Background task to build knowledge graph"""
         operation_id = "knowledge_graph_build"
-        
+
         try:
             background_operations[operation_id] = {
                 "status": "running",
                 "progress": 0,
-                "message": "Starting knowledge graph building...",
+                "message": "Starting knowledge graph build...",
                 "logs": []
             }
-            
-            # Update progress
-            background_operations[operation_id]["progress"] = 10
-            background_operations[operation_id]["message"] = "Loading data..."
-            background_operations[operation_id]["logs"].append("Loading cricket match data...")
-            
-            time.sleep(1)  # Give UI time to show progress
-            
-            # Update progress
-            background_operations[operation_id]["progress"] = 30
-            background_operations[operation_id]["message"] = "Building graph nodes..."
-            background_operations[operation_id]["logs"].append("Creating player, venue, and team nodes...")
-            
-            time.sleep(1)
-            
-            # Update progress
+
+            # Stage: schema resolution (UI hint only; actual resolution occurs inside pipeline)
+            background_operations[operation_id]["progress"] = 5
+            background_operations[operation_id]["message"] = "Resolving schema..."
+            background_operations[operation_id]["logs"].append("Resolving dataset schema and aliases...")
+            time.sleep(0.5)
+
+            # Stage: aggregations
+            background_operations[operation_id]["progress"] = 20
+            background_operations[operation_id]["message"] = "Aggregating relationships (chunked)..."
+            background_operations[operation_id]["logs"].append("Running vectorized group-bys over chunks...")
+            time.sleep(0.5)
+
+            # Stage: cache write
             background_operations[operation_id]["progress"] = 60
-            background_operations[operation_id]["message"] = "Computing relationships..."
-            background_operations[operation_id]["logs"].append("Computing player-venue relationships...")
-            background_operations[operation_id]["logs"].append("Computing performance metrics...")
-            
-            time.sleep(1)
-            
-            # Actually build the knowledge graph
+            background_operations[operation_id]["message"] = "Writing aggregate cache..."
+            background_operations[operation_id]["logs"].append("Caching aggregates to models/aggregates ...")
+            time.sleep(0.5)
+
+            # Stage: assemble graph
             background_operations[operation_id]["progress"] = 80
-            background_operations[operation_id]["message"] = "Running EnhancedGraphBuilder..."
-            background_operations[operation_id]["logs"].append("Running real knowledge graph builder...")
-            
+            background_operations[operation_id]["message"] = "Assembling NetworkX graph..."
+            background_operations[operation_id]["logs"].append("Constructing nodes and edges from aggregates...")
+
             result = admin_tools.build_knowledge_graph()
-            
-            # Update with results
+
+            # Final
             background_operations[operation_id]["progress"] = 100
-            
             if result.startswith("✅"):
                 background_operations[operation_id]["status"] = "completed"
+                # Show final node/edge counts directly in message for the UI header
                 background_operations[operation_id]["message"] = result
-                background_operations[operation_id]["logs"].append("Knowledge graph built successfully!")
+                background_operations[operation_id]["logs"].append(result)
             else:
                 background_operations[operation_id]["status"] = "error"
-                background_operations[operation_id]["message"] = result
+                background_operations[operation_id]["message"] = "Knowledge graph build failed"
                 background_operations[operation_id]["logs"].append(f"Error: {result}")
-                
+
         except Exception as e:
             background_operations[operation_id]["status"] = "error"
-            background_operations[operation_id]["message"] = f"Error: {str(e)}"
+            background_operations[operation_id]["message"] = "Knowledge graph build failed"
             background_operations[operation_id]["logs"].append(f"Exception: {str(e)}")
             logger.error(f"Knowledge graph building failed: {str(e)}")
-    
+
     # Start background task
     thread = threading.Thread(target=run_build)
     thread.daemon = True
     thread.start()
-    
+
     return jsonify({"status": "started", "operation_id": "knowledge_graph_build"})
 
 @app.route('/api/operation-status/<operation_id>', methods=['GET'])
@@ -164,6 +160,46 @@ def get_system_status():
     except Exception as e:
         logger.error(f"System status check failed: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/kg-settings', methods=['GET'])
+def get_kg_settings():
+    try:
+        return jsonify({"status": "success", "settings": admin_tools.get_kg_settings()})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/kg-settings', methods=['POST'])
+def update_kg_settings():
+    try:
+        data = request.get_json(force=True) or {}
+        settings = admin_tools.update_kg_settings(data)
+        return jsonify({"status": "success", "settings": settings})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/aligner-settings', methods=['GET'])
+def get_aligner_settings():
+    try:
+        return jsonify({"status": "success", "settings": admin_tools.get_aligner_settings()})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/aligner-settings', methods=['POST'])
+def update_aligner_settings():
+    try:
+        data = request.get_json(force=True) or {}
+        settings = admin_tools.update_aligner_settings(data)
+        return jsonify({"status": "success", "settings": settings})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+@app.route('/api/kg-cache/purge', methods=['POST'])
+def purge_kg_cache():
+    try:
+        msg = admin_tools.purge_kg_cache()
+        return jsonify({"status": "success", "message": msg})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/dataset-info', methods=['GET'])
 def get_dataset_info():
