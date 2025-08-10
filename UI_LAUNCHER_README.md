@@ -1,24 +1,17 @@
-# WicketWise UI Launcher
+# WicketWise UI Launcher (Deprecated)
 
-## 🎯 **Overview**
+## 🎯 Overview
 
-The WicketWise UI Launcher is a simple Streamlit application that provides a scaffold for the WicketWise Cricket AI system. It creates a clean, tabbed interface for accessing different components of the cricket analysis system.
+Streamlit-based paths are deprecated. The current UI is a Figma-derived static page served alongside the Flask admin API.
 
-## 📋 **Features**
+## 🚀 Run the current UI
 
-### **Three Main Tabs:**
-
-1. **🏏 Live Match Dashboard**
-   - Real-time cricket match analysis and predictions
-   - Placeholder ready for live match data integration
-
-2. **🎮 Simulator Mode**
-   - Cricket match simulation and scenario testing
-   - Placeholder for match simulation functionality
-
-3. **⚙️ Admin Panel**
-   - System administration and configuration options
-   - Placeholder for administrative controls
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+bash start.sh
+open "http://127.0.0.1:8000/wicketwise_admin_fixed.html"
+```
 
 ### **Common Elements:**
 - **Clean UI**: Professional cricket-themed interface with 🏏 icons
@@ -26,16 +19,9 @@ The WicketWise UI Launcher is a simple Streamlit application that provides a sca
 - **Expandable Sidebar**: Collapsible sidebar for future navigation
 - **Version Footer**: Shows "WicketWise version 0.1" at the bottom
 
-## 🚀 **Usage**
-
-### **Running the Application**
-
-```bash
-# Launch the Streamlit app
-streamlit run ui_launcher.py
-
-# The app will be available at http://localhost:8501
-```
+## Notes
+- Backend API: port 5001 (`/api/*`)
+- UI: static server port 8000 (`wicketwise_admin_fixed.html`)
 
 ### **Development Mode**
 
@@ -74,26 +60,10 @@ Each tab follows the same pattern:
 2. `st.write()` with placeholder text
 3. Ready for future functionality integration
 
-## 🧪 **Testing**
-
-### **Test Coverage**
-The UI launcher includes comprehensive tests that verify:
-
-- ✅ **Import Functionality**: Module can be imported without errors
-- ✅ **UI Structure**: Correct page configuration and title
-- ✅ **Tab Creation**: Three tabs with correct names
-- ✅ **Header Content**: Each tab has proper headers
-- ✅ **Placeholder Text**: Appropriate placeholder content
-- ✅ **Footer Display**: Version information is shown
-- ✅ **Tab Context**: Each tab context manager works correctly
-
-### **Running Tests**
+## Testing
+Run the overall test suite:
 ```bash
-# Run all UI launcher tests
-python -m pytest tests/test_ui_launcher.py -v
-
-# Run with coverage
-python -m pytest tests/test_ui_launcher.py --cov=ui_launcher --cov-report=html
+PYTHONPATH=. pytest -q
 ```
 
 ### **Test Results**
@@ -219,18 +189,5 @@ When adding real functionality to tabs:
 - `demo_complete_workflow.py` - Full system demonstration
 - `crickformers/` - Core ML models and training
 
-## 🎉 **Conclusion**
-
-The WicketWise UI Launcher provides a solid foundation for the cricket AI system's user interface. It's:
-
-- ✅ **Simple**: Easy to understand and extend
-- ✅ **Tested**: Comprehensive test coverage
-- ✅ **Scalable**: Ready for future enhancements
-- ✅ **Professional**: Clean, cricket-themed design
-
-The scaffolding is now ready for integration with the complete WicketWise Cricket AI system including knowledge graphs, GNN embeddings, and real-time match analysis.
-
----
-
-**Built with ❤️ for cricket analysis**  
-**WicketWise version 0.1** | **Streamlit UI Launcher** 
+## Status
+This document is kept for historical reference. Prefer the main README instructions for launching the current UI.

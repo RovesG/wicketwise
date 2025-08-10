@@ -90,6 +90,32 @@ Notes:
 - Port 5001 is API-only; `/` returns 404 by design in this branch.
 - The page `wicketwise_admin_fixed.html` contains the main dashboard (fake video window, player cards, KG query) and admin flows.
 
+### Admin panel actions
+- Build Knowledge Graph: runs the scalable, chunked KG pipeline and finishes with node/edge counts.
+- Train GNN: trains and saves `models/gnn_embeddings.pt`.
+- Train Model: runs the Crickformer training path.
+- Aligner Strategy: choose DNA/Exact/Hybrid/LLM in the Knowledge Graph tab; saved to backend and used by align workflows.
+
+### Backend API highlights
+- `GET /api/health`: health check
+- `POST /api/build-knowledge-graph`: build KG (chunked pipeline)
+- `GET|POST /api/kg-settings`: chunk_size, cache_dir, use_llm_schema_hint, compute_heavy_metrics, normalize_ids
+- `POST /api/kg-cache/purge`: clear aggregate caches
+- `GET|POST /api/aligner-settings`: get/set aligner strategy (`dna|exact|hybrid|llm`)
+
+### Development
+- Environment: copy `.env.example` → `.env` and set keys/paths locally (not committed)
+- Pre-commit: `pip install pre-commit && pre-commit install && pre-commit run -a`
+- Tests: `PYTHONPATH=. pytest -q` (CI runs on push/PR)
+- CI: GitHub Actions workflow at `.github/workflows/ci.yml`
+
+### What changed recently
+- Repo hygiene: `.env.example`, `artifacts/`, expanded `.gitignore`, README updates
+- KG: scalable chunked pipeline, vectorized aggregations, cached aggregates, degree-only metrics by default
+- UI: Aligner selector in admin modal; backend endpoints for settings
+- Inference scaffolding: EmbeddingService, Policy module (fractional Kelly), hierarchical model placeholder
+- Tooling: pre-commit (black, ruff) and CI for pytest
+
 ### Repo hygiene
 - Use `.env.example` to create your `.env` (do not commit secrets)
 - Outputs go under `artifacts/` (gitignored); caches under `models/aggregates/`
