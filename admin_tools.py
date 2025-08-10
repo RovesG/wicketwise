@@ -12,11 +12,14 @@ from pathlib import Path
 
 # Import real implementations
 from crickformers.gnn.enhanced_graph_builder import EnhancedGraphBuilder
+from crickformers.gnn.kg_pipeline import build_aggregates_from_csv, PipelineSettings
+from crickformers.gnn.scalable_graph_builder import build_graph_from_aggregates
 from crickformers.gnn.gnn_trainer import CricketGNNTrainer
 from crickformers.train import CrickformerTrainer
 from crickformers.enhanced_trainer import EnhancedTrainer
 from hybrid_match_aligner import hybrid_align_matches
 from cricket_dna_match_aligner import align_matches_with_cricket_dna
+from wicketwise.data.aligners.factory import get_aligner
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +48,61 @@ class AdminTools:
         # Workflow state tracking
         self.workflow_state_file = Path("workflow_state.json")
         self._load_workflow_state()
+        # KG pipeline settings (defaults)
+        self.kg_settings = PipelineSettings(
+            chunk_size=500_000,
+            cache_dir=str(self.models_dir / "aggregates"),
+            use_llm_schema_hint=False,
+            compute_heavy_metrics=False,
+            normalize_ids=False,
+        )
+        # Aligner selection (configurable via API)
+        self.aligner_name: str = "dna"
+
+    def get_kg_settings(self) -> Dict[str, Any]:
+        return {
+            "chunk_size": self.kg_settings.chunk_size,
+            "cache_dir": self.kg_settings.cache_dir,
+            "use_llm_schema_hint": self.kg_settings.use_llm_schema_hint,
+            "compute_heavy_metrics": self.kg_settings.compute_heavy_metrics,
+            "normalize_ids": self.kg_settings.normalize_ids,
+        }
+
+    def get_aligner_settings(self) -> Dict[str, Any]:
+        return {"aligner": self.aligner_name}
+
+    def update_kg_settings(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        if "chunk_size" in data:
+            self.kg_settings.chunk_size = int(data["chunk_size"]) or self.kg_settings.chunk_size
+        if "cache_dir" in data:
+            self.kg_settings.cache_dir = str(data["cache_dir"]) or self.kg_settings.cache_dir
+        if "use_llm_schema_hint" in data:
+            self.kg_settings.use_llm_schema_hint = bool(data["use_llm_schema_hint"]) 
+        if "compute_heavy_metrics" in data:
+            self.kg_settings.compute_heavy_metrics = bool(data["compute_heavy_metrics"]) 
+        if "normalize_ids" in data:
+            self.kg_settings.normalize_ids = bool(data["normalize_ids"]) 
+        return self.get_kg_settings()
+
+    def update_aligner_settings(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        name = str(data.get("aligner", self.aligner_name)).lower()
+        if name not in {"dna", "exact", "hybrid", "llm"}:
+            raise ValueError(f"Unknown aligner: {name}")
+        self.aligner_name = name
+        return self.get_aligner_settings()
+
+    def purge_kg_cache(self) -> str:
+        try:
+            cache_dir = Path(self.kg_settings.cache_dir)
+            if cache_dir.exists():
+                for p in cache_dir.glob("*"):
+                    try:
+                        p.unlink()
+                    except Exception:
+                        pass
+            return "✅ KG cache purged"
+        except Exception as e:
+            return f"❌ KG cache purge failed: {e}"
     
     def get_dataset_info(self) -> dict:
         """
@@ -295,45 +353,24 @@ class AdminTools:
             except Exception as e:
                 logger.warning(f"Could not inspect CSV files: {str(e)}")
             
-            # Run Cricket DNA alignment - much more robust approach
-            matches = None
+            # Select aligner via factory (configurable)
+            aligner_name = self.aligner_name or os.getenv("ALIGNER", "dna")
             try:
-                logger.info("Trying Cricket DNA hash-based alignment...")
-                aligned_df = align_matches_with_cricket_dna(
-                    decimal_csv_path=decimal_path_str,
-                    nvplay_csv_path=nvplay_path_str,
-                    output_path=str(output_path),
-                    similarity_threshold=0.3  # Very low threshold for maximum coverage
-                )
-                matches = aligned_df
-                logger.info(f"Cricket DNA alignment successful: {len(aligned_df)} records aligned")
-                
-            except Exception as dna_error:
-                logger.warning(f"Cricket DNA alignment failed: {str(dna_error)}")
-                logger.info("Falling back to hybrid alignment with LLM configuration...")
-                
-                # Fallback to original hybrid approach
-                try:
-                    matches = hybrid_align_matches(
-                        nvplay_path=nvplay_path_str,
-                        decimal_path=decimal_path_str,
-                        openai_api_key=openai_api_key,
-                        output_path=str(output_path)
-                    )
-                except Exception as llm_error:
-                    logger.warning(f"LLM-based alignment also failed: {str(llm_error)}")
-                    logger.info("Trying final fallback alignment without LLM...")
-                    
-                    # Final fallback without LLM
-                    try:
-                        matches = hybrid_align_matches(
-                            nvplay_path=nvplay_path_str,
-                            decimal_path=decimal_path_str,
-                            openai_api_key=None,  # Force fallback mode
-                            output_path=str(output_path)
-                        )
-                    except Exception as fallback_error:
-                        raise Exception(f"All alignment methods failed. DNA error: {str(dna_error)}, LLM error: {str(llm_error)}, Fallback error: {str(fallback_error)}")
+                aligner = get_aligner(aligner_name)
+            except Exception:
+                aligner = get_aligner("dna")
+
+            result = aligner.align(
+                nvplay_path=nvplay_path_str,
+                decimal_path=decimal_path_str,
+                openai_api_key=openai_api_key,
+                output_path=str(output_path),
+            )
+            matches = None
+            if isinstance(result, dict) and result.get("status") == "success":
+                matches = [None] * int(result.get("num_matches", 0))
+            elif hasattr(result, "__len__"):
+                matches = result
             
             if matches is None:
                 raise Exception("No matches found by any alignment process")
@@ -371,16 +408,11 @@ class AdminTools:
             if not cricket_data_path.exists():
                 return f"❌ Knowledge graph building failed: Real data file not found at {cricket_data_path}"
             
-            # Load the REAL data (240K+ rows)
-            df = pd.read_csv(cricket_data_path)
-            logger.info(f"Loaded {len(df)} rows from {cricket_data_path}")
-            
-            # Fix column names for EnhancedGraphBuilder compatibility
-            df = self._fix_column_names(df)
-            
-            # Build graph
-            builder = EnhancedGraphBuilder()
-            graph = builder.build_from_dataframe(df)
+            # Build graph using scalable, chunked pipeline to handle multi-million rows
+            logger.info("Starting chunked aggregate build for knowledge graph...")
+            aggs = build_aggregates_from_csv(str(cricket_data_path), self.kg_settings)
+            logger.info("Assembling graph from aggregated tables...")
+            graph = build_graph_from_aggregates(aggs)
             
             # Save graph
             graph_path = self.models_dir / "cricket_knowledge_graph.pkl"

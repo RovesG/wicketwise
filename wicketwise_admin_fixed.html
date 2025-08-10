@@ -820,6 +820,24 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="space-y-4">
+                                            <div class="text-sm font-medium">Match Aligner Strategy</div>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label for="alignerSelect" class="text-sm text-muted-foreground">Select aligner</label>
+                                                    <select id="alignerSelect" class="w-full p-2 border border-input rounded-md bg-input-background">
+                                                        <option value="dna">Cricket DNA (default)</option>
+                                                        <option value="exact">Exact (fingerprint)</option>
+                                                        <option value="hybrid">Hybrid (rules + LLM fallback)</option>
+                                                        <option value="llm">LLM (schema-assisted)</option>
+                                                    </select>
+                                                </div>
+                                                <div class="flex items-end">
+                                                    <button id="saveAlignerSettings" class="bg-gray-800 text-white px-4 py-2 rounded-md">Save Aligner</button>
+                                                </div>
+                                            </div>
+                                            <p class="text-xs text-muted-foreground">Controls which strategy is used by alignment workflows. LLM requires configured API key.</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -956,6 +974,35 @@
                     bar.style.width = width;
                 }, 100);
             });
+            // Aligner settings: fetch and save
+            function fetchAligner() {
+                fetch('/api/aligner-settings')
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data && data.settings && data.settings.aligner) {
+                            const sel = document.getElementById('alignerSelect');
+                            if (sel) sel.value = data.settings.aligner;
+                        }
+                    })
+                    .catch(() => {});
+            }
+            fetchAligner();
+
+            const saveAlignerBtn = document.getElementById('saveAlignerSettings');
+            if (saveAlignerBtn) {
+                saveAlignerBtn.addEventListener('click', function() {
+                    const sel = document.getElementById('alignerSelect');
+                    const value = sel ? sel.value : 'dna';
+                    fetch('/api/aligner-settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ aligner: value })
+                    })
+                    .then(r => r.json())
+                    .then(() => { alert('Aligner saved: ' + value); })
+                    .catch(err => console.error('Failed to save aligner', err));
+                });
+            }
         });
     </script>
 </body>

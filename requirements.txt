@@ -1,12 +1,9 @@
-streamlit
+numpy
 pandas
-streamlit-option-menu
-streamlit-extras
 torch
 networkx
 plotly
 umap-learn
-numpy
 scikit-learn
 torch-geometric
 matplotlib

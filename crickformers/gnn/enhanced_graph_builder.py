@@ -37,20 +37,23 @@ class EnhancedGraphBuilder:
         # Initialize graph
         self.graph = nx.DiGraph()
         
-        # Add nodes and edges
-        self._add_player_nodes(df)
-        self._add_venue_nodes(df)
-        self._add_team_nodes(df)
-        self._add_match_nodes(df)
-        
-        # Add relationships
-        self._add_player_relationships(df)
-        self._add_venue_relationships(df)
-        self._add_performance_relationships(df)
-        self._add_tactical_relationships(df)
-        
-        # Calculate node statistics
-        self._calculate_node_statistics(df)
+        # New scalable pipeline using vectorized aggregations
+        from .schema_resolver import resolve_schema
+        from .kg_aggregator import aggregate_core, compute_partnerships
+        from .scalable_graph_builder import build_graph_from_aggregates
+
+        mapping = resolve_schema(df, use_llm=False)
+
+        aggs = aggregate_core(df, mapping)
+        # Partnerships (approximate if non-striker missing)
+        try:
+            partnerships = compute_partnerships(df, mapping)
+            if not partnerships.empty:
+                aggs["partnerships"] = partnerships
+        except Exception:
+            pass
+
+        self.graph = build_graph_from_aggregates(aggs)
         
         logger.info(f"Graph built: {self.graph.number_of_nodes()} nodes, {self.graph.number_of_edges()} edges")
         

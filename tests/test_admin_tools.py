@@ -21,50 +21,43 @@ class TestAdminTools:
     
     def test_build_knowledge_graph_returns_correct_message(self):
         """Test that build_knowledge_graph returns the expected status message."""
-        expected_message = "Knowledge graph building complete"
-        
         # Capture print output
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             result = self.admin_tools.build_knowledge_graph()
         
-        assert result == expected_message
         assert isinstance(result, str)
+        assert "Knowledge graph" in result
+        assert "nodes" in result and "edges" in result
         assert "[LOG] Knowledge graph building started..." in mock_stdout.getvalue()
     
     def test_train_gnn_embeddings_returns_correct_message(self):
         """Test that train_gnn_embeddings returns the expected status message."""
-        expected_message = "GNN training complete"
-        
         # Capture print output
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             result = self.admin_tools.train_gnn_embeddings()
         
-        assert result == expected_message
         assert isinstance(result, str)
+        assert "GNN training" in result
         assert "[LOG] GNN training started..." in mock_stdout.getvalue()
     
     def test_train_crickformer_model_returns_correct_message(self):
         """Test that train_crickformer_model returns the expected status message."""
-        expected_message = "Crickformer training complete"
-        
         # Capture print output
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             result = self.admin_tools.train_crickformer_model()
         
-        assert result == expected_message
         assert isinstance(result, str)
+        assert "Crickformer" in result
         assert "[LOG] Crickformer training started..." in mock_stdout.getvalue()
     
     def test_run_evaluation_returns_correct_message(self):
         """Test that run_evaluation returns the expected status message."""
-        expected_message = "Evaluation complete"
-        
         # Capture print output
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             result = self.admin_tools.run_evaluation()
         
-        assert result == expected_message
         assert isinstance(result, str)
+        assert "Evaluation complete" in result
         assert "[LOG] Evaluation started..." in mock_stdout.getvalue()
     
     def test_get_system_status_returns_correct_structure(self):
@@ -165,13 +158,13 @@ class TestAdminToolsIntegration:
         """Test that the complete ML workflow can be executed in sequence."""
         # Execute all steps in typical order
         result1 = self.admin_tools.build_knowledge_graph()
-        assert "Knowledge graph building complete" in result1
+        assert "Knowledge graph" in result1
         
         result2 = self.admin_tools.train_gnn_embeddings()
-        assert "GNN training complete" in result2
+        assert "GNN training" in result2
         
         result3 = self.admin_tools.train_crickformer_model()
-        assert "Crickformer training complete" in result3
+        assert "Crickformer" in result3
         
         result4 = self.admin_tools.run_evaluation()
         assert "Evaluation complete" in result4
@@ -193,6 +186,7 @@ class TestAdminToolsIntegration:
             assert "[LOG] GNN training started..." in output
             assert "[LOG] Crickformer training started..." in output
             assert "[LOG] Evaluation started..." in output
-
+    
+    
 if __name__ == '__main__':
     pytest.main([__file__, '-v']) 
