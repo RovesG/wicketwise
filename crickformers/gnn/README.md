@@ -7,6 +7,7 @@
 - `scalable_graph_builder.py`: Fast NetworkX assembly from aggregates (nodes/edges, light metrics)
 - `kg_pipeline.py`: Orchestrates chunked read → resolve → aggregate → cache → assemble
 - `event_graph_export.py`: Builds an event-centric subgraph (BallEvent nodes) for analytics/GNN
+- `wicketwise/data/alljson/*`: Ingests large cricsheet-like JSON corpora into BallEventV1 + background aggregates (KG-only)
 
 ## Pipeline usage
 ```python
