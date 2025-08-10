@@ -193,6 +193,103 @@ def update_aligner_settings():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
 
+# All JSON ingestion settings and trigger
+_alljson_settings = {
+    "source_dir": "/Users/shamusrae/Library/Mobile Documents/com~apple~CloudDocs/Cricket /Data/all_json",
+    "output_dir": "artifacts/kg_background/events",
+    "resume": True,
+}
+
+
+@app.route('/api/alljson-settings', methods=['GET'])
+def get_alljson_settings():
+    return jsonify({"status": "success", "settings": _alljson_settings})
+
+
+@app.route('/api/alljson-settings', methods=['POST'])
+def update_alljson_settings():
+    data = request.get_json(force=True) or {}
+    _alljson_settings.update({k: v for k, v in data.items() if k in _alljson_settings})
+    return jsonify({"status": "success", "settings": _alljson_settings})
+
+
+@app.route('/api/ingest-alljson', methods=['POST'])
+def ingest_alljson():
+    operation_id = "ingest_alljson"
+    background_operations[operation_id] = {
+        "status": "running",
+        "progress": 0,
+        "message": "Starting all_json ingestion...",
+        "logs": [],
+    }
+
+    def run():
+        try:
+            from wicketwise.data.alljson.ingest import flatten_file_to_dataframe
+            src = Path(_alljson_settings["source_dir"])
+            out_dir = Path(_alljson_settings["output_dir"])  
+            out_dir.mkdir(parents=True, exist_ok=True)
+
+            files = sorted([p for p in src.glob('*.json')])
+            total = len(files)
+            count = 0
+            dfs = []
+            for p in files:
+                df = flatten_file_to_dataframe(str(p))
+                dfs.append(df)
+                count += 1
+                if count % 50 == 0:
+                    background_operations[operation_id]["message"] = f"Processed {count}/{total} files"
+                    background_operations[operation_id]["progress"] = int(count * 100 / max(1, total))
+            # Write a consolidated parquet shard (simple first version)
+            import pandas as pd
+            if dfs:
+                big = pd.concat(dfs, ignore_index=True)
+                big.to_parquet(out_dir / 'events.parquet', index=False)
+            background_operations[operation_id]["status"] = "completed"
+            background_operations[operation_id]["progress"] = 100
+            background_operations[operation_id]["message"] = "All JSON ingestion completed"
+        except Exception as e:
+            background_operations[operation_id]["status"] = "error"
+            background_operations[operation_id]["message"] = str(e)
+            logger.exception("All JSON ingestion failed")
+
+    t = threading.Thread(target=run, daemon=True)
+    t.start()
+    return jsonify({"status": "started", "operation_id": operation_id})
+
+
+@app.route('/api/export-t20', methods=['POST'])
+def export_t20():
+    operation_id = "export_t20"
+    background_operations[operation_id] = {
+        "status": "running",
+        "progress": 0,
+        "message": "Starting T20 export...",
+        "logs": [],
+    }
+
+    def run():
+        try:
+            import pandas as pd
+            from wicketwise.data.alljson.export_t20 import export_t20_events
+            events_path = Path(_alljson_settings["output_dir"]) / 'events.parquet'
+            if not events_path.exists():
+                raise FileNotFoundError(f"Events parquet not found at {events_path}")
+            df = pd.read_parquet(events_path)
+            out = export_t20_events(df, str(Path('artifacts/train_exports/t20_from_json')))
+            background_operations[operation_id]["status"] = "completed"
+            background_operations[operation_id]["progress"] = 100
+            background_operations[operation_id]["message"] = f"T20 export written to {out}"
+        except Exception as e:
+            background_operations[operation_id]["status"] = "error"
+            background_operations[operation_id]["message"] = str(e)
+            logger.exception("T20 export failed")
+
+    t = threading.Thread(target=run, daemon=True)
+    t.start()
+    return jsonify({"status": "started", "operation_id": operation_id})
+
 @app.route('/api/kg-cache/purge', methods=['POST'])
 def purge_kg_cache():
     try:

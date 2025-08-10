@@ -664,8 +664,32 @@
                                             <input type="text" placeholder="/path/to/video/storage" class="w-full p-3 border border-input rounded-md bg-input-background h-12">
                                             <p class="text-sm text-muted-foreground">Directory for match video files and clips</p>
                                         </div>
-                                        <div class="mt-8">
-                                            <button class="bg-primary text-primary-foreground px-6 py-3 rounded-md font-medium">Update Data Paths</button>
+                                        <div class="space-y-6">
+                                            <div class="text-sm font-medium">All JSON Corpus</div>
+                                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                                                <div>
+                                                    <label class="text-sm">Source Directory</label>
+                                                    <input id="alljsonSource" type="text" class="w-full p-2 border rounded-md" placeholder="/…/Data/all_json">
+                                                </div>
+                                                <div>
+                                                    <label class="text-sm">Events Output</label>
+                                                    <input id="alljsonOutput" type="text" class="w-full p-2 border rounded-md" placeholder="artifacts/kg_background/events">
+                                                </div>
+                                                <div class="flex items-end">
+                                                    <label class="inline-flex items-center space-x-2">
+                                                        <input id="alljsonResume" type="checkbox" class="mr-2" checked>
+                                                        <span class="text-sm">Resume</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-4">
+                                                <button id="startIngestAlljson" class="bg-gray-800 text-white px-4 py-2 rounded-md">Ingest JSON Corpus</button>
+                                                <span id="ingestAlljsonStatus" class="text-sm text-muted-foreground"></span>
+                                            </div>
+                                            <div class="flex items-center space-x-4">
+                                                <button id="startExportT20" class="bg-blue-600 text-white px-4 py-2 rounded-md">Export T20 Training Set</button>
+                                                <span id="exportT20Status" class="text-sm text-muted-foreground"></span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1001,6 +1025,66 @@
                     .then(r => r.json())
                     .then(() => { alert('Aligner saved: ' + value); })
                     .catch(err => console.error('Failed to save aligner', err));
+                });
+            }
+
+            // All JSON settings and flows
+            function fetchAlljsonSettings() {
+                fetch('/api/alljson-settings')
+                    .then(r => r.json())
+                    .then(data => {
+                        const s = data && data.settings ? data.settings : {};
+                        const src = document.getElementById('alljsonSource');
+                        const out = document.getElementById('alljsonOutput');
+                        const res = document.getElementById('alljsonResume');
+                        if (src && s.source_dir) src.value = s.source_dir;
+                        if (out && s.output_dir) out.value = s.output_dir;
+                        if (res && typeof s.resume === 'boolean') res.checked = s.resume;
+                    })
+                    .catch(() => {});
+            }
+            fetchAlljsonSettings();
+
+            function pollOperation(opId, elId) {
+                const el = document.getElementById(elId);
+                if (!el) return;
+                const interval = setInterval(() => {
+                    fetch('/api/operation-status/' + opId)
+                        .then(r => r.json())
+                        .then(st => {
+                            if (st && st.message) el.textContent = st.message;
+                            if (st && (st.status === 'completed' || st.status === 'error')) {
+                                clearInterval(interval);
+                            }
+                        })
+                        .catch(() => clearInterval(interval));
+                }, 1500);
+            }
+
+            const ingestBtn = document.getElementById('startIngestAlljson');
+            if (ingestBtn) {
+                ingestBtn.addEventListener('click', function() {
+                    const src = document.getElementById('alljsonSource')?.value || '';
+                    const out = document.getElementById('alljsonOutput')?.value || '';
+                    const res = document.getElementById('alljsonResume')?.checked ? true : false;
+                    fetch('/api/alljson-settings', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ source_dir: src, output_dir: out, resume: res })
+                    })
+                    .then(() => fetch('/api/ingest-alljson', { method: 'POST' }))
+                    .then(r => r.json())
+                    .then(j => { pollOperation(j.operation_id, 'ingestAlljsonStatus'); })
+                    .catch(err => { const el = document.getElementById('ingestAlljsonStatus'); if (el) el.textContent = String(err); });
+                });
+            }
+
+            const exportBtn = document.getElementById('startExportT20');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', function() {
+                    fetch('/api/export-t20', { method: 'POST' })
+                        .then(r => r.json())
+                        .then(j => { pollOperation(j.operation_id, 'exportT20Status'); })
+                        .catch(err => { const el = document.getElementById('exportT20Status'); if (el) el.textContent = String(err); });
                 });
             }
         });
