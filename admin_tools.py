@@ -58,6 +58,12 @@ class AdminTools:
         )
         # Aligner selection (configurable via API)
         self.aligner_name: str = "dna"
+        # Training data source settings
+        self.training_settings: Dict[str, Any] = {
+            "data_source": "decimal",  # 'decimal' | 't20_from_json'
+            "decimal_csv": str(self.decimal_data_path),
+            "t20_export_path": str(Path("artifacts/train_exports/t20_from_json/t20_events.parquet")),
+        }
 
     def get_kg_settings(self) -> Dict[str, Any]:
         return {
@@ -70,6 +76,9 @@ class AdminTools:
 
     def get_aligner_settings(self) -> Dict[str, Any]:
         return {"aligner": self.aligner_name}
+
+    def get_training_settings(self) -> Dict[str, Any]:
+        return dict(self.training_settings)
 
     def update_kg_settings(self, data: Dict[str, Any]) -> Dict[str, Any]:
         if "chunk_size" in data:
@@ -90,6 +99,16 @@ class AdminTools:
             raise ValueError(f"Unknown aligner: {name}")
         self.aligner_name = name
         return self.get_aligner_settings()
+
+    def update_training_settings(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        ds = data.get("data_source")
+        if ds in {"decimal", "t20_from_json"}:
+            self.training_settings["data_source"] = ds
+        if "decimal_csv" in data and data["decimal_csv"]:
+            self.training_settings["decimal_csv"] = str(data["decimal_csv"])
+        if "t20_export_path" in data and data["t20_export_path"]:
+            self.training_settings["t20_export_path"] = str(data["t20_export_path"])
+        return self.get_training_settings()
 
     def purge_kg_cache(self) -> str:
         try:
@@ -541,19 +560,21 @@ class AdminTools:
             # Create trainer
             trainer = CrickformerTrainer(config)
             
-            # Setup dataset - use our single CSV file
-            logger.info(f"📁 Setting up dataset from: {self.cricket_data_path}")
-            
-            # For now, let's use a simpler approach with the enhanced trainer
-            # that can handle our single CSV file format
-            from crickformers.enhanced_trainer import EnhancedTrainer
-            
-            enhanced_trainer = EnhancedTrainer(config, device="cpu")
-            enhanced_trainer.setup_model()
-            
-            # Load our CSV data and create simple dataset
-            import pandas as pd
-            df = pd.read_csv(self.cricket_data_path)
+            # Determine training dataset path based on settings
+            train_source = self.training_settings.get("data_source", "decimal")
+            if train_source == "decimal":
+                data_path = Path(self.training_settings.get("decimal_csv", str(self.cricket_data_path)))
+                if not data_path.exists():
+                    return f"❌ Crickformer training failed: Decimal CSV not found at {data_path}"
+                df = pd.read_csv(str(data_path))
+            else:  # t20_from_json
+                data_path = Path(self.training_settings.get("t20_export_path", "artifacts/train_exports/t20_from_json/t20_events.parquet"))
+                if not data_path.exists():
+                    return f"❌ Crickformer training failed: T20 export parquet not found at {data_path}"
+                try:
+                    df = pd.read_parquet(str(data_path))
+                except Exception as e:
+                    return f"❌ Crickformer training failed: Unable to read parquet at {data_path}: {e}"
             logger.info(f"📊 Loaded {len(df):,} balls from cricket dataset")
             
             # Use the full dataset for sophisticated Crickformer training

@@ -290,6 +290,24 @@ def export_t20():
     t.start()
     return jsonify({"status": "started", "operation_id": operation_id})
 
+
+@app.route('/api/training-settings', methods=['GET'])
+def get_training_settings():
+    try:
+        return jsonify({"status": "success", "settings": admin_tools.get_training_settings()})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/api/training-settings', methods=['POST'])
+def update_training_settings():
+    try:
+        data = request.get_json(force=True) or {}
+        settings = admin_tools.update_training_settings(data)
+        return jsonify({"status": "success", "settings": settings})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+
 @app.route('/api/kg-cache/purge', methods=['POST'])
 def purge_kg_cache():
     try:

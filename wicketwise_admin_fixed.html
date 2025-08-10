@@ -740,6 +740,27 @@
                                 <div class="card-content space-y-8">
                                         <div class="space-y-4">
                                             <p class="text-muted-foreground">Train AI models on latest cricket data for improved predictions.</p>
+                                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                 <div>
+                                                     <label class="text-sm font-medium">Training Data Source</label>
+                                                     <select id="trainingDataSource" class="w-full p-2 border rounded-md">
+                                                         <option value="decimal">Decimal CSV (betting)</option>
+                                                         <option value="t20_from_json">T20 export (JSON corpus)</option>
+                                                     </select>
+                                                 </div>
+                                                 <div>
+                                                     <label class="text-sm">Decimal CSV Path</label>
+                                                     <input id="decimalCsvPath" type="text" class="w-full p-2 border rounded-md" placeholder="/path/to/decimal.csv">
+                                                 </div>
+                                                 <div>
+                                                     <label class="text-sm">T20 Parquet Path</label>
+                                                     <input id="t20ParquetPath" type="text" class="w-full p-2 border rounded-md" placeholder="artifacts/train_exports/t20_from_json/t20_events.parquet">
+                                                 </div>
+                                             </div>
+                                             <div>
+                                                 <button id="saveTrainingSettings" class="bg-gray-800 text-white px-4 py-2 rounded-md">Save Training Settings</button>
+                                                 <span id="trainingSettingsStatus" class="text-sm text-muted-foreground ml-2"></span>
+                                             </div>
                                             <div class="flex items-center space-x-4">
                                                 <button id="startAITraining" class="bg-purple-600 text-white px-6 py-3 rounded-md font-medium inline-flex items-center">
                                                     <i data-lucide="play" class="w-4 h-4 mr-2"></i>
@@ -1085,6 +1106,42 @@
                         .then(r => r.json())
                         .then(j => { pollOperation(j.operation_id, 'exportT20Status'); })
                         .catch(err => { const el = document.getElementById('exportT20Status'); if (el) el.textContent = String(err); });
+                });
+            }
+
+            // Training data source settings
+            function fetchTrainingSettings() {
+                fetch('/api/training-settings')
+                    .then(r => r.json())
+                    .then(data => {
+                        const s = data && data.settings ? data.settings : {};
+                        const ds = document.getElementById('trainingDataSource');
+                        const dec = document.getElementById('decimalCsvPath');
+                        const t20 = document.getElementById('t20ParquetPath');
+                        if (ds && s.data_source) ds.value = s.data_source;
+                        if (dec && s.decimal_csv) dec.value = s.decimal_csv;
+                        if (t20 && s.t20_export_path) t20.value = s.t20_export_path;
+                    })
+                    .catch(() => {});
+            }
+            fetchTrainingSettings();
+
+            const saveTrainBtn = document.getElementById('saveTrainingSettings');
+            if (saveTrainBtn) {
+                saveTrainBtn.addEventListener('click', function() {
+                    const ds = document.getElementById('trainingDataSource')?.value || 'decimal';
+                    const dec = document.getElementById('decimalCsvPath')?.value || '';
+                    const t20 = document.getElementById('t20ParquetPath')?.value || '';
+                    fetch('/api/training-settings', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data_source: ds, decimal_csv: dec, t20_export_path: t20 })
+                    }).then(() => {
+                        const el = document.getElementById('trainingSettingsStatus');
+                        if (el) el.textContent = 'Saved';
+                    }).catch(err => {
+                        const el = document.getElementById('trainingSettingsStatus');
+                        if (el) el.textContent = String(err);
+                    })
                 });
             }
         });
