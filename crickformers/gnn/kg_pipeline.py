@@ -49,18 +49,22 @@ def _merge_numeric_frames(left: pd.DataFrame, right: pd.DataFrame, on: List[str]
     return merged
 
 
-def build_aggregates_from_csv(csv_path: str, settings: PipelineSettings) -> Dict[str, pd.DataFrame]:
+def build_aggregates_from_csv(data_path: str, settings: PipelineSettings) -> Dict[str, pd.DataFrame]:
     """
-    Chunked aggregation over a large CSV; caches intermediate and final aggregate tables.
+    Chunked aggregation over a large CSV or parquet file; caches intermediate and final aggregate tables.
     Returns a dict of aggregate DataFrames.
     """
     _ensure_dir(settings.cache_dir)
-    cache_key = os.path.splitext(os.path.basename(csv_path))[0]
-    final_cache = os.path.join(settings.cache_dir, f"{cache_key}_aggregates.pkl")
+    # Create unique cache key that includes file path to distinguish between datasets
+    cache_key = os.path.splitext(os.path.basename(data_path))[0]
+    # Add path hash to distinguish between files with same name in different directories
+    import hashlib
+    path_hash = hashlib.md5(data_path.encode()).hexdigest()[:8]
+    final_cache = os.path.join(settings.cache_dir, f"{cache_key}_{path_hash}_aggregates.pkl")
 
     # Reuse cache if available and newer than source
     try:
-        if os.path.exists(final_cache) and os.path.getmtime(final_cache) >= os.path.getmtime(csv_path):
+        if os.path.exists(final_cache) and os.path.getmtime(final_cache) >= os.path.getmtime(data_path):
             logger.info(f"Loading cached aggregates: {final_cache}")
             return pd.read_pickle(final_cache)
     except Exception:
@@ -81,7 +85,19 @@ def build_aggregates_from_csv(csv_path: str, settings: PipelineSettings) -> Dict
         "partnerships": None,
     }
 
-    reader = pd.read_csv(csv_path, chunksize=settings.chunk_size)
+    # Handle both CSV and parquet files
+    if data_path.endswith('.parquet'):
+        # For parquet files, read in chunks
+        df = pd.read_parquet(data_path)
+        chunk_size = settings.chunk_size
+        chunks = [df.iloc[i:i + chunk_size] for i in range(0, len(df), chunk_size)]
+        reader = iter(chunks)
+        logger.info(f"Reading parquet file with {len(df):,} rows in {len(chunks)} chunks")
+    else:
+        # For CSV files, use pandas chunked reader
+        reader = pd.read_csv(data_path, chunksize=settings.chunk_size)
+        logger.info(f"Reading CSV file in chunks of {settings.chunk_size:,} rows")
+    
     mapping: Optional[Dict[str, str]] = None
 
     for i, chunk in enumerate(reader):

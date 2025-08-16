@@ -56,6 +56,11 @@ class AdminTools:
             compute_heavy_metrics=False,
             normalize_ids=False,
         )
+        
+        # KG dataset selection settings
+        self.kg_dataset_settings: Dict[str, Any] = {
+            "dataset_source": "t20_csv",  # 't20_csv' | 'all_json'
+        }
         # Aligner selection (configurable via API)
         self.aligner_name: str = "dna"
         # Training data source settings
@@ -72,6 +77,7 @@ class AdminTools:
             "use_llm_schema_hint": self.kg_settings.use_llm_schema_hint,
             "compute_heavy_metrics": self.kg_settings.compute_heavy_metrics,
             "normalize_ids": self.kg_settings.normalize_ids,
+            "dataset_source": self.kg_dataset_settings["dataset_source"],
         }
 
     def get_aligner_settings(self) -> Dict[str, Any]:
@@ -91,6 +97,10 @@ class AdminTools:
             self.kg_settings.compute_heavy_metrics = bool(data["compute_heavy_metrics"]) 
         if "normalize_ids" in data:
             self.kg_settings.normalize_ids = bool(data["normalize_ids"]) 
+        if "dataset_source" in data:
+            source = str(data["dataset_source"]).lower()
+            if source in {"t20_csv", "all_json"}:
+                self.kg_dataset_settings["dataset_source"] = source
         return self.get_kg_settings()
 
     def update_aligner_settings(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -411,24 +421,42 @@ class AdminTools:
             logger.error(f"Match alignment failed: {str(e)}")
             return f"❌ Match alignment failed: {str(e)}"
     
-    def build_knowledge_graph(self) -> str:
+    def build_knowledge_graph(self, dataset_source: Optional[str] = None) -> str:
         """
-        Build cricket knowledge graph using real EnhancedGraphBuilder on the REAL 240K+ dataset.
+        Build cricket knowledge graph from selected dataset.
+        
+        Args:
+            dataset_source: Either "t20_csv" (240k T20 dataset) or "all_json" (comprehensive JSON corpus)
         
         Returns:
             str: Status message
         """
-        print("[LOG] Knowledge graph building started...")
-        
         try:
-            # Use the REAL 240K+ cricket dataset - no more sample data!
-            cricket_data_path = self.cricket_data_path
+            # Use configured dataset source if not explicitly provided
+            if dataset_source is None:
+                dataset_source = self.kg_dataset_settings["dataset_source"]
+            
+            print(f"[LOG] Knowledge graph building started using {dataset_source} dataset...")
+            print(f"[DEBUG] KG dataset settings: {self.kg_dataset_settings}")
+            print(f"[DEBUG] Passed dataset_source parameter: {dataset_source}")
+            
+            # Select dataset based on source
+            if dataset_source == "all_json":
+                # Use the comprehensive JSON corpus (all formats)
+                cricket_data_path = Path("artifacts/kg_background/events/events.parquet")
+                dataset_description = "comprehensive JSON corpus (all formats)"
+                print(f"[DEBUG] Using JSON corpus: {cricket_data_path}")
+            else:
+                # Use the T20 CSV dataset (default)
+                cricket_data_path = self.cricket_data_path
+                dataset_description = "T20 CSV dataset"
+                print(f"[DEBUG] Using T20 CSV: {cricket_data_path}")
             
             if not cricket_data_path.exists():
-                return f"❌ Knowledge graph building failed: Real data file not found at {cricket_data_path}"
+                return f"❌ Knowledge graph building failed: {dataset_description} not found at {cricket_data_path}"
             
             # Build graph using scalable, chunked pipeline to handle multi-million rows
-            logger.info("Starting chunked aggregate build for knowledge graph...")
+            logger.info(f"Starting chunked aggregate build for knowledge graph from {dataset_description}...")
             aggs = build_aggregates_from_csv(str(cricket_data_path), self.kg_settings)
             logger.info("Assembling graph from aggregated tables...")
             graph = build_graph_from_aggregates(aggs)
@@ -444,7 +472,7 @@ class AdminTools:
             self.workflow_state["step_2_knowledge_graph"] = True
             self._save_workflow_state()
             
-            return f"✅ Knowledge graph built: {graph.number_of_nodes()} nodes, {graph.number_of_edges()} edges"
+            return f"✅ Knowledge graph built from {dataset_description}: {graph.number_of_nodes()} nodes, {graph.number_of_edges()} edges"
             
         except Exception as e:
             logger.error(f"Knowledge graph building failed: {str(e)}")

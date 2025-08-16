@@ -36,6 +36,10 @@ def health_check():
 @app.route('/api/build-knowledge-graph', methods=['POST'])
 def build_knowledge_graph():
     """Build cricket knowledge graph using real EnhancedGraphBuilder"""
+    
+    # Get dataset source from request
+    data = request.get_json() or {}
+    dataset_source = data.get('dataset_source')  # Will be None if not provided, uses configured default
 
     def run_build():
         """Background task to build knowledge graph"""
@@ -72,7 +76,7 @@ def build_knowledge_graph():
             background_operations[operation_id]["message"] = "Assembling NetworkX graph..."
             background_operations[operation_id]["logs"].append("Constructing nodes and edges from aggregates...")
 
-            result = admin_tools.build_knowledge_graph()
+            result = admin_tools.build_knowledge_graph(dataset_source)
 
             # Final
             background_operations[operation_id]["progress"] = 100
@@ -245,6 +249,14 @@ def ingest_alljson():
             import pandas as pd
             if dfs:
                 big = pd.concat(dfs, ignore_index=True)
+                
+                # Fix data type issues for parquet conversion
+                # Convert object columns with mixed types to strings
+                for col in big.columns:
+                    if big[col].dtype == 'object':
+                        # Convert to string, handling NaN values
+                        big[col] = big[col].astype(str).replace('nan', None)
+                
                 big.to_parquet(out_dir / 'events.parquet', index=False)
             background_operations[operation_id]["status"] = "completed"
             background_operations[operation_id]["progress"] = 100

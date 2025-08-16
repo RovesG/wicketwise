@@ -775,6 +775,64 @@
                         <i data-lucide="folder" class="w-4 h-4"></i>
                         Update Data Paths
                     </button>
+                    
+                    <!-- All JSON Corpus Section -->
+                    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e2e8f0;">
+                        <h3 style="color: #374151; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="database" class="w-5 h-5"></i>
+                            All JSON Corpus
+                        </h3>
+                        <div class="form-group">
+                            <label for="alljson-source">Source Directory</label>
+                            <div class="path-input-container">
+                                <input type="text" id="alljson-source" placeholder="/Users/.../Data/all_json" value="/Users/shamusrae/Library/Mobile Documents/com~apple~CloudDocs/Cricket /Data/all_json">
+                                <button type="button" class="browse-btn" onclick="browseFolder('alljson-source')">
+                                    <i data-lucide="folder" class="w-4 h-4"></i>
+                                    Browse
+                                </button>
+                            </div>
+                            <small>Directory containing thousands of JSON cricket files (~8M balls)</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="alljson-output">Events Output Directory</label>
+                            <div class="path-input-container">
+                                <input type="text" id="alljson-output" placeholder="artifacts/kg_background/events" value="artifacts/kg_background/events">
+                                <button type="button" class="browse-btn" onclick="browseFolder('alljson-output')">
+                                    <i data-lucide="folder" class="w-4 h-4"></i>
+                                    Browse
+                                </button>
+                            </div>
+                            <small>Output directory for processed events</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label style="cursor: pointer; margin-bottom: 0.25rem; display: block;">
+                                <input type="checkbox" id="alljson-resume" checked style="margin: 0 0.5rem 0 0; vertical-align: middle;">Resume from previous run
+                            </label>
+                            <small>Skip already processed files if output exists</small>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                            <button class="btn btn-secondary" onclick="ingestAlljsonCorpus()">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                Ingest JSON Corpus
+                            </button>
+                            <button class="btn" onclick="exportT20TrainingSet()">
+                                <i data-lucide="upload" class="w-4 h-4"></i>
+                                Export T20 Training Set
+                            </button>
+                        </div>
+                        
+                        <div id="alljson-status" class="progress-container hidden">
+                            <div style="margin-bottom: 0.5rem;">
+                                <span id="alljson-status-text">Processing...</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div id="alljson-progress-fill" class="progress-fill"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Professional ML Training Pipeline -->
@@ -783,6 +841,19 @@
                         <i data-lucide="cpu" class="w-6 h-6"></i>
                         ML Training Pipeline
                     </h2>
+                    
+                    <!-- Knowledge Graph Dataset Selection -->
+                    <div class="form-section" style="margin-bottom: 2rem;">
+                        <h3>Knowledge Graph Configuration</h3>
+                        <div class="form-group">
+                            <label for="kg-dataset-source">Dataset Source</label>
+                            <select id="kg-dataset-source" onchange="updateKgDatasetSource()">
+                                <option value="t20_csv">T20 CSV Dataset (240k balls)</option>
+                                <option value="all_json">All JSON Corpus (comprehensive)</option>
+                            </select>
+                            <small>Select which dataset to use for building the Knowledge Graph</small>
+                        </div>
+                    </div>
                     
                     <!-- Pipeline Status Overview -->
                     <div class="pipeline-overview" style="
@@ -1204,8 +1275,19 @@
 
         
         async function buildKnowledgeGraph() {
-            // Use the professional training workflow system
-            executeWorkflowStep('build-knowledge-graph', 'knowledge_graph_build', 'Knowledge Graph Building');
+            // Get dataset selection from KG settings
+            try {
+                const kgResponse = await fetch('http://127.0.0.1:5001/api/kg-settings').then(r => r.json());
+                const datasetSource = kgResponse.settings.dataset_source || 't20_csv';
+                
+                console.log('Building KG with dataset source:', datasetSource);
+                
+                // Use the professional training workflow system with dataset selection
+                executeWorkflowStep('build-knowledge-graph', 'knowledge_graph_build', 'Knowledge Graph Building', { dataset_source: datasetSource });
+            } catch (error) {
+                console.error('Failed to get KG settings, using default:', error);
+                executeWorkflowStep('build-knowledge-graph', 'knowledge_graph_build', 'Knowledge Graph Building');
+            }
         }
         
         async function pollOperationStatus(operationId, logsContainer) {
@@ -1809,12 +1891,20 @@
         }
 
         // Generic workflow step executor with professional progress tracking
-        async function executeWorkflowStep(endpoint, operationId, stepName) {
+        async function executeWorkflowStep(endpoint, operationId, stepName, data = null) {
             try {
                 // Show training monitor
                 showTrainingMonitor(stepName);
                 
-                const response = await fetch(`http://localhost:5001/api/${endpoint}`, { method: 'POST' });
+                const fetchOptions = { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                if (data) {
+                    fetchOptions.body = JSON.stringify(data);
+                }
+                
+                const response = await fetch(`http://localhost:5001/api/${endpoint}`, fetchOptions);
                 const result = await response.json();
                 
                 if (result.status === 'started') {
@@ -1940,6 +2030,198 @@
             terminal.scrollTop = terminal.scrollHeight;
         }
 
+        // Knowledge Graph dataset selection
+        async function updateKgDatasetSource() {
+            const datasetSource = document.getElementById('kg-dataset-source').value;
+            try {
+                const response = await fetch('http://127.0.0.1:5001/api/kg-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dataset_source: datasetSource })
+                });
+                
+                if (response.ok) {
+                    console.log(`KG dataset source updated to: ${datasetSource}`);
+                } else {
+                    console.error('Failed to update KG dataset source');
+                }
+            } catch (error) {
+                console.error('Error updating KG dataset source:', error);
+            }
+        }
+        
+        async function loadKgDatasetSource() {
+            try {
+                const response = await fetch('http://127.0.0.1:5001/api/kg-settings');
+                const data = await response.json();
+                const select = document.getElementById('kg-dataset-source');
+                if (select && data.settings && data.settings.dataset_source) {
+                    select.value = data.settings.dataset_source;
+                    console.log('Loaded KG dataset source:', data.settings.dataset_source);
+                }
+            } catch (error) {
+                console.error('Failed to load KG dataset source:', error);
+            }
+        }
+
+        // JSON Corpus functionality
+        async function ingestAlljsonCorpus() {
+            const sourceDir = document.getElementById('alljson-source').value;
+            const outputDir = document.getElementById('alljson-output').value;
+            const resume = document.getElementById('alljson-resume').checked;
+            
+            if (!sourceDir) {
+                showNotification('❌ Please specify source directory', 'error');
+                return;
+            }
+            
+            try {
+                // Save settings first
+                await fetch('http://localhost:5001/api/alljson-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        source_dir: sourceDir,
+                        output_dir: outputDir,
+                        resume: resume
+                    })
+                });
+                
+                // Start ingestion
+                const response = await fetch('http://localhost:5001/api/ingest-alljson', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.status === 'started') {
+                    showAlljsonProgress();
+                    pollAlljsonStatus(result.operation_id);
+                    showNotification('🚀 JSON corpus ingestion started', 'info');
+                } else {
+                    showNotification('❌ Failed to start ingestion: ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Ingestion error:', error);
+                showNotification('❌ Backend connection failed. Make sure admin_backend.py is running.', 'error');
+            }
+        }
+        
+        async function exportT20TrainingSet() {
+            try {
+                const response = await fetch('http://localhost:5001/api/export-t20', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.status === 'started') {
+                    showAlljsonProgress();
+                    pollAlljsonStatus(result.operation_id);
+                    showNotification('🚀 T20 export started', 'info');
+                } else {
+                    showNotification('❌ Failed to start T20 export: ' + result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Export error:', error);
+                showNotification('❌ Backend connection failed. Make sure admin_backend.py is running.', 'error');
+            }
+        }
+        
+        function showAlljsonProgress() {
+            const statusDiv = document.getElementById('alljson-status');
+            const statusText = document.getElementById('alljson-status-text');
+            const progressFill = document.getElementById('alljson-progress-fill');
+            
+            statusDiv.classList.remove('hidden');
+            statusText.textContent = 'Starting...';
+            progressFill.style.width = '0%';
+        }
+        
+        function hideAlljsonProgress() {
+            const statusDiv = document.getElementById('alljson-status');
+            setTimeout(() => {
+                statusDiv.classList.add('hidden');
+            }, 3000);
+        }
+        
+        async function pollAlljsonStatus(operationId) {
+            const maxAttempts = 120; // 10 minutes max
+            let attempts = 0;
+            
+            const poll = async () => {
+                if (attempts >= maxAttempts) {
+                    document.getElementById('alljson-status-text').textContent = 'Operation timed out';
+                    hideAlljsonProgress();
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`http://localhost:5001/api/operation-status/${operationId}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const status = await response.json();
+                    
+                    // Update progress
+                    const statusText = document.getElementById('alljson-status-text');
+                    const progressFill = document.getElementById('alljson-progress-fill');
+                    
+                    if (status.message) {
+                        statusText.textContent = status.message;
+                    }
+                    
+                    if (status.progress !== undefined) {
+                        progressFill.style.width = status.progress + '%';
+                    }
+                    
+                    if (status.status === 'completed') {
+                        showNotification('✅ Operation completed successfully!', 'success');
+                        hideAlljsonProgress();
+                        return;
+                    } else if (status.status === 'error') {
+                        showNotification('❌ Operation failed: ' + status.message, 'error');
+                        hideAlljsonProgress();
+                        return;
+                    }
+                    
+                    // Continue polling
+                    attempts++;
+                    setTimeout(poll, 3000); // Poll every 3 seconds
+                    
+                } catch (error) {
+                    console.error('Status polling error:', error);
+                    document.getElementById('alljson-status-text').textContent = 'Status check failed';
+                    hideAlljsonProgress();
+                }
+            };
+            
+            // Start polling after a short delay
+            setTimeout(poll, 1000);
+        }
+        
+        // Load saved JSON corpus settings
+        async function loadAlljsonSettings() {
+            try {
+                const response = await fetch('http://localhost:5001/api/alljson-settings');
+                const data = await response.json();
+                
+                if (data.status === 'success' && data.settings) {
+                    const settings = data.settings;
+                    if (settings.source_dir) {
+                        document.getElementById('alljson-source').value = settings.source_dir;
+                    }
+                    if (settings.output_dir) {
+                        document.getElementById('alljson-output').value = settings.output_dir;
+                    }
+                    if (typeof settings.resume === 'boolean') {
+                        document.getElementById('alljson-resume').checked = settings.resume;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load JSON corpus settings:', error);
+            }
+        }
+
         // Page initialization
         document.addEventListener('DOMContentLoaded', function() {
             console.log('WicketWise Admin Panel initialized');
@@ -1955,6 +2237,12 @@
             
             // Load workflow status
             loadWorkflowStatus();
+            
+            // Load JSON corpus settings
+            loadAlljsonSettings();
+            
+            // Load KG dataset source
+            loadKgDatasetSource();
             
             // Initialize icons
             if (typeof lucide !== 'undefined') {
