@@ -1060,5 +1060,12 @@ class AdminTools:
         logger.info(f"Fixed column names: {list(df_fixed.columns)}")
         return df_fixed
 
-# Global instance for easy access
-admin_tools = AdminTools() 
+# Global instance for easy access - initialized on demand
+admin_tools = None
+
+def get_admin_tools():
+    """Get or initialize the global admin tools instance"""
+    global admin_tools
+    if admin_tools is None:
+        admin_tools = AdminTools()
+    return admin_tools 

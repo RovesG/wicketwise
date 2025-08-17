@@ -17,7 +17,7 @@ import time
 # Import configuration
 from config.settings import settings
 
-from admin_tools import AdminTools
+from admin_tools import get_admin_tools
 from crickformers.chat import KGChatAgent
 
 # Setup logging
@@ -29,7 +29,7 @@ if settings.CORS_ENABLED:
     CORS(app)
 
 # Global admin tools instance
-admin_tools = AdminTools()
+admin_tools = get_admin_tools()
 
 # Global chat agent instance (initialized lazily)
 chat_agent = None
