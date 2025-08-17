@@ -13,20 +13,32 @@ from flask_cors import CORS
 import logging
 import threading
 import time
+
+# Import configuration
+from config.settings import settings
+
 from admin_tools import AdminTools
+from crickformers.chat import KGChatAgent
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app)
+if settings.CORS_ENABLED:
+    CORS(app)
 
 # Global admin tools instance
 admin_tools = AdminTools()
 
+# Global chat agent instance (initialized lazily)
+chat_agent = None
+
 # Track background operations
 background_operations = {}
+
+# Chat sessions storage (in production, use Redis or database)
+chat_sessions = {}
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -453,6 +465,129 @@ def test_api_key():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
 
+def get_chat_agent():
+    """Get or initialize the chat agent"""
+    global chat_agent
+    if chat_agent is None:
+        try:
+            # Check if OpenAI API key is available
+            api_key = os.getenv('OPENAI_API_KEY')
+            if not api_key:
+                logger.warning("OpenAI API key not found. Set OPENAI_API_KEY environment variable to enable chat.")
+                return None
+            
+            chat_agent = KGChatAgent()
+            logger.info("KG Chat Agent initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize chat agent: {e}")
+            chat_agent = None
+    return chat_agent
+
+@app.route('/api/kg-chat', methods=['POST'])
+def kg_chat():
+    """Knowledge Graph Chat endpoint"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+        
+        user_message = data.get('message')
+        session_id = data.get('session_id', 'default')
+        current_match = data.get('current_match')  # Optional current match context
+        
+        if not user_message:
+            return jsonify({"error": "No message provided"}), 400
+        
+        # Get chat agent
+        agent = get_chat_agent()
+        if not agent:
+            return jsonify({
+                "error": "Chat agent not available - OpenAI API key required", 
+                "message": "Please set your OPENAI_API_KEY environment variable or configure it through the API Keys tab to enable chat functionality."
+            }), 503
+        
+        # Get chat history for this session
+        chat_history = chat_sessions.get(session_id, [])
+        
+        # Process the chat message
+        response_message, updated_history = agent.chat(
+            user_message=user_message,
+            chat_history=chat_history,
+            current_match_context=current_match
+        )
+        
+        # Update session history
+        chat_sessions[session_id] = updated_history
+        
+        # Clean up old sessions (keep last 100 sessions)
+        if len(chat_sessions) > 100:
+            oldest_sessions = sorted(chat_sessions.keys())[:-100]
+            for old_session in oldest_sessions:
+                del chat_sessions[old_session]
+        
+        return jsonify({
+            "response": response_message,
+            "session_id": session_id,
+            "message_count": len(updated_history)
+        })
+        
+    except Exception as e:
+        logger.error(f"KG Chat error: {e}")
+        return jsonify({"error": f"Chat processing failed: {str(e)}"}), 500
+
+@app.route('/api/kg-chat/suggestions', methods=['GET'])
+def kg_chat_suggestions():
+    """Get suggested questions for KG chat"""
+    try:
+        agent = get_chat_agent()
+        if not agent:
+            # Fallback suggestions if agent not available
+            suggestions = [
+                "How does Virat Kohli perform at the MCG?",
+                "Compare MS Dhoni and Jos Buttler's T20 stats",
+                "What's the head-to-head record between India and Australia?",
+                "Tell me about Eden Gardens' pitch characteristics"
+            ]
+        else:
+            suggestions = agent.get_suggested_questions()
+        
+        return jsonify({"suggestions": suggestions})
+        
+    except Exception as e:
+        logger.error(f"Error getting suggestions: {e}")
+        return jsonify({"suggestions": []}), 200
+
+@app.route('/api/kg-chat/functions', methods=['GET'])
+def kg_chat_functions():
+    """Get available KG chat functions"""
+    try:
+        agent = get_chat_agent()
+        if not agent:
+            return jsonify({"functions": {}}), 200
+        
+        functions = agent.get_available_functions()
+        return jsonify({"functions": functions})
+        
+    except Exception as e:
+        logger.error(f"Error getting functions: {e}")
+        return jsonify({"functions": {}}), 200
+
+@app.route('/api/kg-chat/clear-session', methods=['POST'])
+def clear_chat_session():
+    """Clear chat session history"""
+    try:
+        data = request.get_json() or {}
+        session_id = data.get('session_id', 'default')
+        
+        if session_id in chat_sessions:
+            del chat_sessions[session_id]
+        
+        return jsonify({"message": "Session cleared successfully"})
+        
+    except Exception as e:
+        logger.error(f"Error clearing session: {e}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     print("🚀 Starting WicketWise Admin Backend API...")
     print("📊 Real knowledge graph building enabled")
@@ -467,7 +602,11 @@ if __name__ == '__main__':
     print("  GET  /api/operation-status/<id> - Get operation status")
     print("  GET  /api/system-status - Get system status")
     print("  POST /api/test-api-key - Test API keys")
+    print("  POST /api/kg-chat - Knowledge Graph Chat")
+    print("  GET  /api/kg-chat/suggestions - Get chat suggestions")
+    print("  GET  /api/kg-chat/functions - Get available functions")
+    print("  POST /api/kg-chat/clear-session - Clear chat session")
     print()
     
-    # Run on port 5001 to avoid conflicts with macOS AirPlay Receiver on 5000
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    # Run using configured host and port
+    app.run(host=settings.BACKEND_HOST, port=settings.BACKEND_PORT, debug=settings.DEBUG_MODE)

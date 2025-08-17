@@ -10,6 +10,9 @@ import json
 from typing import Dict, Any, Optional
 from pathlib import Path
 
+# Import configuration
+from config.settings import settings
+
 # Import real implementations
 from crickformers.gnn.enhanced_graph_builder import EnhancedGraphBuilder
 from crickformers.gnn.kg_pipeline import build_aggregates_from_csv, PipelineSettings
@@ -31,18 +34,20 @@ class AdminTools:
     
     def __init__(self):
         print("[LOG] AdminTools initialized")
-        self.models_dir = Path("models")
+        
+        # Use centralized configuration
+        self.models_dir = Path(settings.MODELS_DIR)
         self.models_dir.mkdir(exist_ok=True)
         
         self.data_dir = Path("workflow_output")
-        # Use the REAL cricket data - not samples!
-        self.real_data_path = Path("/Users/shamusrae/Library/Mobile Documents/com~apple~CloudDocs/Cricket /Data")
-        self.cricket_data_path = self.real_data_path / "joined_ball_by_ball_data.csv"  # 437MB real data
-        self.nvplay_data_path = self.real_data_path / "nvplay_data_v3.csv"  # 399MB ball-by-ball data
-        self.decimal_data_path = self.real_data_path / "decimal_data_v3.csv"  # 638MB betting data
+        # Use configurable cricket data paths
+        self.real_data_path = Path(settings.DATA_DIR)
+        self.cricket_data_path = settings.get_data_path("joined_ball_by_ball_data.csv")
+        self.nvplay_data_path = settings.get_data_path("nvplay_data_v3.csv")
+        self.decimal_data_path = settings.get_data_path("decimal_data_v3.csv")
         # For match alignment data (this is not ball-by-ball cricket data)
         self.alignment_data_path = Path("fallback_hybrid_aligned_matches.csv")
-        self.reports_dir = Path("reports")
+        self.reports_dir = Path(settings.REPORTS_DIR)
         self.reports_dir.mkdir(exist_ok=True)
         
         # Workflow state tracking

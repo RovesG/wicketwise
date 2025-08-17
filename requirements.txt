@@ -11,3 +11,8 @@ matplotlib
 seaborn
 graphviz
 hmmlearn>=0.3.0
+openai>=1.0.0
+flask
+flask-cors
+pydantic
+python-Levenshtein
