@@ -905,14 +905,16 @@
             const adminTabs = document.querySelectorAll('.admin-tab');
             const tabContents = document.querySelectorAll('.tab-content');
             
-            // Open admin modal
-            adminButton.addEventListener('click', function() {
-                console.log('Admin button clicked');
-                adminModal.classList.remove('hidden');
-                document.body.style.overflow = 'hidden'; // Prevent background scroll
-                console.log('Modal should now be visible');
-                lucide.createIcons(); // Re-initialize icons in modal
-            });
+            // Open admin modal (with null check to prevent errors)
+            if (adminButton && adminModal) {
+                adminButton.addEventListener('click', function() {
+                    console.log('Admin button clicked');
+                    adminModal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden'; // Prevent background scroll
+                    console.log('Modal should now be visible');
+                    lucide.createIcons(); // Re-initialize icons in modal
+                });
+            }
             
             // Close admin modal
             function closeModal() {

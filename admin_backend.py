@@ -29,7 +29,15 @@ if settings.CORS_ENABLED:
     CORS(app)
 
 # Global admin tools instance
-admin_tools = get_admin_tools()
+# Global admin tools instance - initialized lazily
+admin_tools = None
+
+def get_admin_tools_instance():
+    """Get or initialize the admin tools instance"""
+    global admin_tools
+    if admin_tools is None:
+        admin_tools = get_admin_tools()
+    return admin_tools
 
 # Global chat agent instance (initialized lazily)
 chat_agent = None
@@ -88,7 +96,7 @@ def build_knowledge_graph():
             background_operations[operation_id]["message"] = "Assembling NetworkX graph..."
             background_operations[operation_id]["logs"].append("Constructing nodes and edges from aggregates...")
 
-            result = admin_tools.build_knowledge_graph(dataset_source)
+            result = get_admin_tools_instance().build_knowledge_graph(dataset_source)
 
             # Final
             background_operations[operation_id]["progress"] = 100
@@ -140,7 +148,7 @@ def train_model():
             }
             
             # Actually run training immediately (no fake progress)
-            result = admin_tools.train_model()
+            result = get_admin_tools_instance().train_model()
             
             # Update with results
             background_operations[operation_id]["progress"] = 100
@@ -171,7 +179,7 @@ def train_model():
 def get_system_status():
     """Get real system status"""
     try:
-        status = admin_tools.get_system_status()
+        status = get_admin_tools_instance().get_system_status()
         return jsonify(status)
     except Exception as e:
         logger.error(f"System status check failed: {str(e)}")
@@ -180,7 +188,7 @@ def get_system_status():
 @app.route('/api/kg-settings', methods=['GET'])
 def get_kg_settings():
     try:
-        return jsonify({"status": "success", "settings": admin_tools.get_kg_settings()})
+        return jsonify({"status": "success", "settings": get_admin_tools_instance().get_kg_settings()})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -188,7 +196,7 @@ def get_kg_settings():
 def update_kg_settings():
     try:
         data = request.get_json(force=True) or {}
-        settings = admin_tools.update_kg_settings(data)
+        settings = get_admin_tools_instance().update_kg_settings(data)
         return jsonify({"status": "success", "settings": settings})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -196,7 +204,7 @@ def update_kg_settings():
 @app.route('/api/aligner-settings', methods=['GET'])
 def get_aligner_settings():
     try:
-        return jsonify({"status": "success", "settings": admin_tools.get_aligner_settings()})
+        return jsonify({"status": "success", "settings": get_admin_tools_instance().get_aligner_settings()})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -204,7 +212,7 @@ def get_aligner_settings():
 def update_aligner_settings():
     try:
         data = request.get_json(force=True) or {}
-        settings = admin_tools.update_aligner_settings(data)
+        settings = get_admin_tools_instance().update_aligner_settings(data)
         return jsonify({"status": "success", "settings": settings})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
@@ -318,7 +326,7 @@ def export_t20():
 @app.route('/api/training-settings', methods=['GET'])
 def get_training_settings():
     try:
-        return jsonify({"status": "success", "settings": admin_tools.get_training_settings()})
+        return jsonify({"status": "success", "settings": get_admin_tools_instance().get_training_settings()})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -327,7 +335,7 @@ def get_training_settings():
 def update_training_settings():
     try:
         data = request.get_json(force=True) or {}
-        settings = admin_tools.update_training_settings(data)
+        settings = get_admin_tools_instance().update_training_settings(data)
         return jsonify({"status": "success", "settings": settings})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
@@ -335,7 +343,7 @@ def update_training_settings():
 @app.route('/api/kg-cache/purge', methods=['POST'])
 def purge_kg_cache():
     try:
-        msg = admin_tools.purge_kg_cache()
+        msg = get_admin_tools_instance().purge_kg_cache()
         return jsonify({"status": "success", "message": msg})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -344,7 +352,7 @@ def purge_kg_cache():
 def get_dataset_info():
     """Get dataset information for UI display"""
     try:
-        dataset_info = admin_tools.get_dataset_info()
+        dataset_info = get_admin_tools_instance().get_dataset_info()
         return jsonify(dataset_info)
     except Exception as e:
         logger.error(f"Dataset info error: {str(e)}")
@@ -354,7 +362,7 @@ def get_dataset_info():
 def get_workflow_status():
     """Get current workflow status and step validation"""
     try:
-        workflow_status = admin_tools.get_workflow_status()
+        workflow_status = get_admin_tools_instance().get_workflow_status()
         return jsonify(workflow_status)
     except Exception as e:
         logger.error(f"Workflow status error: {str(e)}")
@@ -374,7 +382,7 @@ def train_gnn():
     
     def run_gnn_training():
         try:
-            result = admin_tools.train_gnn()
+            result = get_admin_tools_instance().train_gnn()
             
             if result.startswith("✅"):
                 background_operations[operation_id]["status"] = "completed"
@@ -415,7 +423,7 @@ def update_data_paths():
             from pathlib import Path
             data_path = Path(data['data'])
             if data_path.exists():
-                admin_tools.cricket_data_path = data_path
+                get_admin_tools_instance().cricket_data_path = data_path
                 logger.info(f"Updated cricket data path to: {data_path}")
             else:
                 logger.warning(f"Data path does not exist: {data_path}")
@@ -423,7 +431,7 @@ def update_data_paths():
         return jsonify({
             "message": "Data paths updated successfully",
             "paths": data,
-            "current_data_file": str(admin_tools.cricket_data_path)
+            "current_data_file": str(get_admin_tools_instance().cricket_data_path)
         })
         
     except Exception as e:
