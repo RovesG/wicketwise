@@ -1297,11 +1297,11 @@
                 console.log('Building Unified KG with dataset source:', datasetSource);
                 
                 // Always use the unified KG builder with correct operation ID
-                executeWorkflowStep('build-knowledge-graph', 'unified_kg_build', 'Unified Knowledge Graph Building', { dataset_source: datasetSource });
+                executeWorkflowStep('build-unified-knowledge-graph', 'unified_kg_build', 'Unified Knowledge Graph Building', { dataset_source: datasetSource });
             } catch (error) {
                 console.error('Failed to get KG settings, using default:', error);
                 // Even on error, use unified KG builder
-                executeWorkflowStep('build-knowledge-graph', 'unified_kg_build', 'Unified Knowledge Graph Building');
+                executeWorkflowStep('build-unified-knowledge-graph', 'unified_kg_build', 'Unified Knowledge Graph Building');
             }
         }
         
