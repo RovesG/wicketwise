@@ -10,7 +10,7 @@ Streamlit-based paths are deprecated. The current UI is a Figma-derived static p
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 bash start.sh
-open "http://127.0.0.1:8000/wicketwise_admin_fixed.html"
+open "http://127.0.0.1:8000/wicketwise_dashboard.html"
 ```
 
 ### **Common Elements:**
@@ -21,7 +21,7 @@ open "http://127.0.0.1:8000/wicketwise_admin_fixed.html"
 
 ## Notes
 - Backend API: port 5001 (`/api/*`)
-- UI: static server port 8000 (`wicketwise_admin_fixed.html`)
+- UI: static server port 8000 (`wicketwise_dashboard.html`)
 
 ### **Development Mode**
 

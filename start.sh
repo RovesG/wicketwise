@@ -31,7 +31,7 @@ nohup python3 -m http.server 8000 > static.log 2>&1 &
 sleep 2
 
 echo "Backend health: http://127.0.0.1:5001/api/health"
-echo "UI (Figma):     http://127.0.0.1:8000/wicketwise_admin_fixed.html"
+echo "UI (Figma):     http://127.0.0.1:8000/wicketwise_dashboard.html"
 
 exit 0
 

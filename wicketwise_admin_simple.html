@@ -848,7 +848,7 @@
                         <div class="form-group">
                             <label for="kg-dataset-source">Dataset Source</label>
                             <select id="kg-dataset-source" onchange="updateKgDatasetSource()">
-                                <option value="t20_csv">T20 CSV Dataset (240k balls)</option>
+                                <option value="t20_csv">T20 CSV Dataset</option>
                                 <option value="all_json">All JSON Corpus (comprehensive)</option>
                             </select>
                             <small>Select which dataset to use for building the Knowledge Graph</small>
@@ -920,6 +920,20 @@
                                 <div id="current-operation-status" style="font-size: 0.8rem; color: #64748b; margin-top: 0.5rem;">
                                     Ready
                                 </div>
+                                <button id="cancel-operation-btn" onclick="cancelCurrentOperation()" style="
+                                    display: none;
+                                    margin-top: 0.5rem;
+                                    background: #ef4444;
+                                    color: white;
+                                    border: none;
+                                    padding: 0.25rem 0.75rem;
+                                    border-radius: 4px;
+                                    font-size: 0.75rem;
+                                    cursor: pointer;
+                                    transition: background 0.2s ease;
+                                " onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                                    Cancel Operation
+                                </button>
                             </div>
                             
                             <div class="progress-card">
@@ -1280,10 +1294,10 @@
                 const kgResponse = await fetch('http://127.0.0.1:5001/api/kg-settings').then(r => r.json());
                 const datasetSource = kgResponse.settings.dataset_source || 't20_csv';
                 
-                console.log('Building KG with dataset source:', datasetSource);
+                console.log('Building Unified KG with dataset source:', datasetSource);
                 
-                // Use the professional training workflow system with dataset selection
-                executeWorkflowStep('build-knowledge-graph', 'knowledge_graph_build', 'Knowledge Graph Building', { dataset_source: datasetSource });
+                // Use the unified KG builder (same as main dashboard)
+                executeWorkflowStep('build-knowledge-graph', 'unified_kg_build', 'Unified Knowledge Graph Building', { dataset_source: datasetSource });
             } catch (error) {
                 console.error('Failed to get KG settings, using default:', error);
                 executeWorkflowStep('build-knowledge-graph', 'knowledge_graph_build', 'Knowledge Graph Building');
@@ -1836,7 +1850,7 @@
                     `This will overwrite existing results and may take several minutes.\n\n` +
                     `• Knowledge Graph: ~30 seconds (2116 nodes, 8912 edges)\n` +
                     `• GNN Training: ~2-5 minutes\n` +
-                    `• Main Model Training: ~2-3 minutes on 240K+ records\n\n` +
+                    `• Main Model Training: ~5-10 minutes on 10M+ records\n\n` +
                     `Continue?`
                 );
                 
@@ -1936,6 +1950,10 @@
             // Clear and add initial log
             addTerminalLog(`🚀 Starting ${stepName}...`, 'info');
             // Dataset info will come from API - don't hardcode
+            
+            // Show cancel button
+            document.getElementById('cancel-operation-btn').style.display = 'block';
+            window.currentOperationId = operationId;
         }
 
         function hideTrainingMonitor() {
@@ -1945,6 +1963,9 @@
             }
             // Keep monitor visible but update status
             document.getElementById('current-operation-status').textContent = 'Ready for next operation';
+            // Hide cancel button
+            document.getElementById('cancel-operation-btn').style.display = 'none';
+            window.currentOperationId = null;
         }
 
         function updateElapsedTime() {
@@ -1997,6 +2018,14 @@
                         loadWorkflowStatus(); // Refresh workflow after completion
                         hideTrainingMonitor();
                         
+                    } else if (status.status === 'cancelled') {
+                        clearInterval(pollInterval);
+                        clearInterval(progressInterval);
+                        
+                        document.getElementById('current-operation-status').textContent = 'Operation cancelled';
+                        addTerminalLog(`⚠️ ${stepName} was cancelled`, 'warning');
+                        hideTrainingMonitor();
+                        
                     } else if (status.status === 'error') {
                         clearInterval(pollInterval);
                         clearInterval(progressInterval);
@@ -2005,8 +2034,22 @@
                         addTerminalLog(`❌ ${stepName} failed: ${status.message}`, 'error');
                         hideTrainingMonitor();
                     } else {
-                        // Update status
-                        document.getElementById('current-operation-status').textContent = status.message || 'Processing...';
+                        // Update progress bar if available
+                        if (status.progress !== undefined) {
+                            document.getElementById('current-operation-percent').textContent = Math.round(status.progress) + '%';
+                            document.getElementById('current-operation-bar').style.width = status.progress + '%';
+                        }
+                        
+                        // Enhanced status with granular details
+                        let statusMessage = status.message || 'Processing...';
+                        if (status.details) {
+                            if (status.details.balls) statusMessage += ` | Balls: ${status.details.balls.toLocaleString()}`;
+                            if (status.details.processed_balls) statusMessage += ` (${status.details.processed_balls.toLocaleString()} processed)`;
+                            if (status.details.players) statusMessage += ` | Players: ${status.details.players.toLocaleString()}`;
+                            if (status.details.edges) statusMessage += ` | Edges: ${status.details.edges.toLocaleString()}`;
+                        }
+                        document.getElementById('current-operation-status').textContent = statusMessage;
+                        
                         if (status.logs && status.logs.length > 0) {
                             status.logs.forEach(log => addTerminalLog(log, 'info'));
                         }

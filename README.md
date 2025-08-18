@@ -78,9 +78,9 @@ pip install -r requirements.txt
 bash start.sh
 
 # open the correct UI
-open "http://127.0.0.1:8000/wicketwise_admin_fixed.html"  # macOS
+open "http://127.0.0.1:8000/wicketwise_dashboard.html"  # macOS
 # or visit in your browser
-# http://127.0.0.1:8000/wicketwise_admin_fixed.html
+# http://127.0.0.1:8000/wicketwise_dashboard.html
 
 # backend health check
 curl http://127.0.0.1:5001/api/health
@@ -88,7 +88,7 @@ curl http://127.0.0.1:5001/api/health
 
 Notes:
 - Port 5001 is API-only; `/` returns 404 by design in this branch.
-- The page `wicketwise_admin_fixed.html` contains the main dashboard (fake video window, player cards, KG query) and admin flows.
+- The page `wicketwise_dashboard.html` contains the main dashboard (fake video window, player cards, KG query) and admin flows.
 
 ### Admin panel actions
 - Build Knowledge Graph: runs the scalable, chunked KG pipeline and finishes with node/edge counts.

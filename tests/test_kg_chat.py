@@ -176,7 +176,7 @@ def main():
         print("\n🚀 To use the chat:")
         print("1. Make sure Flask backend is running: python admin_backend.py")
         print("2. Set OPENAI_API_KEY environment variable")
-        print("3. Open http://127.0.0.1:8000/wicketwise_admin_fixed.html")
+        print("3. Open http://127.0.0.1:8000/wicketwise_dashboard.html")
         print("4. Look for the 'Cricket AI Chat' panel")
     else:
         print("❌ Some tests failed. Check the output above for details.")
