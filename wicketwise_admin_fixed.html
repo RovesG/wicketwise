@@ -7,6 +7,13 @@
     <link rel="stylesheet" href="wicketwise_styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <!-- Markdown and Chart Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@5.1.1/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@9.4.3/dist/mermaid.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet">
     <style>
         /* Ensure admin modal is properly styled */
         #adminModal {
@@ -44,6 +51,106 @@
         
         .tab-content.hidden {
             display: none !important;
+        }
+        
+        /* Enhanced Chat Markdown Styles */
+        .chat-message {
+            max-width: none !important;
+        }
+        
+        .chat-message table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1rem 0;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .chat-message th,
+        .chat-message td {
+            border: 1px solid #e2e8f0;
+            padding: 0.75rem;
+            text-align: left;
+        }
+        
+        .chat-message th {
+            background-color: #f8fafc;
+            font-weight: 600;
+        }
+        
+        .chat-message tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        
+        .chat-message pre {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+        
+        .chat-message code {
+            background-color: #f1f5f9;
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+        
+        .chat-message pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        
+        .chat-message blockquote {
+            border-left: 4px solid #3b82f6;
+            margin: 1rem 0;
+            padding-left: 1rem;
+            color: #64748b;
+            font-style: italic;
+        }
+        
+        .chat-message h1, .chat-message h2, .chat-message h3,
+        .chat-message h4, .chat-message h5, .chat-message h6 {
+            margin: 1rem 0 0.5rem 0;
+            font-weight: 600;
+        }
+        
+        .chat-message h1 { font-size: 1.5rem; }
+        .chat-message h2 { font-size: 1.25rem; }
+        .chat-message h3 { font-size: 1.125rem; }
+        
+        .chat-message ul, .chat-message ol {
+            margin: 1rem 0;
+            padding-left: 1.5rem;
+        }
+        
+        .chat-message li {
+            margin: 0.25rem 0;
+        }
+        
+        .chat-message a {
+            color: #3b82f6;
+            text-decoration: underline;
+        }
+        
+        .chat-message a:hover {
+            color: #1d4ed8;
+        }
+        
+        /* Chart container styles */
+        .chat-chart {
+            margin: 1rem 0;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            background-color: white;
+        }
+        
+        .mermaid {
+            text-align: center;
+            margin: 1rem 0;
         }
         
         /* Tab styling */
@@ -84,10 +191,10 @@
             <div class="text-sm text-muted-foreground">
                 Portfolio: <span class="font-medium text-red-600">-$61</span>
             </div>
-            <a href="wicketwise_admin_simple.html" class="inline-flex items-center px-3 py-1 border border-input rounded-md text-sm bg-background hover:bg-accent text-inherit no-underline">
+            <button onclick="alert('You are already in the admin panel!')" class="inline-flex items-center px-3 py-1 border border-input rounded-md text-sm bg-background hover:bg-accent text-inherit cursor-pointer">
                 <i data-lucide="settings" class="w-4 h-4 mr-1"></i>
                 Admin
-            </a>
+            </button>
         </div>
     </div>
 
@@ -472,18 +579,23 @@
                     <div class="card-content space-y-4">
                         <div class="space-y-2">
                             <label class="text-sm font-medium">Ask about cricket patterns</label>
-                            <input type="text" placeholder="e.g. How does Kohli perform vs left-arm spin?" class="w-full p-2 border border-input rounded-md bg-input-background">
-                        </div>
-                        <button class="w-full bg-primary text-primary-foreground p-2 rounded-md">
-                            Query Knowledge Graph
-                        </button>
+                            <input id="kg-query-input" type="text" placeholder="e.g. How does Kohli perform vs left-arm spin?" class="w-full p-2 border border-input rounded-md bg-input-background">
+                            </div>
+                        <button id="kg-query-button" class="w-full bg-primary text-primary-foreground p-2 rounded-md hover:bg-primary/90 transition-colors">
+                            <span id="kg-query-text">Query Knowledge Graph</span>
+                            <i id="kg-query-spinner" data-lucide="loader" class="w-4 h-4 ml-2 animate-spin hidden"></i>
+                                </button>
+                        <div id="kg-query-result" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+                            <div class="text-sm font-medium mb-2 text-blue-800">Query Result:</div>
+                            <div id="kg-query-response" class="text-sm text-blue-700"></div>
+                            </div>
                         <div class="bg-muted rounded-lg p-3">
                             <div class="text-sm font-medium mb-2">Recent Insights</div>
                             <div class="space-y-2 text-sm">
                                 <div>• Kohli averages 28.4 vs left-arm spin in death overs</div>
                                 <div>• RCB has won 67% of matches when scoring 180+</div>
                                 <div>• Bumrah's economy rate drops to 4.8 in final 3 overs</div>
-                            </div>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -592,6 +704,10 @@
                     <button class="admin-tab py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="system-status">
                         <i data-lucide="check-circle" class="w-4 h-4 mr-2 inline"></i>
                         System Status
+                    </button>
+                    <button class="admin-tab py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="kg-chat">
+                        <i data-lucide="message-circle" class="w-4 h-4 mr-2 inline"></i>
+                        Knowledge Chat
                     </button>
                 </nav>
             </div>
@@ -707,12 +823,21 @@
                                 <div class="card-content space-y-8">
                                         <div class="space-y-4">
                                             <p class="text-muted-foreground">Build and maintain the cricket knowledge graph for enhanced AI insights.</p>
+                                            <div class="space-y-4">
                                             <div class="flex items-center space-x-4">
                                                 <button id="buildKnowledgeGraph" class="bg-blue-600 text-white px-6 py-3 rounded-md font-medium inline-flex items-center">
                                                     <i data-lucide="play" class="w-4 h-4 mr-2"></i>
-                                                    Build Knowledge Graph
+                                                        Build Legacy KG
                                                 </button>
                                                 <div class="text-sm text-muted-foreground">Last built: 2 hours ago</div>
+                                                </div>
+                                                <div class="flex items-center space-x-4">
+                                                    <button id="buildUnifiedKG" class="bg-green-600 text-white px-6 py-3 rounded-md font-medium inline-flex items-center">
+                                                        <i data-lucide="zap" class="w-4 h-4 mr-2"></i>
+                                                        Build Unified KG v2.0
+                                                    </button>
+                                                    <div class="text-sm text-green-600 font-medium">🚀 New: Ball-by-ball granularity + situational analysis</div>
+                                                </div>
                                             </div>
                                             <div id="knowledgeGraphProgress" class="space-y-2 hidden">
                                                 <div class="flex items-center justify-between">
@@ -721,6 +846,10 @@
                                                 </div>
                                                 <div class="w-full bg-gray-200 rounded-full h-3">
                                                     <div id="kgProgressBar" class="bg-blue-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                                </div>
+                                                <div id="kgStageDetails" class="text-xs text-gray-600"></div>
+                                                <div class="flex gap-2 mt-2">
+                                                    <button id="cancelKG" class="bg-red-600 text-white px-3 py-1 rounded-md text-sm hidden">Cancel</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -891,11 +1020,120 @@
                 </div>
             </div>
         </div>
+
+                            <!-- Knowledge Graph Chat Tab -->
+                        <div id="kg-chat" class="tab-content hidden">
+                            <div class="space-y-6">
+                                <div class="card bg-white shadow-sm border rounded-lg">
+                                    <div class="card-header">
+                                        <h3 class="card-title flex items-center space-x-2">
+                                            <i data-lucide="message-circle" class="w-5 h-5"></i>
+                                            <span>Knowledge Graph Chat Assistant</span>
+                                        </h3>
+                                        <p class="text-sm text-gray-600 mt-1">Ask questions about cricket data, players, teams, and matches</p>
+                                    </div>
+                                    <div class="card-content">
+                                        <!-- Chat Messages Container -->
+                                        <div id="chat-messages" class="h-96 overflow-y-auto border rounded-lg p-4 mb-4 bg-gray-50">
+                                            <div class="text-center text-gray-500 py-8">
+                                                <i data-lucide="message-square" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+                                                <p>Start a conversation with the cricket AI assistant</p>
+                                                <p class="text-sm">Try asking: "Who are the top run scorers?" or "Tell me about recent matches"</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Chat Input -->
+                                        <div class="flex space-x-2">
+                                            <input 
+                                                type="text" 
+                                                id="chat-input" 
+                                                placeholder="Ask about cricket data, players, teams, or matches..." 
+                                                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                maxlength="500"
+                                            >
+                                            <button 
+                                                id="send-chat" 
+                                                class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <i data-lucide="send" class="w-4 h-4"></i>
+                                            </button>
+                                            <button 
+                                                id="clear-chat" 
+                                                class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+                                                title="Clear conversation"
+                                            >
+                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Chat Status -->
+                                        <div id="chat-status" class="mt-2 text-sm text-gray-500 hidden">
+                                            <i data-lucide="loader" class="w-4 h-4 inline animate-spin mr-1"></i>
+                                            Thinking...
+                                        </div>
+                                        
+                                        <!-- Suggested Questions -->
+                                        <div class="mt-4">
+                                            <h4 class="text-sm font-medium text-gray-700 mb-2">Suggested Questions:</h4>
+                                            <div class="flex flex-wrap gap-2" id="chat-suggestions">
+                                                <!-- Suggestions will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Initialize Lucide icons
+        // Initialize libraries
         lucide.createIcons();
+        
+        // Initialize Mermaid for diagram rendering
+        if (window.mermaid) {
+            try {
+                mermaid.initialize({ 
+                    startOnLoad: false,
+                    theme: 'default',
+                    securityLevel: 'loose',
+                    flowchart: { useMaxWidth: true, htmlLabels: true }
+                });
+            } catch (e) {
+                console.log('Mermaid initialization warning:', e);
+            }
+        }
+        
+        // Initialize Prism for syntax highlighting
+        if (window.Prism) {
+            Prism.manual = true;
+        }
+        
+        // Simple fallback markdown processor
+        function simpleMarkdownProcessor(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code>$1</code>')
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/\n/g, '<br>');
+        }
+        
+        // Check if libraries loaded successfully
+        function checkLibrariesLoaded() {
+            const status = {
+                marked: !!window.marked,
+                chart: !!window.Chart,
+                mermaid: !!window.mermaid,
+                prism: !!window.Prism
+            };
+            console.log('Library loading status:', status);
+            return status;
+        }
+        
+        // Wait for libraries to load
+        setTimeout(checkLibrariesLoaded, 1000);
         
         // Admin Panel functionality
         document.addEventListener('DOMContentLoaded', function() {
@@ -907,13 +1145,13 @@
             
             // Open admin modal (with null check to prevent errors)
             if (adminButton && adminModal) {
-                adminButton.addEventListener('click', function() {
-                    console.log('Admin button clicked');
-                    adminModal.classList.remove('hidden');
-                    document.body.style.overflow = 'hidden'; // Prevent background scroll
-                    console.log('Modal should now be visible');
-                    lucide.createIcons(); // Re-initialize icons in modal
-                });
+            adminButton.addEventListener('click', function() {
+                console.log('Admin button clicked');
+                adminModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // Prevent background scroll
+                console.log('Modal should now be visible');
+                lucide.createIcons(); // Re-initialize icons in modal
+            });
             }
             
             // Close admin modal
@@ -960,30 +1198,144 @@
             });
             
             // Knowledge Graph building simulation
+            // Main Knowledge Graph Build now triggers Unified KG
             document.getElementById('buildKnowledgeGraph').addEventListener('click', function() {
+                buildKnowledgeGraph('unified', this);
+            });
+            
+            // Unified Knowledge Graph Build
+            document.getElementById('buildUnifiedKG').addEventListener('click', function() {
+                buildKnowledgeGraph('unified', this);
+            });
+            
+            // Unified function to build knowledge graphs
+            function buildKnowledgeGraph(type, buttonElement) {
                 const progressDiv = document.getElementById('knowledgeGraphProgress');
                 const progressBar = document.getElementById('kgProgressBar');
                 const progressText = document.getElementById('kgProgressText');
                 
                 progressDiv.classList.remove('hidden');
-                this.disabled = true;
-                this.innerHTML = '<i data-lucide="loader" class="w-4 h-4 mr-2 animate-spin"></i>Building...';
+                buttonElement.disabled = true;
+                // Reset progress UI at start to avoid showing stale 90%+ from prior runs
+                if (progressBar) progressBar.style.width = '0%';
+                if (progressText) progressText.textContent = 'Initializing...';
                 
-                let progress = 0;
-                const interval = setInterval(() => {
-                    progress += Math.random() * 10;
-                    if (progress >= 100) {
-                        progress = 100;
-                        clearInterval(interval);
-                        this.disabled = false;
-                        this.innerHTML = '<i data-lucide="play" class="w-4 h-4 mr-2"></i>Build Knowledge Graph';
-                        lucide.createIcons();
-                        setTimeout(() => progressDiv.classList.add('hidden'), 2000);
+                if (type === 'unified') {
+                    buttonElement.innerHTML = '<i data-lucide="loader" class="w-4 h-4 mr-2 animate-spin"></i>Building Unified KG...';
+                    progressText.textContent = 'Initializing unified knowledge graph...';
+                } else {
+                    buttonElement.innerHTML = '<i data-lucide="loader" class="w-4 h-4 mr-2 animate-spin"></i>Building Legacy KG...';
+                    progressText.textContent = 'Initializing legacy knowledge graph...';
+                }
+                
+                // Start the build process
+                const apiEndpoint = type === 'unified' ? 
+                    'http://127.0.0.1:5001/api/build-unified-knowledge-graph' : 
+                    'http://127.0.0.1:5001/api/build-knowledge-graph';
+                
+                const operationId = type === 'unified' ? 'unified_kg_build' : 'knowledge_graph_build';
+                
+                fetch(apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        dataset_source: 'all_json'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'started') {
+                        // Poll for progress
+                        pollBuildProgress(operationId, type, buttonElement, progressDiv, progressBar, progressText);
+                    } else {
+                        throw new Error(data.error || 'Failed to start build');
                     }
+                })
+                .catch(error => {
+                    console.error('Error starting KG build:', error);
+                    buttonElement.disabled = false;
+                    buttonElement.innerHTML = type === 'unified' ? 
+                        '<i data-lucide="zap" class="w-4 h-4 mr-2"></i>Build Unified KG v2.0' :
+                        '<i data-lucide="play" class="w-4 h-4 mr-2"></i>Build Legacy KG';
+                    progressText.textContent = 'Error: ' + error.message;
+                        lucide.createIcons();
+                });
+            }
+            
+            // Poll for build progress
+            function pollBuildProgress(operationId, type, buttonElement, progressDiv, progressBar, progressText) {
+                const stageDetailsElId = 'kgStageDetails';
+                let stageDetails = document.getElementById(stageDetailsElId);
+                if (!stageDetails) {
+                    stageDetails = document.createElement('div');
+                    stageDetails.id = stageDetailsElId;
+                    stageDetails.className = 'text-xs text-gray-600';
+                    progressDiv.appendChild(stageDetails);
+                }
+                const pollInterval = setInterval(() => {
+                    fetch(`http://127.0.0.1:5001/api/operation-status/${operationId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // render granular details if provided by backend
+                            if (data && data.details && stageDetails) {
+                                const parts = [];
+                                if (data.details.balls) parts.push(`balls: ${Number(data.details.balls).toLocaleString()}`);
+                                if (data.details.balls_processed) parts.push(`processed: ${Number(data.details.balls_processed).toLocaleString()}`);
+                                if (data.details.players) parts.push(`players: ${Number(data.details.players).toLocaleString()}`);
+                                if (data.details.edges) parts.push(`edges: ${Number(data.details.edges).toLocaleString()}`);
+                                stageDetails.textContent = parts.join(' · ');
+                            }
+                            if (data.status === 'completed') {
+                                clearInterval(pollInterval);
+                                progressBar.style.width = '100%';
+                                progressText.textContent = 'Completed!';
+                                
+                                buttonElement.disabled = false;
+                                buttonElement.innerHTML = type === 'unified' ? 
+                                    '<i data-lucide="zap" class="w-4 h-4 mr-2"></i>Build Unified KG v2.0' :
+                                    '<i data-lucide="play" class="w-4 h-4 mr-2"></i>Build Legacy KG';
+                                
+                                if (type === 'unified' && data.result) {
+                                    // Show unified KG success details
+                                    const details = data.result.details;
+                                    progressText.innerHTML = `✅ Unified KG built: ${details.players.toLocaleString()} players, ${details.balls_processed.toLocaleString()} balls, ${details.venues} venues`;
+                                } else {
+                                    progressText.textContent = data.message || 'Knowledge graph built successfully!';
+                                }
+                                
+                                lucide.createIcons();
+                                setTimeout(() => progressDiv.classList.add('hidden'), 10000); // Show success longer
+                                
+                            } else if (data.status === 'error') {
+                                clearInterval(pollInterval);
+                                buttonElement.disabled = false;
+                                buttonElement.innerHTML = type === 'unified' ? 
+                                    '<i data-lucide="zap" class="w-4 h-4 mr-2"></i>Build Unified KG v2.0' :
+                                    '<i data-lucide="play" class="w-4 h-4 mr-2"></i>Build Legacy KG';
+                                progressText.textContent = 'Error: ' + data.message;
+                                lucide.createIcons();
+                                
+                            } else if (data.status === 'running') {
+                                // Update progress
+                                const progress = data.progress || 0;
                     progressBar.style.width = progress + '%';
-                    progressText.textContent = Math.round(progress) + '%';
-                }, 500);
-            });
+                                progressText.textContent = data.message || `Building... ${Math.round(progress)}%`;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error polling build status:', error);
+                            clearInterval(pollInterval);
+                            buttonElement.disabled = false;
+                            buttonElement.innerHTML = type === 'unified' ? 
+                                '<i data-lucide="zap" class="w-4 h-4 mr-2"></i>Build Unified KG v2.0' :
+                                '<i data-lucide="play" class="w-4 h-4 mr-2"></i>Build Legacy KG';
+                            progressText.textContent = 'Error checking progress';
+                            lucide.createIcons();
+                        });
+                }, 2000); // Poll every 2 seconds
+            }
             
             // AI Training simulation
             document.getElementById('startAITraining').addEventListener('click', function() {
@@ -1023,7 +1375,7 @@
             });
             // Aligner settings: fetch and save
             function fetchAligner() {
-                fetch('/api/aligner-settings')
+                fetch('http://127.0.0.1:5001/api/aligner-settings')
                     .then(r => r.json())
                     .then(data => {
                         if (data && data.settings && data.settings.aligner) {
@@ -1040,7 +1392,7 @@
                 saveAlignerBtn.addEventListener('click', function() {
                     const sel = document.getElementById('alignerSelect');
                     const value = sel ? sel.value : 'dna';
-                    fetch('/api/aligner-settings', {
+                    fetch('http://127.0.0.1:5001/api/aligner-settings', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ aligner: value })
@@ -1053,7 +1405,7 @@
 
             // All JSON settings and flows
             function fetchAlljsonSettings() {
-                fetch('/api/alljson-settings')
+                fetch('http://127.0.0.1:5001/api/alljson-settings')
                     .then(r => r.json())
                     .then(data => {
                         const s = data && data.settings ? data.settings : {};
@@ -1072,7 +1424,7 @@
                 const el = document.getElementById(elId);
                 if (!el) return;
                 const interval = setInterval(() => {
-                    fetch('/api/operation-status/' + opId)
+                    fetch('http://127.0.0.1:5001/api/operation-status/' + opId)
                         .then(r => r.json())
                         .then(st => {
                             if (st && st.message) el.textContent = st.message;
@@ -1090,11 +1442,11 @@
                     const src = document.getElementById('alljsonSource')?.value || '';
                     const out = document.getElementById('alljsonOutput')?.value || '';
                     const res = document.getElementById('alljsonResume')?.checked ? true : false;
-                    fetch('/api/alljson-settings', {
+                    fetch('http://127.0.0.1:5001/api/alljson-settings', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ source_dir: src, output_dir: out, resume: res })
                     })
-                    .then(() => fetch('/api/ingest-alljson', { method: 'POST' }))
+                    .then(() => fetch('http://127.0.0.1:5001/api/ingest-alljson', { method: 'POST' }))
                     .then(r => r.json())
                     .then(j => { pollOperation(j.operation_id, 'ingestAlljsonStatus'); })
                     .catch(err => { const el = document.getElementById('ingestAlljsonStatus'); if (el) el.textContent = String(err); });
@@ -1104,7 +1456,7 @@
             const exportBtn = document.getElementById('startExportT20');
             if (exportBtn) {
                 exportBtn.addEventListener('click', function() {
-                    fetch('/api/export-t20', { method: 'POST' })
+                    fetch('http://127.0.0.1:5001/api/export-t20', { method: 'POST' })
                         .then(r => r.json())
                         .then(j => { pollOperation(j.operation_id, 'exportT20Status'); })
                         .catch(err => { const el = document.getElementById('exportT20Status'); if (el) el.textContent = String(err); });
@@ -1113,7 +1465,7 @@
 
             // Training data source settings
             function fetchTrainingSettings() {
-                fetch('/api/training-settings')
+                fetch('http://127.0.0.1:5001/api/training-settings')
                     .then(r => r.json())
                     .then(data => {
                         const s = data && data.settings ? data.settings : {};
@@ -1134,7 +1486,7 @@
                     const ds = document.getElementById('trainingDataSource')?.value || 'decimal';
                     const dec = document.getElementById('decimalCsvPath')?.value || '';
                     const t20 = document.getElementById('t20ParquetPath')?.value || '';
-                    fetch('/api/training-settings', {
+                    fetch('http://127.0.0.1:5001/api/training-settings', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ data_source: ds, decimal_csv: dec, t20_export_path: t20 })
                     }).then(() => {
@@ -1144,6 +1496,400 @@
                         const el = document.getElementById('trainingSettingsStatus');
                         if (el) el.textContent = String(err);
                     })
+                });
+            }
+
+            // Chat functionality
+            let chatSessionId = 'admin_' + Date.now();
+            const chatMessages = document.getElementById('chat-messages');
+            const chatInput = document.getElementById('chat-input');
+            const sendButton = document.getElementById('send-chat');
+            const clearButton = document.getElementById('clear-chat');
+            const chatStatus = document.getElementById('chat-status');
+            const chatSuggestions = document.getElementById('chat-suggestions');
+
+            // Load chat suggestions with enhanced markdown examples
+            function loadChatSuggestions() {
+                // Add some built-in suggestions that showcase markdown capabilities
+                const enhancedSuggestions = [
+                    'Show me a comparison table of top batsmen',
+                    'Create a chart of runs scored by teams',
+                    'Generate a performance analysis with graphs',
+                    'Show bowling statistics in a table format'
+                ];
+                
+                fetch('http://127.0.0.1:5001/api/kg-chat/suggestions')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (chatSuggestions) {
+                            chatSuggestions.innerHTML = '';
+                            
+                            // Combine API suggestions with enhanced ones
+                            const allSuggestions = data.suggestions ? 
+                                [...enhancedSuggestions, ...data.suggestions.slice(0, 4)] : 
+                                enhancedSuggestions;
+                            
+                            allSuggestions.slice(0, 8).forEach(suggestion => {
+                                const button = document.createElement('button');
+                                button.className = 'px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors';
+                                button.textContent = suggestion;
+                                button.onclick = () => {
+                                    if (chatInput) {
+                                        chatInput.value = suggestion;
+                                        sendChatMessage();
+                                    }
+                                };
+                                chatSuggestions.appendChild(button);
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        console.log('Could not load API suggestions:', err);
+                        // Fallback to enhanced suggestions only
+                        if (chatSuggestions) {
+                            chatSuggestions.innerHTML = '';
+                            enhancedSuggestions.forEach(suggestion => {
+                const button = document.createElement('button');
+                                button.className = 'px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors';
+                                button.textContent = suggestion;
+                                button.onclick = () => {
+                                    if (chatInput) {
+                                        chatInput.value = suggestion;
+                                        sendChatMessage();
+                                    }
+                                };
+                                chatSuggestions.appendChild(button);
+                            });
+                        }
+                    });
+            }
+
+            // Enhanced markdown processing with charts and tables
+            function processMarkdownWithCharts(markdown) {
+                // Configure marked for better rendering (compatible with v5)
+                if (typeof marked.setOptions === 'function') {
+                    marked.setOptions({
+                        breaks: true,
+                        gfm: true
+                    });
+                }
+                
+                // Process chart blocks first
+                let processed = markdown;
+                
+                // Handle Chart.js charts
+                processed = processed.replace(/```chart\s*\n([\s\S]*?)\n```/g, (match, chartData) => {
+                    const chartId = 'chart-' + Math.random().toString(36).substr(2, 9);
+                    
+                    // Parse chart configuration
+                    let config;
+                    try {
+                        config = JSON.parse(chartData.trim());
+                    } catch (e) {
+                        return `<div class="chat-chart"><p style="color: #ef4444;">Invalid chart configuration: ${e.message}</p></div>`;
+                    }
+                    
+                    // Queue chart rendering after DOM insertion
+                    setTimeout(() => {
+                        const canvas = document.getElementById(chartId);
+                        if (canvas && window.Chart) {
+                            try {
+                                // Ensure proper context
+                                const ctx = canvas.getContext('2d');
+                                new Chart(ctx, config);
+                            } catch (chartError) {
+                                console.error('Chart rendering error:', chartError);
+                                canvas.parentElement.innerHTML = `<p style="color: #ef4444;">Chart rendering error: ${chartError.message}</p>`;
+                            }
+                        }
+                    }, 200);
+                    
+                    return `<div class="chat-chart"><canvas id="${chartId}" width="400" height="200"></canvas></div>`;
+                });
+                
+                // Handle Mermaid diagrams
+                processed = processed.replace(/```mermaid\s*\n([\s\S]*?)\n```/g, (match, mermaidCode) => {
+                    const diagramId = 'mermaid-' + Math.random().toString(36).substr(2, 9);
+                    
+                    // Queue mermaid rendering after DOM insertion
+                    setTimeout(() => {
+                        const element = document.getElementById(diagramId);
+                        if (element && window.mermaid) {
+                            try {
+                                mermaid.render(diagramId + '-svg', mermaidCode.trim(), (svgCode) => {
+                                    element.innerHTML = svgCode;
+                                }, element);
+                            } catch (mermaidError) {
+                                console.error('Mermaid rendering error:', mermaidError);
+                                element.innerHTML = `<p style="color: #ef4444;">Diagram rendering error: ${mermaidError.message}</p>`;
+                            }
+                        }
+                    }, 200);
+                    
+                    return `<div id="${diagramId}" class="mermaid">${mermaidCode.trim()}</div>`;
+                });
+                
+                // Convert markdown to HTML (compatible with both v4 and v5)
+                let html;
+                if (window.marked) {
+                    try {
+                        if (typeof marked.parse === 'function') {
+                            html = marked.parse(processed);
+                        } else if (typeof marked === 'function') {
+                            html = marked(processed);
+                        } else {
+                            html = simpleMarkdownProcessor(processed);
+                        }
+                    } catch (e) {
+                        console.error('Marked.js error:', e);
+                        html = simpleMarkdownProcessor(processed);
+                    }
+                } else {
+                    // Fallback to simple markdown processing
+                    html = simpleMarkdownProcessor(processed);
+                }
+                
+                return html;
+            }
+            
+            // Add message to chat with enhanced markdown support
+            function addChatMessage(message, isUser = false) {
+                if (!chatMessages) return;
+            
+            const messageDiv = document.createElement('div');
+                messageDiv.className = `mb-4 ${isUser ? 'text-right' : 'text-left'}`;
+                
+                const messageContent = document.createElement('div');
+                messageContent.className = `chat-message inline-block px-4 py-2 rounded-lg ${
+                    isUser ? 'bg-blue-600 text-white max-w-xs lg:max-w-md' : 'bg-white border shadow-sm max-w-full'
+                }`;
+                
+                if (isUser) {
+                    messageContent.textContent = message;
+                } else {
+                    // For AI responses, process markdown with charts and tables
+                    messageContent.innerHTML = processMarkdownWithCharts(message);
+                    
+                    // Apply syntax highlighting to code blocks
+                    setTimeout(() => {
+                        if (window.Prism) {
+                            Prism.highlightAllUnder(messageContent);
+                        }
+                    }, 50);
+                }
+                
+                messageDiv.appendChild(messageContent);
+                chatMessages.appendChild(messageDiv);
+            
+            // Scroll to bottom
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Clear the welcome message if it exists
+                const welcomeMessage = chatMessages.querySelector('.text-center.text-gray-500');
+                if (welcomeMessage && welcomeMessage.parentElement) {
+                    welcomeMessage.parentElement.remove();
+                }
+            }
+
+            // Send chat message
+            function sendChatMessage() {
+                if (!chatInput || !chatInput.value.trim()) return;
+                
+                const message = chatInput.value.trim();
+                chatInput.value = '';
+                
+                // Add user message
+                addChatMessage(message, true);
+                
+                // Show loading status
+                if (chatStatus) {
+                    chatStatus.classList.remove('hidden');
+                }
+                
+                // Disable send button
+                if (sendButton) {
+                    sendButton.disabled = true;
+                }
+                
+                // Send to API
+                fetch('http://127.0.0.1:5001/api/kg-chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        session_id: chatSessionId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.response) {
+                        addChatMessage(data.response, false);
+                    } else if (data.error) {
+                        addChatMessage('Sorry, I encountered an error: ' + data.error, false);
+                    } else {
+                        addChatMessage('Sorry, I could not process your request.', false);
+                    }
+                })
+                .catch(err => {
+                    console.error('Chat error:', err);
+                    addChatMessage('Sorry, I am currently unavailable. Please check that the backend is running and try again.', false);
+                })
+                .finally(() => {
+                    // Hide loading status
+                    if (chatStatus) {
+                        chatStatus.classList.add('hidden');
+                    }
+                    
+                    // Re-enable send button
+                    if (sendButton) {
+                        sendButton.disabled = false;
+                    }
+                    
+                    // Re-initialize icons
+                    lucide.createIcons();
+                });
+            }
+
+            // Clear chat
+            function clearChat() {
+                if (!chatMessages) return;
+                
+                // Clear session
+                fetch('http://127.0.0.1:5001/api/kg-chat/clear-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        session_id: chatSessionId
+                    })
+                })
+                .catch(err => console.log('Could not clear session:', err));
+                
+                // Generate new session ID
+                chatSessionId = 'admin_' + Date.now();
+                
+                // Clear messages
+                chatMessages.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        <i data-lucide="message-square" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+                        <p>Start a conversation with the cricket AI assistant</p>
+                        <p class="text-sm">Try asking: "Who are the top run scorers?" or "Tell me about recent matches"</p>
+                    </div>
+                `;
+                
+                lucide.createIcons();
+            }
+
+            // Event listeners for chat
+            if (sendButton) {
+                sendButton.addEventListener('click', sendChatMessage);
+            }
+            
+            if (clearButton) {
+                clearButton.addEventListener('click', clearChat);
+            }
+            
+            if (chatInput) {
+                chatInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendChatMessage();
+                    }
+                });
+            }
+            
+            // Load suggestions when the chat tab is opened
+            adminTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    if (tab.getAttribute('data-tab') === 'kg-chat') {
+                        setTimeout(loadChatSuggestions, 100);
+                    }
+                });
+            });
+            
+            // Main Dashboard Knowledge Graph Query functionality
+            const kgQueryInput = document.getElementById('kg-query-input');
+            const kgQueryButton = document.getElementById('kg-query-button');
+            const kgQueryText = document.getElementById('kg-query-text');
+            const kgQuerySpinner = document.getElementById('kg-query-spinner');
+            const kgQueryResult = document.getElementById('kg-query-result');
+            const kgQueryResponse = document.getElementById('kg-query-response');
+            
+            function executeMainDashboardQuery() {
+                if (!kgQueryInput || !kgQueryInput.value.trim()) return;
+                
+                const query = kgQueryInput.value.trim();
+                
+                // Show loading state
+                if (kgQueryText) kgQueryText.textContent = 'Querying...';
+                if (kgQuerySpinner) kgQuerySpinner.classList.remove('hidden');
+                if (kgQueryButton) kgQueryButton.disabled = true;
+                if (kgQueryResult) kgQueryResult.classList.add('hidden');
+                
+                // Send query to chat API
+                fetch('http://127.0.0.1:5001/api/kg-chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                        message: query,
+                        session_id: 'dashboard_query_' + Date.now()
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.response && kgQueryResponse && kgQueryResult) {
+                        // Process markdown for the response
+                        const processedResponse = processMarkdownWithCharts(data.response);
+                        kgQueryResponse.innerHTML = processedResponse;
+                        kgQueryResult.classList.remove('hidden');
+                        
+                        // Apply syntax highlighting if available
+                        setTimeout(() => {
+                            if (window.Prism) {
+                                Prism.highlightAllUnder(kgQueryResponse);
+                            }
+                        }, 50);
+                    } else if (data.error) {
+                        if (kgQueryResponse && kgQueryResult) {
+                            kgQueryResponse.innerHTML = `<span style="color: #ef4444;">Error: ${data.error}</span>`;
+                            kgQueryResult.classList.remove('hidden');
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('Dashboard query error:', err);
+                    if (kgQueryResponse && kgQueryResult) {
+                        kgQueryResponse.innerHTML = '<span style="color: #ef4444;">Unable to connect to the knowledge graph. Please ensure the backend is running.</span>';
+                        kgQueryResult.classList.remove('hidden');
+                    }
+                })
+                .finally(() => {
+                    // Reset button state
+                    if (kgQueryText) kgQueryText.textContent = 'Query Knowledge Graph';
+                    if (kgQuerySpinner) kgQuerySpinner.classList.add('hidden');
+                    if (kgQueryButton) kgQueryButton.disabled = false;
+                    
+                    // Re-initialize icons
+                    lucide.createIcons();
+                });
+            }
+            
+            // Add event listeners for main dashboard query
+            if (kgQueryButton) {
+                kgQueryButton.addEventListener('click', executeMainDashboardQuery);
+            }
+            
+            if (kgQueryInput) {
+                kgQueryInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        executeMainDashboardQuery();
+                    }
                 });
             }
         });
