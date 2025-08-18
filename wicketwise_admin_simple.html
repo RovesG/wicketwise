@@ -1923,7 +1923,9 @@
                 const result = await response.json();
                 
                 if (result.status === 'started') {
-                    showStepProgress(operationId, stepName);
+                    // Use the operation_id from the API response, not the parameter
+                    const actualOperationId = result.operation_id || operationId;
+                    showStepProgress(actualOperationId, stepName);
                 } else {
                     addTerminalLog(`❌ ${stepName} failed: ${result.message || 'Unknown error'}`, 'error');
                     hideTrainingMonitor();
