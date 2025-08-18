@@ -1296,11 +1296,12 @@
                 
                 console.log('Building Unified KG with dataset source:', datasetSource);
                 
-                // Use the unified KG builder (same as main dashboard)
+                // Always use the unified KG builder with correct operation ID
                 executeWorkflowStep('build-knowledge-graph', 'unified_kg_build', 'Unified Knowledge Graph Building', { dataset_source: datasetSource });
             } catch (error) {
                 console.error('Failed to get KG settings, using default:', error);
-                executeWorkflowStep('build-knowledge-graph', 'knowledge_graph_build', 'Knowledge Graph Building');
+                // Even on error, use unified KG builder
+                executeWorkflowStep('build-knowledge-graph', 'unified_kg_build', 'Unified Knowledge Graph Building');
             }
         }
         
@@ -1985,16 +1986,56 @@
             return 1;
         }
 
+        // Cancel operation functionality
+        async function cancelCurrentOperation() {
+            if (!window.currentOperationId) {
+                addTerminalLog('⚠️ No operation to cancel', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:5001/api/cancel-operation/${window.currentOperationId}`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    addTerminalLog(`🚫 Cancellation requested for operation: ${window.currentOperationId}`, 'warning');
+                    addTerminalLog(`📝 ${result.message}`, 'info');
+                    
+                    // Update UI
+                    document.getElementById('current-operation-status').textContent = 'Cancelling...';
+                    document.getElementById('cancel-operation-btn').style.display = 'none';
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                addTerminalLog(`❌ Failed to cancel operation: ${error.message}`, 'error');
+                console.error('Cancel operation failed:', error);
+            }
+        }
+
         function showStepProgress(operationId, stepName) {
             addTerminalLog(`⏳ Operation ID: ${operationId}`, 'muted');
+            
+            // Reset progress bar to 0% at start
+            document.getElementById('current-operation-percent').textContent = '0%';
+            document.getElementById('current-operation-bar').style.width = '0%';
+            document.getElementById('current-operation-status').textContent = 'Initializing...';
+            
+            // Reset progress flags
+            window.hasRealProgress = false;
             
             let progressSim = 0;
             const progressInterval = setInterval(() => {
                 progressSim += Math.random() * 15;
                 if (progressSim > 95) progressSim = 95;
                 
-                document.getElementById('current-operation-percent').textContent = `${Math.round(progressSim)}%`;
-                document.getElementById('current-operation-bar').style.width = `${progressSim}%`;
+                // Only use simulated progress if we don't have real progress from API
+                if (!window.hasRealProgress) {
+                    document.getElementById('current-operation-percent').textContent = `${Math.round(progressSim)}%`;
+                    document.getElementById('current-operation-bar').style.width = `${progressSim}%`;
+                }
             }, 1000);
             
             // Poll for status updates
@@ -2036,6 +2077,7 @@
                     } else {
                         // Update progress bar if available
                         if (status.progress !== undefined) {
+                            window.hasRealProgress = true; // Stop simulated progress
                             document.getElementById('current-operation-percent').textContent = Math.round(status.progress) + '%';
                             document.getElementById('current-operation-bar').style.width = status.progress + '%';
                         }
