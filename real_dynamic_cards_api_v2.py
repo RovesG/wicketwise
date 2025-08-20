@@ -258,7 +258,7 @@ def get_real_player_data(player_name):
                 'style_analysis': player_stats.get('style_analysis', {}),
                 'venues_played': player_stats.get('venues_played', []),
                 'venue_performance': player_stats.get('venue_performance', {}),
-                'profile_image_url': get_player_image_url(player_name, real_data.get('teams', [])),
+                'profile_image_url': get_player_image_url(player_name, player_stats.get('teams', [])),
                 'last_updated': datetime.now().isoformat(),
                 'data_sources': ['Real_KG_Data'],
                 'source': 'Real_KG_Data'
