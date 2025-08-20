@@ -112,22 +112,51 @@ class KGQueryEngine:
         return self.metadata.copy()
     
     def find_player_node(self, player_name: str) -> Optional[str]:
-        """Find a player node by name (fuzzy matching)"""
+        """Find a player node by name (fuzzy matching with common variations)"""
         if not self.graph:
             return None
             
         player_name_lower = player_name.lower()
         
+        # Common name mappings for cricket players
+        name_mappings = {
+            'virat kohli': 'v kohli',
+            'ms dhoni': 'm dhoni', 
+            'rohit sharma': 'r sharma',
+            'sachin tendulkar': 's tendulkar',
+            'kapil dev': 'k dev',
+            'rahul dravid': 'r dravid',
+            'sourav ganguly': 's ganguly',
+            'anil kumble': 'a kumble',
+            'harbhajan singh': 'h singh'
+        }
+        
+        # Check if we have a known mapping
+        if player_name_lower in name_mappings:
+            mapped_name = name_mappings[player_name_lower]
+            for node, data in self.graph.nodes(data=True):
+                if (data.get('type') in ['batter', 'bowler'] and 
+                    str(node).lower() == mapped_name):
+                    return node
+        
         # Try exact match first
         for node, data in self.graph.nodes(data=True):
-            if (data.get('node_type') == 'player' and 
-                data.get('name', '').lower() == player_name_lower):
+            if (data.get('type') in ['batter', 'bowler'] and 
+                str(node).lower() == player_name_lower):
                 return node
         
-        # Try partial match
+        # Try partial match (last name)
+        if ' ' in player_name_lower:
+            last_name = player_name_lower.split()[-1]
+            for node, data in self.graph.nodes(data=True):
+                if (data.get('type') in ['batter', 'bowler'] and 
+                    last_name in str(node).lower()):
+                    return node
+        
+        # Try partial match (any part)
         for node, data in self.graph.nodes(data=True):
-            if (data.get('node_type') == 'player' and 
-                player_name_lower in data.get('name', '').lower()):
+            if (data.get('type') in ['batter', 'bowler'] and 
+                player_name_lower in str(node).lower()):
                 return node
         
         return None
@@ -141,14 +170,14 @@ class KGQueryEngine:
         
         # Try exact match first
         for node, data in self.graph.nodes(data=True):
-            if (data.get('node_type') == 'venue' and 
-                data.get('name', '').lower() == venue_name_lower):
+            if (data.get('type') == 'venue' and 
+                str(node).lower() == venue_name_lower):
                 return node
         
         # Try partial match
         for node, data in self.graph.nodes(data=True):
-            if (data.get('node_type') == 'venue' and 
-                venue_name_lower in data.get('name', '').lower()):
+            if (data.get('type') == 'venue' and 
+                venue_name_lower in str(node).lower()):
                 return node
         
         return None
@@ -162,14 +191,14 @@ class KGQueryEngine:
         
         # Try exact match first
         for node, data in self.graph.nodes(data=True):
-            if (data.get('node_type') == 'team' and 
-                data.get('name', '').lower() == team_name_lower):
+            if (data.get('type') == 'team' and 
+                str(node).lower() == team_name_lower):
                 return node
         
         # Try partial match
         for node, data in self.graph.nodes(data=True):
-            if (data.get('node_type') == 'team' and 
-                team_name_lower in data.get('name', '').lower()):
+            if (data.get('type') == 'team' and 
+                team_name_lower in str(node).lower()):
                 return node
         
         return None
@@ -205,11 +234,11 @@ class KGQueryEngine:
                 
                 for neighbor in neighbors:
                     neighbor_data = self.graph.nodes[neighbor]
-                    if neighbor_data.get('node_type') == 'venue':
-                        venues.append(neighbor_data.get('name', neighbor))
-                    elif neighbor_data.get('node_type') == 'team':
-                        teams.append(neighbor_data.get('name', neighbor))
-                    elif neighbor_data.get('node_type') == 'match':
+                    if neighbor_data.get('type') == 'venue':
+                        venues.append(str(neighbor))
+                    elif neighbor_data.get('type') == 'team':
+                        teams.append(str(neighbor))
+                    elif neighbor_data.get('type') == 'match':
                         matches += 1
                 
                 # Apply filters if specified
@@ -221,22 +250,45 @@ class KGQueryEngine:
                         edge_data = self.graph.edges[player_node, venue_node]
                         filtered_stats['venue_specific'] = edge_data
                 
-                result = {
-                    "player": player_data.get('name', player),
-                    "node_id": player_node,
-                    "career_stats": {
+                # Determine what type of stats we have
+                player_type = player_data.get('type', 'unknown')
+                is_bowling_data = player_type == 'bowler'
+                is_batting_data = player_type == 'batter'
+                
+                # Build appropriate stats based on data type
+                if is_bowling_data:
+                    career_stats = {
+                        "data_type": "bowling",
+                        "runs_conceded": player_data.get('runs_conceded', 0),
+                        "balls_bowled": player_data.get('balls_bowled', 0),
+                        "wickets": player_data.get('wickets', 0),
+                        "bowling_average": player_data.get('average', 0),
+                        "economy_rate": player_data.get('economy', 0),
+                        "bowling_strike_rate": player_data.get('strike_rate', 0),
+                        "matches_played": player_data.get('matches_played', matches)
+                    }
+                else:
+                    career_stats = {
+                        "data_type": "batting", 
                         "total_runs": player_data.get('total_runs', 0),
                         "total_balls": player_data.get('total_balls', 0),
-                        "matches": matches,
+                        "batting_average": player_data.get('average', 0),
                         "strike_rate": player_data.get('strike_rate', 0),
-                        "average": player_data.get('average', 0),
                         "boundaries": player_data.get('boundaries', 0),
-                        "sixes": player_data.get('sixes', 0)
-                    },
+                        "sixes": player_data.get('sixes', 0),
+                        "matches_played": matches
+                    }
+                
+                result = {
+                    "player": str(player_node),  # Use actual node name
+                    "node_id": player_node,
+                    "player_type": player_type,
+                    "career_stats": career_stats,
                     "venues_played": venues[:10],  # Limit to top 10
                     "teams_played_for": teams,
                     "formats": player_data.get('formats', []),
-                    "filtered_stats": filtered_stats
+                    "filtered_stats": filtered_stats,
+                    "data_note": f"This data represents {player_type} statistics for {player_node}"
                 }
                 
                 return result
@@ -333,12 +385,12 @@ class KGQueryEngine:
                 
                 for neighbor in neighbors:
                     neighbor_data = self.graph.nodes[neighbor]
-                    if neighbor_data.get('node_type') == 'team':
-                        teams_played.append(neighbor_data.get('name', neighbor))
-                    elif neighbor_data.get('node_type') == 'match':
+                    if neighbor_data.get('type') == 'team':
+                        teams_played.append(str(neighbor))
+                    elif neighbor_data.get('type') == 'match':
                         matches.append(neighbor)
-                    elif neighbor_data.get('node_type') == 'player':
-                        players.append(neighbor_data.get('name', neighbor))
+                    elif neighbor_data.get('type') in ['batter', 'bowler']:
+                        players.append(str(neighbor))
                 
                 # Apply team filter if specified
                 if team:
@@ -404,7 +456,7 @@ class KGQueryEngine:
                 
                 # Filter for match nodes only
                 match_nodes = [node for node in common_matches 
-                              if self.graph.nodes[node].get('node_type') == 'match']
+                              if self.graph.nodes[node].get('type') == 'match']
                 
                 if not match_nodes:
                     return {
@@ -478,7 +530,7 @@ class KGQueryEngine:
                 similar_players = []
                 
                 for node, data in self.graph.nodes(data=True):
-                    if (data.get('node_type') == 'player' and 
+                    if (data.get('type') in ['batter', 'bowler'] and 
                         node != player_node and 
                         data.get(metric, 0) > 0):
                         
@@ -513,3 +565,59 @@ class KGQueryEngine:
         except Exception as e:
             logger.error(f"Error finding similar players: {e}")
             return {"error": f"Failed to find similar players: {str(e)}"}
+    
+    def explain_data_limitations(self, query_type: str) -> Dict[str, Any]:
+        """
+        Explain data limitations in the knowledge graph
+        
+        Args:
+            query_type: Type of query that couldn't be fulfilled
+            
+        Returns:
+            Dictionary explaining limitations and alternatives
+        """
+        explanations = {
+            "recent_matches": {
+                "limitation": "The knowledge graph contains aggregate career statistics, not individual match data",
+                "available": [
+                    "Career totals (runs, balls, wickets, etc.)",
+                    "Overall averages and strike rates", 
+                    "Venues where players have played",
+                    "Teams players have represented"
+                ],
+                "not_available": [
+                    "Individual match scores",
+                    "Recent game-by-game performance",
+                    "Last 5 games statistics",
+                    "Live or current season data"
+                ],
+                "alternatives": [
+                    "Ask for overall career stats",
+                    "Compare players' career averages",
+                    "Find venues where a player has performed",
+                    "Get similar players based on career metrics"
+                ]
+            },
+            "game_by_game": {
+                "limitation": "Individual match data is not stored in the current knowledge graph",
+                "available": ["Aggregate statistics", "Career summaries", "Venue histories"],
+                "not_available": ["Match-by-match breakdowns", "Specific game performances", "Date-specific stats"],
+                "alternatives": ["Request career averages", "Compare overall performance metrics"]
+            },
+            "live_stats": {
+                "limitation": "The knowledge graph contains historical data, not live or current statistics",
+                "available": ["Historical career data", "Past venue performances"],
+                "not_available": ["Current match scores", "Live updates", "Today's performance"],
+                "alternatives": ["Analyze historical trends", "Compare past performances"]
+            }
+        }
+        
+        if query_type in explanations:
+            return explanations[query_type]
+        else:
+            return {
+                "limitation": "The requested data type is not available in the current knowledge graph",
+                "available": ["Career statistics", "Player comparisons", "Venue histories", "Team data"],
+                "not_available": ["Real-time data", "Individual match details", "Recent specific performances"],
+                "alternatives": ["Try asking for career statistics or player comparisons"]
+            }

@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Dynamic Player Cards - FIXED VERSION</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .player-card {
+            transition: all 0.3s ease;
+        }
+        .player-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .autocomplete-dropdown {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .autocomplete-item {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .autocomplete-item:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .real-data-indicator {
+            background: linear-gradient(45deg, #10b981, #059669);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .mock-data-indicator {
+            background: linear-gradient(45deg, #f59e0b, #d97706);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-2">🎴 Real Dynamic Player Cards</h1>
+        <p class="text-center text-gray-600 mb-8">Connected to Knowledge Graph + GNN System</p>
+        
+        <!-- System Status -->
+        <div id="systemStatus" class="bg-white p-4 rounded-lg shadow mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <div id="connectionIndicator" class="w-3 h-3 rounded-full mr-2"></div>
+                        <span id="connectionText" class="text-sm font-medium">Checking connection...</span>
+                    </div>
+                </div>
+                <div id="systemInfo" class="text-sm text-gray-500">
+                    <!-- System info will be populated -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Search Section -->
+        <div class="bg-white p-6 rounded-lg shadow-lg mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Player Search with Real Autocomplete -->
+                <div class="relative">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Search Player 
+                        <span id="autocompleteSource" class="text-xs text-gray-500">(17K+ players)</span>
+                    </label>
+                    <input type="text" id="playerSearch" 
+                           placeholder="Type 'Kohl' or 'Virat'..." 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                           autocomplete="off">
+                    <div id="autocompleteResults" class="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 hidden autocomplete-dropdown"></div>
+                </div>
+                
+                <!-- Persona Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Persona</label>
+                    <select id="personaSelect" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="betting">🎰 Betting SME</option>
+                        <option value="commentary">📺 TV Pundit</option>
+                        <option value="coaching">🎯 Coaching Staff</option>
+                        <option value="fantasy">⚡ Fantasy Team</option>
+                    </select>
+                </div>
+                
+                <!-- Generate Button -->
+                <div class="flex items-end">
+                    <button id="generateCard" 
+                            class="w-full px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                        🎴 Generate Real Card
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Popular Players -->
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Quick Select</label>
+                <div id="popularPlayers" class="flex flex-wrap gap-2">
+                    <!-- Will be populated from API -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Generated Cards Display -->
+        <div id="cardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Cards will be inserted here -->
+        </div>
+        
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p class="mt-2 text-gray-600">Querying Knowledge Graph + GNN...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:5004/api/cards';
+        let autocompleteTimeout = null;
+        let systemConnected = false;
+        
+        // Initialize the system
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSystem();
+            setupEventListeners();
+        });
+        
+        async function initializeSystem() {
+            try {
+                // Check system health
+                const health = await fetch(`${API_BASE}/health`).then(r => r.json());
+                console.log('🎯 Real Dynamic Cards System:', health);
+                
+                systemConnected = true;
+                updateSystemStatus(health);
+                
+                // Load popular players
+                await loadPopularPlayers();
+                
+            } catch (error) {
+                console.error('Error initializing system:', error);
+                systemConnected = false;
+                updateSystemStatus(null, error);
+            }
+        }
+        
+        function updateSystemStatus(health, error = null) {
+            const indicator = document.getElementById('connectionIndicator');
+            const text = document.getElementById('connectionText');
+            const info = document.getElementById('systemInfo');
+            const autocompleteSource = document.getElementById('autocompleteSource');
+            
+            if (health && !error) {
+                indicator.className = 'w-3 h-3 rounded-full mr-2 bg-green-500';
+                text.textContent = 'Connected to Real System';
+                text.className = 'text-sm font-medium text-green-700';
+                
+                info.innerHTML = `
+                    <div class="text-xs">
+                        Players: ${health.players_available} | 
+                        KG: ${health.kg_available ? '✅' : '❌'} | 
+                        GNN: ${health.gnn_available ? '✅' : '❌'}
+                    </div>
+                `;
+                
+                autocompleteSource.textContent = health.kg_available ? 
+                    '(Real KG Database)' : '(17K+ players)';
+                
+            } else {
+                indicator.className = 'w-3 h-3 rounded-full mr-2 bg-red-500';
+                text.textContent = 'API Server Not Available';
+                text.className = 'text-sm font-medium text-red-700';
+                
+                info.innerHTML = '<div class="text-xs text-red-500">Using fallback mode</div>';
+                autocompleteSource.textContent = '(Fallback mode)';
+            }
+        }
+        
+        function setupEventListeners() {
+            const playerSearch = document.getElementById('playerSearch');
+            const generateBtn = document.getElementById('generateCard');
+            
+            // Player search with autocomplete
+            playerSearch.addEventListener('input', handlePlayerSearch);
+            playerSearch.addEventListener('blur', () => {
+                setTimeout(() => hideAutocomplete(), 150);
+            });
+            
+            // Generate card button
+            generateBtn.addEventListener('click', generatePlayerCard);
+            
+            // Enter key to generate card
+            playerSearch.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    hideAutocomplete();
+                    generatePlayerCard();
+                }
+            });
+        }
+        
+        function handlePlayerSearch(e) {
+            const query = e.target.value.trim();
+            
+            if (query.length < 2) {
+                hideAutocomplete();
+                return;
+            }
+            
+            // Debounce the search
+            clearTimeout(autocompleteTimeout);
+            autocompleteTimeout = setTimeout(() => {
+                if (systemConnected) {
+                    getRealAutocompleteSuggestions(query);
+                } else {
+                    getFallbackAutocompleteSuggestions(query);
+                }
+            }, 200);
+        }
+        
+        async function getRealAutocompleteSuggestions(query) {
+            try {
+                const response = await fetch(`${API_BASE}/autocomplete?partial=${encodeURIComponent(query)}&limit=5`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayAutocompleteSuggestions(data.suggestions, data.source);
+                }
+            } catch (error) {
+                console.error('Error getting real autocomplete:', error);
+                getFallbackAutocompleteSuggestions(query);
+            }
+        }
+        
+        function getFallbackAutocompleteSuggestions(query) {
+            // Fallback autocomplete
+            const mockPlayers = [
+                'Virat Kohli', 'MS Dhoni', 'Rohit Sharma', 'KL Rahul', 'Hardik Pandya',
+                'A Kohli', 'Nikhil Kohli', 'Parth Kohli', 'Virandeep Singh', 'Virat Singh'
+            ];
+            
+            const suggestions = mockPlayers.filter(player => 
+                player.toLowerCase().includes(query.toLowerCase())
+            ).slice(0, 5);
+            
+            displayAutocompleteSuggestions(suggestions, 'Fallback');
+        }
+        
+        function displayAutocompleteSuggestions(suggestions, source = '') {
+            const resultsDiv = document.getElementById('autocompleteResults');
+            
+            if (suggestions.length === 0) {
+                hideAutocomplete();
+                return;
+            }
+            
+            const sourceIndicator = source === 'Real_Player_Database' ? 
+                '<span class="real-data-indicator">REAL</span>' : 
+                '<span class="mock-data-indicator">MOCK</span>';
+            
+            resultsDiv.innerHTML = suggestions.map(suggestion => `
+                <div class="autocomplete-item px-4 py-2 border-b border-gray-100 last:border-b-0 flex justify-between items-center" onclick="selectPlayer('${suggestion}')">
+                    <span>${suggestion}</span>
+                    ${sourceIndicator}
+                </div>
+            `).join('');
+            
+            resultsDiv.classList.remove('hidden');
+        }
+        
+        function selectPlayer(playerName) {
+            document.getElementById('playerSearch').value = playerName;
+            hideAutocomplete();
+        }
+        
+        function hideAutocomplete() {
+            document.getElementById('autocompleteResults').classList.add('hidden');
+        }
+        
+        async function loadPopularPlayers() {
+            try {
+                if (!systemConnected) {
+                    displayFallbackPopularPlayers();
+                    return;
+                }
+                
+                const response = await fetch(`${API_BASE}/popular`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayPopularPlayers(data.popular_players);
+                }
+            } catch (error) {
+                console.error('Error loading popular players:', error);
+                displayFallbackPopularPlayers();
+            }
+        }
+        
+        function displayPopularPlayers(players) {
+            const container = document.getElementById('popularPlayers');
+            
+            container.innerHTML = players.map(player => `
+                <button class="popular-player px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors" onclick="selectPlayer('${player.name}')">
+                    ${player.name}
+                </button>
+            `).join('');
+        }
+        
+        function displayFallbackPopularPlayers() {
+            const players = [
+                { name: 'Virat Kohli' }, { name: 'MS Dhoni' }, { name: 'Rohit Sharma' },
+                { name: 'KL Rahul' }, { name: 'Hardik Pandya' }
+            ];
+            displayPopularPlayers(players);
+        }
+        
+        async function generatePlayerCard() {
+            const playerName = document.getElementById('playerSearch').value.trim();
+            const persona = document.getElementById('personaSelect').value;
+            
+            if (!playerName) {
+                alert('Please enter a player name');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                if (systemConnected) {
+                    await generateRealPlayerCard(playerName, persona);
+                } else {
+                    await generateFallbackPlayerCard(playerName, persona);
+                }
+            } catch (error) {
+                console.error('Error generating card:', error);
+                alert('Error generating card: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function generateRealPlayerCard(playerName, persona) {
+            const response = await fetch(`${API_BASE}/generate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    player_name: playerName,
+                    persona: persona
+                })
+            });
+            
+            const data = await response.json();
+            
+            console.log('🔍 DEBUG: API Response:', data);
+            
+            if (data.success) {
+                displayPlayerCard(data.card_data, persona, {
+                    realDataUsed: data.real_data_used,
+                    gnnInsightsUsed: data.gnn_insights_used
+                });
+            } else {
+                throw new Error(data.error || 'Failed to generate card');
+            }
+        }
+        
+        async function generateFallbackPlayerCard(playerName, persona) {
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Generate fallback card (same logic as before)
+            const cardData = generateMockCardData(playerName);
+            displayPlayerCard(cardData, persona, { realDataUsed: false, gnnInsightsUsed: false });
+        }
+        
+        function displayPlayerCard(cardData, persona, metadata = {}) {
+            const container = document.getElementById('cardsContainer');
+            
+            // Debug the metadata
+            console.log('🔍 DEBUG: Card metadata:', metadata);
+            console.log('🔍 DEBUG: Card data sources:', cardData.data_sources || cardData.dataSources);
+            console.log('🔍 DEBUG: metadata.realDataUsed:', metadata.realDataUsed);
+            console.log('🔍 DEBUG: cardData contains Real_KG_Data:', (cardData.data_sources || []).includes('Real_KG_Data'));
+            
+            // Check multiple ways to determine if real data is used
+            const isRealData = metadata.realDataUsed || 
+                              (cardData.data_sources && cardData.data_sources.includes('Real_KG_Data')) ||
+                              (cardData.source === 'Real_KG_Data');
+            
+            console.log('🔍 DEBUG: Final isRealData decision:', isRealData);
+            
+            const dataSourceBadge = isRealData ? 
+                '<span class="real-data-indicator">REAL KG DATA</span>' :
+                '<span class="mock-data-indicator">MOCK DATA</span>';
+            
+            const gnnBadge = metadata.gnnInsightsUsed ? 
+                '<span class="real-data-indicator ml-1">GNN INSIGHTS</span>' : '';
+            
+            const cardHtml = `
+                <div class="player-card bg-white rounded-lg shadow-lg overflow-hidden border-l-4 ${getPersonaBorderColor(persona)}">
+                    <!-- Card Header -->
+                    <div class="bg-gradient-to-r from-gray-800 to-gray-900 text-white p-4">
+                        <div class="flex items-center space-x-4">
+                            <img src="${cardData.profile_image_url || cardData.profileImageUrl}" 
+                                 alt="${cardData.player_name || cardData.playerName}"
+                                 class="w-16 h-16 rounded-full border-2 border-white object-cover">
+                            <div>
+                                <h3 class="text-xl font-bold">${cardData.player_name || cardData.playerName}</h3>
+                                <p class="text-gray-300 text-sm">${getPersonaLabel(persona)} Analysis</p>
+                                <div class="flex items-center mt-1">
+                                    ${dataSourceBadge}
+                                    ${gnnBadge}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Performance Stats -->
+                    <div class="p-4 border-b">
+                        <h4 class="font-semibold text-gray-800 mb-2">📊 Performance</h4>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <p class="text-gray-600">Batting Average</p>
+                                <p class="font-bold text-lg">${cardData.batting_avg || cardData.battingAvg}</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-600">Strike Rate</p>
+                                <p class="font-bold text-lg">${cardData.strike_rate || cardData.strikeRate}</p>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <p class="text-gray-600 text-sm">Recent Form</p>
+                            <p class="font-semibold ${getFormColor(cardData.form_rating || cardData.formRating)}">${cardData.recent_form || cardData.recentForm} (${cardData.form_rating || cardData.formRating}/10)</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Situational Stats -->
+                    <div class="p-4 border-b">
+                        <h4 class="font-semibold text-gray-800 mb-2">🏏 Situational</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Powerplay SR:</span>
+                                <span class="font-medium">${cardData.powerplay_sr || cardData.powerplaySR}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Death Overs SR:</span>
+                                <span class="font-medium">${cardData.death_overs_sr || cardData.deathOversSR}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">vs Pace Avg:</span>
+                                <span class="font-medium">${cardData.vs_pace_avg || cardData.vsPaceAvg}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Pressure Rating:</span>
+                                <span class="font-medium">${cardData.pressure_rating || cardData.pressureRating}/10</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- GNN Insights (if available) -->
+                    ${cardData.similar_players ? `
+                    <div class="p-4 border-b bg-blue-50">
+                        <h4 class="font-semibold text-gray-800 mb-2">🧠 GNN Similar Players</h4>
+                        <div class="flex flex-wrap gap-2">
+                            ${(Array.isArray(cardData.similar_players) ? cardData.similar_players : cardData.similar_players.split(', ')).map(player => `
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">${player}</span>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    <!-- Data Sources -->
+                    <div class="p-3 bg-gray-50 text-xs text-gray-500">
+                        <div class="flex justify-between">
+                            <span>Updated: ${new Date(cardData.last_updated || cardData.lastUpdated).toLocaleTimeString()}</span>
+                            <span>Sources: ${(cardData.data_sources || cardData.dataSources || ['Unknown']).join(', ')}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add to the beginning of the container
+            container.insertAdjacentHTML('afterbegin', cardHtml);
+        }
+        
+        // Helper functions (same as before)
+        function getPersonaLabel(persona) {
+            const labels = {
+                'betting': '🎰 Betting SME',
+                'commentary': '📺 TV Pundit',
+                'coaching': '🎯 Coaching Staff',
+                'fantasy': '⚡ Fantasy Team'
+            };
+            return labels[persona] || persona;
+        }
+        
+        function getPersonaBorderColor(persona) {
+            const colors = {
+                'betting': 'border-orange-500',
+                'commentary': 'border-blue-500',
+                'coaching': 'border-green-500',
+                'fantasy': 'border-red-500'
+            };
+            return colors[persona] || 'border-gray-500';
+        }
+        
+        function getFormColor(rating) {
+            if (rating >= 8) return 'text-green-600';
+            if (rating >= 6) return 'text-yellow-600';
+            return 'text-red-600';
+        }
+        
+        function showLoading(show) {
+            const indicator = document.getElementById('loadingIndicator');
+            if (show) {
+                indicator.classList.remove('hidden');
+            } else {
+                indicator.classList.add('hidden');
+            }
+        }
+        
+        function generateMockCardData(playerName) {
+            // Fallback mock data generation (simplified)
+            const seed = hashString(playerName);
+            const random = seedRandom(seed);
+            
+            return {
+                playerName: playerName,
+                battingAvg: Math.round((25 + random() * 30) * 10) / 10,
+                strikeRate: Math.round((110 + random() * 50) * 10) / 10,
+                recentForm: "Good Form",
+                formRating: Math.round((5 + random() * 4.5) * 10) / 10,
+                powerplaySR: Math.round((110 + random() * 40) * 10) / 10,
+                deathOversSR: Math.round((130 + random() * 50) * 10) / 10,
+                vsPaceAvg: Math.round((28 + random() * 17) * 10) / 10,
+                pressureRating: Math.round((5 + random() * 4.5) * 10) / 10,
+                profileImageUrl: `https://robohash.org/${playerName.replace(' ', '')}?set=set1&size=150x150&bgset=bg1`,
+                lastUpdated: new Date().toISOString(),
+                dataSources: ['Mock_Fallback']
+            };
+        }
+        
+        function hashString(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return Math.abs(hash);
+        }
+        
+        function seedRandom(seed) {
+            let x = Math.sin(seed) * 10000;
+            return function() {
+                x = Math.sin(x) * 10000;
+                return x - Math.floor(x);
+            };
+        }
+    </script>
+</body>
+</html>

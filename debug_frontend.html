@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Debug - MS Dhoni</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-4">🔍 Frontend Debug Test</h1>
+        
+        <button id="testBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mb-4">
+            Generate MS Dhoni Card (Debug Mode)
+        </button>
+        
+        <div id="debugLog" class="bg-black text-green-400 p-4 rounded font-mono text-sm mb-4 hidden">
+            <h3 class="text-white mb-2">🔍 Debug Log:</h3>
+            <div id="logContent"></div>
+        </div>
+        
+        <div id="cardContainer" class="space-y-4"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logContent = document.getElementById('logContent');
+            const debugLog = document.getElementById('debugLog');
+            logContent.innerHTML += message + '<br>';
+            debugLog.classList.remove('hidden');
+            console.log(message);
+        }
+        
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            const logContent = document.getElementById('logContent');
+            logContent.innerHTML = '';
+            
+            try {
+                log('🚀 Starting API request...');
+                
+                const response = await fetch('http://127.0.0.1:5004/api/cards/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        player_name: 'MS Dhoni',
+                        persona: 'betting'
+                    })
+                });
+                
+                log('📡 Response received, parsing JSON...');
+                const data = await response.json();
+                
+                log('🔍 API Response Analysis:');
+                log(`  - success: ${data.success}`);
+                log(`  - real_data_used: ${data.real_data_used}`);
+                log(`  - card_data.data_sources: ${JSON.stringify(data.card_data?.data_sources)}`);
+                log(`  - card_data.source: "${data.card_data?.source}"`);
+                log(`  - matches_played: ${data.card_data?.matches_played}`);
+                
+                log('🎯 Frontend Detection Logic:');
+                const metadata = {
+                    realDataUsed: data.real_data_used,
+                    gnnInsightsUsed: data.gnn_insights_used
+                };
+                log(`  - metadata.realDataUsed: ${metadata.realDataUsed}`);
+                
+                const cardData = data.card_data;
+                log(`  - cardData.data_sources includes Real_KG_Data: ${(cardData.data_sources || []).includes('Real_KG_Data')}`);
+                log(`  - cardData.source === Real_KG_Data: ${cardData.source === 'Real_KG_Data'}`);
+                
+                // Frontend detection logic (same as in real UI)
+                const isRealData = metadata.realDataUsed || 
+                                  (cardData.data_sources && cardData.data_sources.includes('Real_KG_Data')) ||
+                                  (cardData.source === 'Real_KG_Data');
+                
+                log(`🎯 FINAL DECISION: isRealData = ${isRealData}`);
+                
+                // Generate the card
+                displayCard(cardData, metadata, isRealData);
+                
+            } catch (error) {
+                log(`❌ ERROR: ${error.message}`);
+            }
+        });
+        
+        function displayCard(cardData, metadata, isRealData) {
+            const container = document.getElementById('cardContainer');
+            
+            const badgeClass = isRealData ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800';
+            const badgeText = isRealData ? '🟢 REAL KG DATA' : '🟠 MOCK DATA';
+            
+            const cardHtml = `
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold">${cardData.player_name || 'MS Dhoni'}</h2>
+                        <span class="px-3 py-1 rounded-full text-sm font-medium ${badgeClass}">
+                            ${badgeText}
+                        </span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <p class="text-sm text-gray-600">Batting Average</p>
+                            <p class="text-xl font-bold">${cardData.batting_avg || 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Matches Played</p>
+                            <p class="text-xl font-bold">${cardData.matches_played || 'N/A'}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="text-sm text-gray-600">Teams</p>
+                        <p class="text-sm">${JSON.stringify(cardData.teams || [])}</p>
+                    </div>
+                    
+                    <div class="text-xs text-gray-500">
+                        <p>Sources: ${JSON.stringify(cardData.data_sources || [cardData.source])}</p>
+                        <p>Real Data Used: ${metadata.realDataUsed}</p>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = cardHtml;
+            log(`🎴 Card displayed with ${isRealData ? 'GREEN' : 'ORANGE'} badge`);
+        }
+    </script>
+</body>
+</html>

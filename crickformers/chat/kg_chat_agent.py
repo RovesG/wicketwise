@@ -3,6 +3,7 @@
 
 import json
 import logging
+from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 from openai import OpenAI
 import os
@@ -35,8 +36,21 @@ class KGChatAgent:
         
         self.client = OpenAI(api_key=api_key)
         
-        # Initialize KG Query Engine
-        self.kg_engine = KGQueryEngine(graph_path)
+        # Initialize KG Query Engine (try unified first, fallback to legacy)
+        try:
+            from .unified_kg_query_engine import UnifiedKGQueryEngine
+            unified_path = graph_path.replace('cricket_knowledge_graph.pkl', 'unified_cricket_kg.pkl')
+            if Path(unified_path).exists():
+                self.kg_engine = UnifiedKGQueryEngine(unified_path)
+                logger.info("Using Unified Knowledge Graph Query Engine")
+            else:
+                from .kg_query_engine import KGQueryEngine
+                self.kg_engine = KGQueryEngine(graph_path)
+                logger.info("Using Legacy Knowledge Graph Query Engine")
+        except ImportError:
+            from .kg_query_engine import KGQueryEngine
+            self.kg_engine = KGQueryEngine(graph_path)
+            logger.info("Using Legacy Knowledge Graph Query Engine")
         
         # Get available function tools
         self.function_tools = get_function_tools()
@@ -74,10 +88,12 @@ RESPONSE GUIDELINES:
 1. **Be Cricket Expert**: Use cricket terminology naturally and provide insightful analysis
 2. **Use Functions Strategically**: Call functions to get specific data, then provide expert analysis
 3. **Format Responses**: Use markdown for tables, lists, and emphasis
-4. **Handle Errors Gracefully**: If data isn't found, suggest alternatives or explain limitations
-5. **Be Conversational**: Respond naturally while being informative and helpful
-6. **Provide Context**: Explain what the numbers mean in cricket terms
-7. **Compare & Contrast**: When showing stats, provide perspective and comparisons
+4. **Trust Knowledge Graph Data**: NEVER dismiss KG data as "incomplete" or "problematic" - always present the actual data returned
+5. **Handle Data Types**: If you get bowling stats for a famous batsman, present them as valid bowling statistics for that player
+6. **Be Conversational**: Respond naturally while being informative and helpful
+7. **Provide Context**: Explain what the numbers mean in cricket terms
+8. **Compare & Contrast**: When showing stats, provide perspective and comparisons
+9. **Data Interpretation**: Look for "data_type" field to understand if stats are batting or bowling data
 
 EXAMPLE RESPONSE PATTERNS:
 - For player queries: Get stats, then analyze performance patterns, strengths, key venues
@@ -101,10 +117,16 @@ Remember: You're not just showing data, you're providing expert cricket analysis
             function_map = {
                 'get_player_stats': self.kg_engine.get_player_stats,
                 'compare_players': self.kg_engine.compare_players,
-                'get_venue_history': self.kg_engine.get_venue_history,
-                'get_head_to_head': self.kg_engine.get_head_to_head,
-                'find_similar_players': self.kg_engine.find_similar_players,
-                'get_graph_summary': self.kg_engine.get_graph_summary
+                'get_venue_history': getattr(self.kg_engine, 'get_venue_history', None),
+                'get_head_to_head': getattr(self.kg_engine, 'get_head_to_head', None),
+                'find_similar_players': getattr(self.kg_engine, 'find_similar_players', None),
+                'get_graph_summary': self.kg_engine.get_graph_summary,
+                'explain_data_limitations': self.kg_engine.explain_data_limitations,
+                # New unified functions
+                'get_complete_player_profile': getattr(self.kg_engine, 'get_complete_player_profile', None),
+                'get_situational_analysis': getattr(self.kg_engine, 'get_situational_analysis', None),
+                'compare_players_advanced': getattr(self.kg_engine, 'compare_players_advanced', None),
+                'find_best_performers': getattr(self.kg_engine, 'find_best_performers', None)
             }
             
             if function_name not in function_map:
@@ -113,13 +135,27 @@ Remember: You're not just showing data, you're providing expert cricket analysis
             # Execute the function
             func = function_map[function_name]
             
+            # Check if function exists (for backwards compatibility)
+            if func is None:
+                return {"error": f"Function {function_name} not available in current KG engine"}
+            
+            # Enhanced logging
+            logger.info(f"🎯 KG FUNCTION CALL: {function_name} with args: {arguments}")
+            
             # Handle functions with no arguments
-            if function_name == 'get_graph_summary':
+            if function_name in ['get_graph_summary']:
                 result = func()
             else:
                 result = func(**arguments)
             
-            logger.info(f"Executed {function_name} with args {arguments}")
+            # Log result summary
+            if isinstance(result, dict) and 'error' not in result:
+                logger.info(f"📊 KG SUCCESS: {function_name} returned data successfully")
+            elif isinstance(result, dict) and 'error' in result:
+                logger.warning(f"⚠️ KG WARNING: {function_name} returned error: {result['error']}")
+            else:
+                logger.info(f"📊 KG RESULT: {function_name} returned: {str(result)[:100]}...")
+            
             return result
             
         except Exception as e:
@@ -234,10 +270,14 @@ Remember: You're not just showing data, you're providing expert cricket analysis
             if assistant_message.tool_calls:
                 # Execute function calls
                 function_results = []
+                kg_functions_used = []
                 
                 for tool_call in assistant_message.tool_calls:
                     function_name = tool_call.function.name
                     function_args = json.loads(tool_call.function.arguments)
+                    
+                    # Track KG functions used for debug display
+                    kg_functions_used.append(f"{function_name}({', '.join(f'{k}={v}' for k, v in function_args.items())})")
                     
                     # Execute the function
                     result = self._execute_function_call(function_name, function_args)
@@ -269,9 +309,17 @@ Remember: You're not just showing data, you're providing expert cricket analysis
                 
                 final_message = final_response.choices[0].message.content
                 
+                # Add KG debug info to response
+                if kg_functions_used:
+                    kg_debug = f"\n\n---\n**🔍 Knowledge Graph Insights Used:**\n" + "\n".join(f"• `{func}`" for func in kg_functions_used)
+                    final_message = final_message + kg_debug
+                
             else:
                 # No function calls, use the direct response
                 final_message = assistant_message.content
+                
+                # Add debug info for AI-only responses
+                final_message = final_message + "\n\n---\n**🤖 Response Source:** AI General Knowledge (no KG functions called)"
             
             # Update chat history
             updated_history = chat_history + [

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Player Name Matching</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">🧪 Player Name Matching Test</h1>
+        
+        <div class="bg-white p-6 rounded-lg shadow-lg mb-6">
+            <h2 class="text-xl font-semibold mb-4">Test Different Query Variations</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" onclick="testQuery('Tell me about Kohl')">
+                        Test: "Tell me about Kohl"
+                    </button>
+                </div>
+                
+                <div>
+                    <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" onclick="testQuery('Tell me about Kohli last 5 games')">
+                        Test: "Tell me about Kohli last 5 games"
+                    </button>
+                </div>
+                
+                <div>
+                    <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" onclick="testQuery('Kohl\\'s recent performance')">
+                        Test: "Kohl's recent performance"
+                    </button>
+                </div>
+                
+                <div>
+                    <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" onclick="testQuery('How is Dhoni doing?')">
+                        Test: "How is Dhoni doing?"
+                    </button>
+                </div>
+                
+                <div>
+                    <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" onclick="testQuery('General cricket statistics')">
+                        Test: "General cricket statistics" (should show generic)
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <h3 class="text-lg font-semibold mb-4">Test Results</h3>
+            <div id="testResults" class="space-y-4">
+                <p class="text-gray-500">Click a test button above to see results</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Copy the functions from wicketwise_dashboard.html
+        function normalizePlayerName(matchedName) {
+            // Remove possessive forms ('s) and normalize
+            const cleanName = matchedName.replace(/'s?$/i, '');
+            
+            const nameMap = {
+                'Kohl': 'Virat Kohli',
+                'Kohli': 'Virat Kohli',
+                'Virat Kohli': 'Virat Kohli',
+                'Dhoni': 'MS Dhoni',
+                'MS Dhoni': 'MS Dhoni',
+                'ABD': 'AB de Villiers',
+                'AB de Villiers': 'AB de Villiers',
+                'Rohit': 'Rohit Sharma',
+                'Rohit Sharma': 'Rohit Sharma',
+                'Rahul': 'KL Rahul',
+                'KL Rahul': 'KL Rahul',
+                'Hardik': 'Hardik Pandya',
+                'Hardik Pandya': 'Hardik Pandya',
+                'SKY': 'Suryakumar Yadav',
+                'Suryakumar Yadav': 'Suryakumar Yadav',
+                'Pant': 'Rishabh Pant',
+                'Rishabh Pant': 'Rishabh Pant',
+                'Bumrah': 'Jasprit Bumrah',
+                'Jasprit Bumrah': 'Jasprit Bumrah'
+            };
+            return nameMap[cleanName] || cleanName;
+        }
+
+        function testQuery(query) {
+            const playerMatch = query.match(/\b(Virat Kohli|Kohli'?s?|Kohl'?s?|MS Dhoni|Dhoni'?s?|AB de Villiers|ABD'?s?|Rohit Sharma|Rohit'?s?|KL Rahul|Rahul'?s?|Hardik Pandya|Hardik'?s?|Suryakumar Yadav|SKY'?s?|Rishabh Pant|Pant'?s?|Jasprit Bumrah|Bumrah'?s?)\b/i);
+            const isPlayerQuery = playerMatch !== null;
+            const rawPlayerName = playerMatch ? playerMatch[0] : '';
+            const playerName = rawPlayerName ? normalizePlayerName(rawPlayerName) : '';
+            
+            const result = {
+                query: query,
+                playerMatch: playerMatch,
+                isPlayerQuery: isPlayerQuery,
+                rawPlayerName: rawPlayerName,
+                normalizedPlayerName: playerName,
+                expectedResult: isPlayerQuery ? 'Player Analysis' : 'General Intelligence Summary'
+            };
+            
+            displayTestResult(result);
+        }
+        
+        function displayTestResult(result) {
+            const resultsDiv = document.getElementById('testResults');
+            
+            const resultHtml = `
+                <div class="border-l-4 ${result.isPlayerQuery ? 'border-green-500 bg-green-50' : 'border-yellow-500 bg-yellow-50'} p-4 rounded">
+                    <h4 class="font-semibold mb-2">Query: "${result.query}"</h4>
+                    <div class="text-sm space-y-1">
+                        <p><strong>Player Detected:</strong> ${result.isPlayerQuery ? '✅ Yes' : '❌ No'}</p>
+                        <p><strong>Raw Match:</strong> "${result.rawPlayerName}"</p>
+                        <p><strong>Normalized Name:</strong> "${result.normalizedPlayerName}"</p>
+                        <p><strong>Expected Result:</strong> <span class="font-medium">${result.expectedResult}</span></p>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = resultHtml + resultsDiv.innerHTML;
+        }
+    </script>
+</body>
+</html>

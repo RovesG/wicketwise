@@ -1071,6 +1071,7 @@
     </div>
 
     <script>
+        // WicketWise Admin Panel v2.3 - Optimized KG building with progress tracking (Cache bust: 2025-08-18-15:45)
         // Initialize Lucide icons
         lucide.createIcons();
         
@@ -1292,82 +1293,29 @@
 
         
         async function buildKnowledgeGraph() {
+            console.log('🚀 buildKnowledgeGraph called');
+            addTerminalLog('🚀 Starting Unified Knowledge Graph Building...', 'info');
+            
             // Get dataset selection from KG settings
             try {
+                console.log('📡 Fetching KG settings...');
                 const kgResponse = await fetch('http://127.0.0.1:5001/api/kg-settings').then(r => r.json());
                 const datasetSource = kgResponse.settings.dataset_source || 't20_csv';
                 
                 console.log('Building Unified KG with dataset source:', datasetSource);
                 
                 // Always use the unified KG builder with correct operation ID
+                console.log('📞 Calling executeWorkflowStep...');
                 executeWorkflowStep('build-unified-knowledge-graph', 'unified_kg_build', 'Unified Knowledge Graph Building', { dataset_source: datasetSource });
             } catch (error) {
                 console.error('Failed to get KG settings, using default:', error);
+                addTerminalLog(`❌ Unified Knowledge Graph Building error: ${error.message}`, 'error');
                 // Even on error, use unified KG builder
                 executeWorkflowStep('build-unified-knowledge-graph', 'unified_kg_build', 'Unified Knowledge Graph Building');
             }
         }
         
-        async function pollOperationStatus(operationId, logsContainer) {
-            const maxAttempts = 60; // 5 minutes max
-            let attempts = 0;
-            let lastLogCount = 0;
-            let lastMessage = "";
-            
-            const poll = async () => {
-                if (attempts >= maxAttempts) {
-                    logsContainer.innerHTML += '<div style="color: #ef4444;">[ERROR] Operation timed out</div>';
-                    return;
-                }
-                
-                try {
-                    const response = await fetch(`http://localhost:5001/api/operation-status/${operationId}`);
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-                    
-                    const status = await response.json();
-                    
-                    // Add new logs (only the ones we haven't seen before)
-                    if (status.logs && status.logs.length > lastLogCount) {
-                        const newLogs = status.logs.slice(lastLogCount);
-                        newLogs.forEach(log => {
-                            const color = status.status === 'error' ? '#ef4444' : 
-                                        status.status === 'completed' ? '#10b981' : '#3b82f6';
-                            logsContainer.innerHTML += `<div style="color: ${color};">[${operationId.toUpperCase()}] ${log}</div>`;
-                        });
-                        lastLogCount = status.logs.length;
-                    }
-                    
-                    // Update progress message only when it changes
-                    if (status.message && status.message !== lastMessage && status.progress !== undefined) {
-                        const color = status.status === 'error' ? '#ef4444' : 
-                                    status.status === 'completed' ? '#10b981' : '#f59e0b';
-                        logsContainer.innerHTML += `<div style="color: ${color};">[PROGRESS] ${status.message} (${status.progress}%)</div>`;
-                        lastMessage = status.message;
-                    }
-                    
-                    logsContainer.scrollTop = logsContainer.scrollHeight;
-                    
-                    if (status.status === 'completed' || status.status === 'error') {
-                        return; // Done
-                    }
-                    
-                    // Continue polling
-                    attempts++;
-                    setTimeout(poll, 2000); // Poll every 2 seconds
-                    
-                } catch (error) {
-                    console.error('Polling error:', error);
-                    logsContainer.innerHTML += `<div style="color: #ef4444;">[ERROR] Status polling failed: ${error.message}</div>`;
-                    logsContainer.innerHTML += '<div style="color: #f59e0b;">[INFO] Backend API may not be running</div>';
-                    logsContainer.scrollTop = logsContainer.scrollHeight;
-                }
-            };
-            
-            // Start polling
-            setTimeout(poll, 1000);
-        }
+
         
         function testKnowledgeGraphDirect() {
             const logsContainer = document.getElementById('training-logs');
@@ -1912,7 +1860,7 @@
         async function executeWorkflowStep(endpoint, operationId, stepName, data = null) {
             try {
                 // Show training monitor
-                showTrainingMonitor(stepName);
+                showTrainingMonitor(stepName, operationId);
                 
                 const fetchOptions = { 
                     method: 'POST',
@@ -1939,7 +1887,7 @@
             }
         }
 
-        function showTrainingMonitor(stepName) {
+        function showTrainingMonitor(stepName, operationId = null) {
             const monitor = document.getElementById('training-monitor');
             monitor.style.display = 'block';
             
@@ -1959,7 +1907,9 @@
             
             // Show cancel button
             document.getElementById('cancel-operation-btn').style.display = 'block';
-            window.currentOperationId = operationId;
+            if (operationId) {
+                window.currentOperationId = operationId;
+            }
         }
 
         function hideTrainingMonitor() {
@@ -2090,10 +2040,16 @@
                         // Enhanced status with granular details
                         let statusMessage = status.message || 'Processing...';
                         if (status.details) {
-                            if (status.details.balls) statusMessage += ` | Balls: ${status.details.balls.toLocaleString()}`;
+                            if (status.details.balls) statusMessage += ` | 📊 ${status.details.balls.toLocaleString()} balls loaded`;
                             if (status.details.processed_balls) statusMessage += ` (${status.details.processed_balls.toLocaleString()} processed)`;
-                            if (status.details.players) statusMessage += ` | Players: ${status.details.players.toLocaleString()}`;
-                            if (status.details.edges) statusMessage += ` | Edges: ${status.details.edges.toLocaleString()}`;
+                            if (status.details.players_processed && status.details.total_players) {
+                                statusMessage += ` | 👥 ${status.details.players_processed.toLocaleString()}/${status.details.total_players.toLocaleString()} players`;
+                            } else if (status.details.players) {
+                                statusMessage += ` | 👥 ${status.details.players.toLocaleString()} players`;
+                            }
+                            if (status.details.balls_processed) statusMessage += ` | ⚾ ${status.details.balls_processed.toLocaleString()} events`;
+                            if (status.details.venues) statusMessage += ` | 🏟️ ${status.details.venues.toLocaleString()} venues`;
+                            if (status.details.edges) statusMessage += ` | 🔗 ${status.details.edges.toLocaleString()} edges`;
                         }
                         document.getElementById('current-operation-status').textContent = statusMessage;
                         

@@ -175,6 +175,120 @@ def get_function_tools() -> List[Dict[str, Any]]:
                     "required": []
                 }
             }
+        },
+        {
+            "type": "function", 
+            "function": {
+                "name": "explain_data_limitations",
+                "description": "Explain what types of cricket data are and aren't available in the knowledge graph, especially for recent matches or specific game-by-game stats",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query_type": {
+                            "type": "string",
+                            "description": "The type of query that couldn't be fulfilled (e.g., 'recent_matches', 'game_by_game', 'live_stats')"
+                        }
+                    },
+                    "required": ["query_type"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_situational_analysis",
+                "description": "Get detailed situational analysis for a player (vs spinners, death overs, powerplay, etc.)",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "player": {
+                            "type": "string",
+                            "description": "The player's name"
+                        },
+                        "situation": {
+                            "type": "string",
+                            "description": "Situation type",
+                            "enum": ["vs_spin", "vs_pace", "death_overs", "powerplay"]
+                        },
+                        "venue": {
+                            "type": "string",
+                            "description": "Optional venue filter"
+                        }
+                    },
+                    "required": ["player", "situation"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "compare_players_advanced",
+                "description": "Advanced player comparison with situational context",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "player1": {
+                            "type": "string",
+                            "description": "First player's name"
+                        },
+                        "player2": {
+                            "type": "string",
+                            "description": "Second player's name"
+                        },
+                        "context": {
+                            "type": "string",
+                            "description": "Optional comparison context",
+                            "enum": ["vs_spin", "vs_pace", "death_overs", "powerplay", "overall"]
+                        }
+                    },
+                    "required": ["player1", "player2"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "find_best_performers",
+                "description": "Find best performers in specific contexts (death overs, vs spinners, etc.)",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "context": {
+                            "type": "string",
+                            "description": "Performance context",
+                            "enum": ["vs_spin", "vs_pace", "death_overs", "powerplay", "overall"]
+                        },
+                        "min_balls": {
+                            "type": "integer",
+                            "description": "Minimum balls faced for qualification",
+                            "default": 100
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "description": "Maximum number of results",
+                            "default": 10
+                        }
+                    },
+                    "required": ["context"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_complete_player_profile",
+                "description": "Get complete player profile with batting, bowling, and situational stats",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "player": {
+                            "type": "string",
+                            "description": "The player's name"
+                        }
+                    },
+                    "required": ["player"]
+                }
+            }
         }
     ]
 

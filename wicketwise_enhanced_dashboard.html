@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WicketWise - Cricket Intelligence Engine</title>
+    <link rel="stylesheet" href="wicketwise_styles.css">
+    <style>
+        /* Enhanced Dashboard Styles */
+        .intelligence-engine-header {
+            background: linear-gradient(135deg, #002466 0%, #c8712d 100%);
+            padding: 2rem;
+            text-align: center;
+            color: white;
+            margin-bottom: 2rem;
+            border-radius: 12px;
+        }
+
+        .intelligence-search-container {
+            max-width: 800px;
+            margin: 0 auto 3rem;
+            position: relative;
+        }
+
+        .intelligence-search-box {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            font-size: 1.2rem;
+            border: 3px solid #c8712d;
+            border-radius: 50px;
+            outline: none;
+            box-shadow: 0 4px 20px rgba(200, 113, 45, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .intelligence-search-box:focus {
+            box-shadow: 0 6px 30px rgba(200, 113, 45, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            z-index: 1000;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .search-suggestion {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s ease;
+        }
+
+        .search-suggestion:hover {
+            background-color: #f8f9fa;
+        }
+
+        .search-suggestion:last-child {
+            border-bottom: none;
+        }
+
+        .quick-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+
+        .quick-action-btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #819f3d, #a0c34a);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .quick-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(129, 159, 61, 0.3);
+        }
+
+        /* Enhanced Player Cards */
+        .player-cards-section {
+            margin: 3rem 0;
+        }
+
+        .persona-selector {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .persona-btn {
+            padding: 0.75rem 1.5rem;
+            border: 2px solid #c8712d;
+            background: white;
+            color: #c8712d;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .persona-btn.active {
+            background: #c8712d;
+            color: white;
+        }
+
+        .persona-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(200, 113, 45, 0.2);
+        }
+
+        .enhanced-player-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .enhanced-player-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border-left: 6px solid;
+        }
+
+        .enhanced-player-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .enhanced-player-card.betting { border-left-color: #c8712d; }
+        .enhanced-player-card.commentary { border-left-color: #002466; }
+        .enhanced-player-card.coaching { border-left-color: #819f3d; }
+        .enhanced-player-card.fantasy { border-left-color: #660003; }
+
+        .card-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(200,113,45,0.1), rgba(200,113,45,0.05));
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-subtitle {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .status-hot { background: rgba(0,255,0,0.1); color: #008000; }
+        .status-steady { background: rgba(255,255,0,0.1); color: #b8860b; }
+        .status-cold { background: rgba(255,0,0,0.1); color: #dc3545; }
+
+        .card-section {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .card-section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 0.75rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .metric-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #c8712d;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+
+        .metric-trend {
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+        }
+
+        .trend-up { color: #28a745; }
+        .trend-down { color: #dc3545; }
+        .trend-stable { color: #6c757d; }
+
+        .recommendations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .recommendation {
+            padding: 0.75rem;
+            background: rgba(200,113,45,0.05);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid #c8712d;
+        }
+
+        .recommendation-type {
+            font-weight: 600;
+            color: #c8712d;
+        }
+
+        .recommendation-reasoning {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+
+        .last-6-balls {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+
+        .ball-outcome {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+
+        .ball-dot { background: #6c757d; }
+        .ball-single { background: #17a2b8; }
+        .ball-boundary { background: #28a745; }
+        .ball-six { background: #dc3545; }
+        .ball-wicket { background: #000; }
+
+        .card-actions {
+            padding: 1rem 1.5rem;
+            background: #f8f9fa;
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .card-action-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #c8712d;
+            background: white;
+            color: #c8712d;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .card-action-btn:hover {
+            background: #c8712d;
+            color: white;
+        }
+
+        .intelligence-response {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .response-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .response-content {
+            line-height: 1.6;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #c8712d;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 4px solid #dc3545;
+        }
+
+        @media (max-width: 768px) {
+            .enhanced-player-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .intelligence-search-container {
+                margin: 0 1rem 2rem;
+            }
+            
+            .quick-actions {
+                padding: 0 1rem;
+            }
+            
+            .persona-selector {
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Enhanced Header -->
+        <div class="intelligence-engine-header">
+            <h1>🧠 Cricket Intelligence Engine</h1>
+            <p>Advanced Analytics • Player Intelligence • Matchup Predictions</p>
+        </div>
+
+        <!-- Intelligence Search -->
+        <div class="intelligence-search-container">
+            <input type="text" 
+                   id="intelligenceSearch" 
+                   class="intelligence-search-box" 
+                   placeholder="Ask anything... 'How does Kohli perform vs spin in death overs?'"
+                   autocomplete="off">
+            <div id="searchSuggestions" class="search-suggestions"></div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="quick-action-btn" onclick="quickSearch('find similar players to Kohli')">
+                👥 Find Similar Players
+            </button>
+            <button class="quick-action-btn" onclick="quickSearch('predict matchup Kohli vs spin')">
+                ⚔️ Predict Matchup
+            </button>
+            <button class="quick-action-btn" onclick="quickSearch('best powerplay batsmen')">
+                ⚡ Powerplay Specialists
+            </button>
+            <button class="quick-action-btn" onclick="quickSearch('death overs finishers')">
+                🎯 Death Overs Finishers
+            </button>
+        </div>
+
+        <!-- Intelligence Response Area -->
+        <div id="intelligenceResponse" class="intelligence-response">
+            <div class="response-header">
+                <span class="response-icon">🧠</span>
+                <h3 id="responseTitle">Cricket Intelligence</h3>
+            </div>
+            <div id="responseContent" class="response-content"></div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Analyzing cricket intelligence...</p>
+        </div>
+
+        <!-- Player Cards Section -->
+        <div class="player-cards-section">
+            <h2 style="text-align: center; margin-bottom: 2rem;">🏏 Player Intelligence Cards</h2>
+            
+            <!-- Persona Selector -->
+            <div class="persona-selector">
+                <button class="persona-btn active" data-persona="betting" onclick="switchPersona('betting')">
+                    🎰 Betting SME
+                </button>
+                <button class="persona-btn" data-persona="commentary" onclick="switchPersona('commentary')">
+                    📺 TV Pundit
+                </button>
+                <button class="persona-btn" data-persona="coaching" onclick="switchPersona('coaching')">
+                    🎯 Coaching Staff
+                </button>
+                <button class="persona-btn" data-persona="fantasy" onclick="switchPersona('fantasy')">
+                    ⚡ Fantasy Team
+                </button>
+            </div>
+
+            <!-- Enhanced Player Cards Grid -->
+            <div id="playerCardsGrid" class="enhanced-player-cards">
+                <!-- Cards will be dynamically loaded here -->
+            </div>
+        </div>
+
+        <!-- Admin Access -->
+        <div style="text-align: center; margin: 3rem 0;">
+            <a href="wicketwise_admin_simple.html" class="quick-action-btn">
+                🔧 Admin Panel
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentPersona = 'betting';
+        let playerSearchCache = new Map();
+        let intelligenceEngine = {
+            searchPlayers: async (query) => {
+                // Simulate player search - in production, this calls the backend
+                const players = [
+                    'V Kohli', 'MS Dhoni', 'AB de Villiers', 'KL Rahul', 
+                    'RG Sharma', 'HH Pandya', 'JC Buttler', 'DA Warner'
+                ];
+                return players.filter(p => p.toLowerCase().includes(query.toLowerCase()));
+            },
+            processQuery: async (query) => {
+                // Simulate intelligence processing
+                return {
+                    response: `Intelligence analysis for: "${query}"`,
+                    insights: ['Key insight 1', 'Key insight 2', 'Key insight 3'],
+                    confidence: 0.85
+                };
+            }
+        };
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeIntelligenceEngine();
+            loadPlayerCards(currentPersona);
+            setupSearchFunctionality();
+        });
+
+        function initializeIntelligenceEngine() {
+            console.log('🧠 Initializing Cricket Intelligence Engine...');
+            
+            // Setup search suggestions
+            const searchBox = document.getElementById('intelligenceSearch');
+            const suggestions = document.getElementById('searchSuggestions');
+            
+            searchBox.addEventListener('input', debounce(handleSearchInput, 300));
+            searchBox.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    processIntelligenceQuery(this.value);
+                }
+            });
+            
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchBox.contains(e.target) && !suggestions.contains(e.target)) {
+                    suggestions.style.display = 'none';
+                }
+            });
+        }
+
+        async function handleSearchInput(event) {
+            const query = event.target.value.trim();
+            const suggestions = document.getElementById('searchSuggestions');
+            
+            if (query.length < 2) {
+                suggestions.style.display = 'none';
+                return;
+            }
+            
+            try {
+                // Get player suggestions
+                const players = await intelligenceEngine.searchPlayers(query);
+                
+                // Generate smart suggestions
+                const smartSuggestions = generateSmartSuggestions(query, players);
+                
+                displaySearchSuggestions(smartSuggestions);
+                
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+        }
+
+        function generateSmartSuggestions(query, players) {
+            const suggestions = [];
+            
+            // Player-specific suggestions
+            players.slice(0, 3).forEach(player => {
+                suggestions.push({
+                    text: `${player} performance analysis`,
+                    type: 'player',
+                    action: () => processIntelligenceQuery(`Analyze ${player} performance`)
+                });
+                
+                suggestions.push({
+                    text: `Find players similar to ${player}`,
+                    type: 'similarity',
+                    action: () => processIntelligenceQuery(`Find similar players to ${player}`)
+                });
+            });
+            
+            // Context-aware suggestions
+            if (query.toLowerCase().includes('vs') || query.toLowerCase().includes('against')) {
+                suggestions.push({
+                    text: `${query} - Matchup prediction`,
+                    type: 'matchup',
+                    action: () => processIntelligenceQuery(`Predict matchup: ${query}`)
+                });
+            }
+            
+            return suggestions.slice(0, 6);
+        }
+
+        function displaySearchSuggestions(suggestions) {
+            const container = document.getElementById('searchSuggestions');
+            
+            if (suggestions.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.innerHTML = suggestions.map(suggestion => 
+                `<div class="search-suggestion" onclick="handleSuggestionClick('${suggestion.text}')">
+                    <div style="font-weight: 500;">${suggestion.text}</div>
+                    <div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem;">${suggestion.type}</div>
+                </div>`
+            ).join('');
+            
+            container.style.display = 'block';
+        }
+
+        function handleSuggestionClick(suggestionText) {
+            document.getElementById('intelligenceSearch').value = suggestionText;
+            document.getElementById('searchSuggestions').style.display = 'none';
+            processIntelligenceQuery(suggestionText);
+        }
+
+        async function processIntelligenceQuery(query) {
+            if (!query.trim()) return;
+            
+            console.log('🔍 Processing query:', query);
+            
+            // Show loading
+            showLoading();
+            hideIntelligenceResponse();
+            
+            try {
+                // Simulate API call to Cricket Intelligence Engine
+                await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate processing time
+                
+                const response = await intelligenceEngine.processQuery(query);
+                displayIntelligenceResponse(query, response);
+                
+            } catch (error) {
+                console.error('Intelligence processing error:', error);
+                displayErrorResponse(query, error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayIntelligenceResponse(query, response) {
+            const responseDiv = document.getElementById('intelligenceResponse');
+            const titleDiv = document.getElementById('responseTitle');
+            const contentDiv = document.getElementById('responseContent');
+            
+            titleDiv.textContent = `Analysis: "${query}"`;
+            
+            contentDiv.innerHTML = `
+                <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <h4 style="margin: 0 0 1rem 0; color: #c8712d;">🎯 Intelligence Summary</h4>
+                    <p style="margin: 0; line-height: 1.6;">${response.response}</p>
+                    <div style="margin-top: 1rem; font-size: 0.9rem; color: #666;">
+                        Confidence: <strong>${Math.round(response.confidence * 100)}%</strong>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 style="margin: 0 0 1rem 0; color: #002466;">🔍 Key Insights</h4>
+                    <ul style="margin: 0; padding-left: 1.5rem;">
+                        ${response.insights.map(insight => `<li style="margin-bottom: 0.5rem;">${insight}</li>`).join('')}
+                    </ul>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <button class="card-action-btn" onclick="exploreDeeper('${query}')">
+                        🔬 Explore Deeper
+                    </button>
+                    <button class="card-action-btn" onclick="comparePlayers('${query}')">
+                        ⚖️ Compare Players
+                    </button>
+                    <button class="card-action-btn" onclick="generateReport('${query}')">
+                        📊 Generate Report
+                    </button>
+                </div>
+            `;
+            
+            responseDiv.style.display = 'block';
+            responseDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function displayErrorResponse(query, error) {
+            const responseDiv = document.getElementById('intelligenceResponse');
+            const titleDiv = document.getElementById('responseTitle');
+            const contentDiv = document.getElementById('responseContent');
+            
+            titleDiv.textContent = 'Analysis Error';
+            contentDiv.innerHTML = `
+                <div class="error-message">
+                    <h4 style="margin: 0 0 0.5rem 0;">❌ Unable to process query</h4>
+                    <p style="margin: 0 0 1rem 0;">Query: "${query}"</p>
+                    <p style="margin: 0; font-size: 0.9rem;">Error: ${error}</p>
+                </div>
+                <p>Please try:</p>
+                <ul>
+                    <li>Rephrasing your question</li>
+                    <li>Using specific player names</li>
+                    <li>Checking spelling</li>
+                </ul>
+            `;
+            
+            responseDiv.style.display = 'block';
+        }
+
+        function showLoading() {
+            document.getElementById('loadingSpinner').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+
+        function showIntelligenceResponse() {
+            document.getElementById('intelligenceResponse').style.display = 'block';
+        }
+
+        function hideIntelligenceResponse() {
+            document.getElementById('intelligenceResponse').style.display = 'none';
+        }
+
+        function quickSearch(query) {
+            document.getElementById('intelligenceSearch').value = query;
+            processIntelligenceQuery(query);
+        }
+
+        function switchPersona(persona) {
+            currentPersona = persona;
+            
+            // Update UI
+            document.querySelectorAll('.persona-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-persona="${persona}"]`).classList.add('active');
+            
+            // Reload cards
+            loadPlayerCards(persona);
+        }
+
+        async function loadPlayerCards(persona) {
+            console.log(`🎴 Loading ${persona} player cards...`);
+            
+            const grid = document.getElementById('playerCardsGrid');
+            grid.innerHTML = '<div style="text-align: center; padding: 2rem; color: #666;">Loading player cards...</div>';
+            
+            try {
+                // Simulate loading player cards
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const cards = generateSamplePlayerCards(persona);
+                displayPlayerCards(cards);
+                
+            } catch (error) {
+                console.error('Error loading player cards:', error);
+                grid.innerHTML = '<div class="error-message">Failed to load player cards</div>';
+            }
+        }
+
+        function generateSamplePlayerCards(persona) {
+            const players = [
+                { name: 'V Kohli', role: 'Top-order Batsman', avg: 42.5, sr: 135 },
+                { name: 'MS Dhoni', role: 'Wicket-keeper Batsman', avg: 38.2, sr: 142 },
+                { name: 'AB de Villiers', role: 'Middle-order Batsman', avg: 45.8, sr: 158 },
+                { name: 'KL Rahul', role: 'Opening Batsman', avg: 41.2, sr: 128 },
+                { name: 'RG Sharma', role: 'Opening Batsman', avg: 39.8, sr: 124 },
+                { name: 'HH Pandya', role: 'All-rounder', avg: 28.5, sr: 148 }
+            ];
+            
+            return players.map(player => generatePlayerCard(player, persona));
+        }
+
+        function generatePlayerCard(player, persona) {
+            const cardData = {
+                name: player.name,
+                role: player.role,
+                persona: persona,
+                stats: {
+                    average: player.avg,
+                    strikeRate: player.sr,
+                    formRating: (Math.random() * 3 + 7).toFixed(1),
+                    trend: Math.random() > 0.5 ? 'up' : 'stable'
+                },
+                liveData: {
+                    lastMatch: Math.floor(Math.random() * 50 + 20),
+                    last6Balls: generateLast6Balls(),
+                    partnership: Math.floor(Math.random() * 60 + 15)
+                }
+            };
+            
+            return cardData;
+        }
+
+        function generateLast6Balls() {
+            const outcomes = ['1', '2', '4', '6', '.', 'W'];
+            return Array.from({length: 6}, () => outcomes[Math.floor(Math.random() * outcomes.length)]);
+        }
+
+        function displayPlayerCards(cards) {
+            const grid = document.getElementById('playerCardsGrid');
+            
+            grid.innerHTML = cards.map(card => createPlayerCardHTML(card)).join('');
+        }
+
+        function createPlayerCardHTML(card) {
+            const personaConfig = getPersonaConfig(card.persona);
+            const trendClass = card.stats.trend === 'up' ? 'trend-up' : 'trend-stable';
+            
+            return `
+                <div class="enhanced-player-card ${card.persona}">
+                    <div class="card-header">
+                        <div class="card-title">
+                            ${personaConfig.icon} ${card.name} - ${personaConfig.title}
+                        </div>
+                        <div class="card-subtitle">${card.role} • Right-handed • Aggressive</div>
+                        <div class="status-indicator status-${card.stats.trend}">
+                            ${card.stats.trend === 'up' ? '🔥' : '⚡'} ${card.stats.trend === 'up' ? 'Hot Form' : 'Steady'}
+                        </div>
+                    </div>
+                    
+                    <div class="card-section">
+                        <div class="section-title">📈 Current Form</div>
+                        <div class="metrics-grid">
+                            <div class="metric">
+                                <div class="metric-value">${card.stats.average}</div>
+                                <div class="metric-label">Average</div>
+                                <div class="metric-trend ${trendClass}">+12% vs season</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-value">${card.stats.strikeRate}</div>
+                                <div class="metric-label">Strike Rate</div>
+                                <div class="metric-trend ${trendClass}">Above par</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-value">${card.stats.formRating}/10</div>
+                                <div class="metric-label">Form Rating</div>
+                                <div class="metric-trend ${trendClass}">Peak form</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${generatePersonaSpecificSections(card)}
+                    
+                    <div class="card-section">
+                        <div class="section-title">🔴 Live Context</div>
+                        <div style="margin-bottom: 1rem;">
+                            <strong>Last Match:</strong> ${card.liveData.lastMatch} runs (35 balls)
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <strong>Last 6 Balls:</strong>
+                            <div class="last-6-balls">
+                                ${card.liveData.last6Balls.map(ball => 
+                                    `<div class="ball-outcome ${getBallClass(ball)}">${ball}</div>`
+                                ).join('')}
+                            </div>
+                        </div>
+                        <div>
+                            <strong>Current Partnership:</strong> ${card.liveData.partnership} runs (28 balls)
+                        </div>
+                    </div>
+                    
+                    <div class="card-actions">
+                        <button class="card-action-btn" onclick="analyzePlayer('${card.name}')">
+                            🔍 Detailed Analysis
+                        </button>
+                        <button class="card-action-btn" onclick="findSimilarPlayers('${card.name}')">
+                            👥 Similar Players
+                        </button>
+                        <button class="card-action-btn" onclick="predictMatchup('${card.name}')">
+                            ⚔️ Predict Matchup
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getPersonaConfig(persona) {
+            const configs = {
+                betting: { icon: '🎰', title: 'Betting Intelligence' },
+                commentary: { icon: '📺', title: 'Commentary Insights' },
+                coaching: { icon: '🎯', title: 'Tactical Analysis' },
+                fantasy: { icon: '⚡', title: 'Fantasy Intelligence' }
+            };
+            return configs[persona] || configs.betting;
+        }
+
+        function generatePersonaSpecificSections(card) {
+            switch(card.persona) {
+                case 'betting':
+                    return `
+                        <div class="card-section">
+                            <div class="section-title">💰 Value Opportunities</div>
+                            <div class="recommendations-list">
+                                <div class="recommendation">
+                                    <div class="recommendation-type">Runs Over 30.5</div>
+                                    <div class="recommendation-reasoning">Strong vs spin, venue advantage</div>
+                                </div>
+                                <div class="recommendation">
+                                    <div class="recommendation-type">Boundaries 4+</div>
+                                    <div class="recommendation-reasoning">Aggressive approach in powerplay</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                case 'commentary':
+                    return `
+                        <div class="card-section">
+                            <div class="section-title">🎙️ Key Talking Points</div>
+                            <ul style="margin: 0; padding-left: 1.5rem;">
+                                <li>Master of timing and placement</li>
+                                <li>300 runs away from milestone</li>
+                                <li>Excellent record vs this opposition</li>
+                            </ul>
+                        </div>
+                    `;
+                case 'coaching':
+                    return `
+                        <div class="card-section">
+                            <div class="section-title">📋 Tactical Recommendations</div>
+                            <div style="margin-bottom: 1rem;">
+                                <strong>Strengths:</strong> Strong against pace, excellent in powerplay
+                            </div>
+                            <div>
+                                <strong>Strategy:</strong> Target with short ball early, bowl wide outside off
+                            </div>
+                        </div>
+                    `;
+                case 'fantasy':
+                    return `
+                        <div class="card-section">
+                            <div class="section-title">🎯 Points Forecast</div>
+                            <div class="metrics-grid">
+                                <div class="metric">
+                                    <div class="metric-value">67</div>
+                                    <div class="metric-label">Expected Points</div>
+                                    <div class="metric-trend trend-up">85% confidence</div>
+                                </div>
+                                <div class="metric">
+                                    <div class="metric-value">8.2/10</div>
+                                    <div class="metric-label">Captain Rating</div>
+                                    <div class="metric-trend trend-up">High floor</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                default:
+                    return '';
+            }
+        }
+
+        function getBallClass(ball) {
+            switch(ball) {
+                case '.': return 'ball-dot';
+                case '1': case '2': case '3': return 'ball-single';
+                case '4': return 'ball-boundary';
+                case '6': return 'ball-six';
+                case 'W': return 'ball-wicket';
+                default: return 'ball-dot';
+            }
+        }
+
+        // Card action handlers
+        function analyzePlayer(playerName) {
+            processIntelligenceQuery(`Analyze ${playerName} comprehensive performance`);
+        }
+
+        function findSimilarPlayers(playerName) {
+            processIntelligenceQuery(`Find players similar to ${playerName}`);
+        }
+
+        function predictMatchup(playerName) {
+            processIntelligenceQuery(`Predict ${playerName} performance vs spin bowling`);
+        }
+
+        function exploreDeeper(query) {
+            processIntelligenceQuery(`Detailed analysis: ${query}`);
+        }
+
+        function comparePlayers(query) {
+            processIntelligenceQuery(`Compare players mentioned in: ${query}`);
+        }
+
+        function generateReport(query) {
+            processIntelligenceQuery(`Generate comprehensive report for: ${query}`);
+        }
+
+        // Utility functions
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Setup search functionality
+        function setupSearchFunctionality() {
+            console.log('🔍 Search functionality initialized');
+        }
+
+        console.log('🚀 WicketWise Enhanced Dashboard loaded successfully!');
+    </script>
+</body>
+</html>

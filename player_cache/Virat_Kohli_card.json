@@ -1,0 +1,83 @@
+{
+  "player_name": "Virat Kohli",
+  "unique_name": "Virat Kohli",
+  "identifier": "d7b25335",
+  "batting_avg": 54.2,
+  "strike_rate": 113.2,
+  "recent_form": "Exceptional Form",
+  "form_rating": 8.6,
+  "powerplay_sr": 149.0,
+  "death_overs_sr": 133.2,
+  "vs_pace_avg": 41.7,
+  "vs_spin_avg": 34.6,
+  "pressure_rating": 7.0,
+  "last_5_games": [
+    {
+      "score": "23",
+      "opponent": "GT",
+      "date": "Aug 16, 2025",
+      "performance": "average"
+    },
+    {
+      "score": "71",
+      "opponent": "DC",
+      "date": "Aug 12, 2025",
+      "performance": "excellent"
+    },
+    {
+      "score": "28",
+      "opponent": "CSK",
+      "date": "Aug 08, 2025",
+      "performance": "average"
+    },
+    {
+      "score": "62",
+      "opponent": "PBKS",
+      "date": "Aug 04, 2025",
+      "performance": "excellent"
+    },
+    {
+      "score": "33",
+      "opponent": "CSK",
+      "date": "Jul 31, 2025",
+      "performance": "average"
+    }
+  ],
+  "current_match_status": "Fielding",
+  "last_6_balls": [
+    "1",
+    "1",
+    ".",
+    "W",
+    "0",
+    "W"
+  ],
+  "current_partnership": {
+    "partner": null,
+    "runs": 0,
+    "balls": 0
+  },
+  "betting_odds": {
+    "market_odds": 2.47,
+    "model_odds": 1.36,
+    "expected_value": 81.6
+  },
+  "value_opportunities": [
+    {
+      "market": "Runs Over 30.5",
+      "market_odds": 2.47,
+      "model_odds": 1.36,
+      "expected_value": 81.6,
+      "confidence": 90
+    }
+  ],
+  "profile_image_url": "https://via.placeholder.com/150x150?text=Virat+Kohli&bg=1f2937&color=ffffff",
+  "profile_image_cached": false,
+  "last_updated": "2025-08-19T12:47:41.399637",
+  "data_sources": [
+    "KG",
+    "GNN",
+    "Mock_Live",
+    "OpenAI_Images"
+  ]
+}

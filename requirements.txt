@@ -15,4 +15,4 @@ openai>=1.0.0
 flask
 flask-cors
 pydantic
-python-Levenshtein
+python-Levenshteinpython-dotenv==1.0.0

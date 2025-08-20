@@ -14,6 +14,14 @@ import logging
 import threading
 import time
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    print("✅ Loaded environment variables from .env file")
+except ImportError:
+    print("⚠️  python-dotenv not installed - using system environment variables only")
+
 # Import configuration
 from config.settings import settings
 
@@ -55,66 +63,78 @@ def health_check():
 
 @app.route('/api/build-knowledge-graph', methods=['POST'])
 def build_knowledge_graph():
-    """Build cricket knowledge graph using real EnhancedGraphBuilder"""
-    
-    # Get dataset source from request
-    data = request.get_json() or {}
-    dataset_source = data.get('dataset_source')  # Will be None if not provided, uses configured default
+    """Mapped to unified KG build to avoid legacy/cached aggregates"""
 
     def run_build():
-        """Background task to build knowledge graph"""
         operation_id = "knowledge_graph_build"
-
         try:
             background_operations[operation_id] = {
                 "status": "running",
-                "progress": 0,
-                "message": "Starting knowledge graph build...",
-                "logs": []
+                "progress": 10,
+                "message": "Initializing unified KG builder...",
+                "logs": ["🚀 Starting unified knowledge graph construction..."],
+                "_last_log": ""
             }
 
-            # Stage: schema resolution (UI hint only; actual resolution occurs inside pipeline)
-            background_operations[operation_id]["progress"] = 5
-            background_operations[operation_id]["message"] = "Resolving schema..."
-            background_operations[operation_id]["logs"].append("Resolving dataset schema and aliases...")
-            time.sleep(0.5)
+            def cb(stage: str, message: str, progress: int, details: dict):
+                try:
+                    background_operations[operation_id]["message"] = message
+                    background_operations[operation_id]["progress"] = max(background_operations[operation_id]["progress"], int(progress))
+                    log_line = f"[{stage}] {message}"
+                    # de-duplicate consecutive identical log lines
+                    last_log = background_operations[operation_id].get("_last_log")
+                    if log_line != last_log:
+                        background_operations[operation_id]["logs"].append(log_line)
+                        background_operations[operation_id]["_last_log"] = log_line
+                    # keep last 200 logs max to avoid memory bloat
+                    if len(background_operations[operation_id]["logs"]) > 200:
+                        background_operations[operation_id]["logs"] = background_operations[operation_id]["logs"][-200:]
+                    # attach details snapshot
+                    background_operations[operation_id]["details"] = details or {}
+                except Exception:
+                    pass
 
-            # Stage: aggregations
-            background_operations[operation_id]["progress"] = 20
-            background_operations[operation_id]["message"] = "Aggregating relationships (chunked)..."
-            background_operations[operation_id]["logs"].append("Running vectorized group-bys over chunks...")
-            time.sleep(0.5)
+            def should_cancel():
+                return background_operations.get(operation_id, {}).get("status") == "canceled"
 
-            # Stage: cache write
-            background_operations[operation_id]["progress"] = 60
-            background_operations[operation_id]["message"] = "Writing aggregate cache..."
-            background_operations[operation_id]["logs"].append("Caching aggregates to models/aggregates ...")
-            time.sleep(0.5)
+            # Wrap callback to add running counts for UI
+            balls_total = {"value": 0}
+            def cb_with_counts(stage: str, message: str, progress: int, details: dict):
+                if stage == 'load_data' and isinstance(details, dict) and 'balls' in details:
+                    balls_total['value'] = int(details['balls'])
+                # forward original callback first
+                cb(stage, message, progress, details)
+                # enrich details with processed/total where applicable
+                if stage.startswith('ball_events') and balls_total['value']:
+                    current = background_operations[operation_id].get('details', {})
+                    current['balls'] = balls_total['value']
+                    background_operations[operation_id]['details'] = current
 
-            # Stage: assemble graph
-            background_operations[operation_id]["progress"] = 80
-            background_operations[operation_id]["message"] = "Assembling NetworkX graph..."
-            background_operations[operation_id]["logs"].append("Constructing nodes and edges from aggregates...")
+            result = get_admin_tools_instance().build_unified_knowledge_graph(progress_callback=cb_with_counts, should_cancel=should_cancel)
 
-            result = get_admin_tools_instance().build_knowledge_graph(dataset_source)
-
-            # Final
-            background_operations[operation_id]["progress"] = 100
-            if result.startswith("✅"):
-                background_operations[operation_id]["status"] = "completed"
-                # Show final node/edge counts directly in message for the UI header
-                background_operations[operation_id]["message"] = result
-                background_operations[operation_id]["logs"].append(result)
+            if result.get('status') == 'success':
+                details = result.get('details', {})
+                background_operations[operation_id].update({
+                    "status": "completed",
+                    "progress": 100,
+                    "message": f"Unified KG built: {details.get('players', 0):,} players, {details.get('balls_processed', 0):,} balls, {details.get('venues', 0)} venues",
+                    "result": result
+                })
+                background_operations[operation_id]["logs"].append("✅ Unified KG build completed successfully")
             else:
-                background_operations[operation_id]["status"] = "error"
-                background_operations[operation_id]["message"] = "Knowledge graph build failed"
-                background_operations[operation_id]["logs"].append(f"Error: {result}")
+                background_operations[operation_id].update({
+                    "status": "error",
+                    "message": result.get('message', 'Unified KG build failed')
+                })
+                background_operations[operation_id]["logs"].append(f"❌ {background_operations[operation_id]['message']}")
 
         except Exception as e:
-            background_operations[operation_id]["status"] = "error"
-            background_operations[operation_id]["message"] = "Knowledge graph build failed"
-            background_operations[operation_id]["logs"].append(f"Exception: {str(e)}")
-            logger.error(f"Knowledge graph building failed: {str(e)}")
+            background_operations[operation_id].update({
+                "status": "error",
+                "message": f"Unified KG build failed: {str(e)}"
+            })
+            background_operations[operation_id]["logs"].append(f"❌ Exception: {str(e)}")
+            logger.error(f"Unified KG build failed: {str(e)}")
 
     # Start background task
     thread = threading.Thread(target=run_build)
@@ -122,6 +142,89 @@ def build_knowledge_graph():
     thread.start()
 
     return jsonify({"status": "started", "operation_id": "knowledge_graph_build"})
+
+@app.route('/api/build-unified-knowledge-graph', methods=['POST'])
+def build_unified_knowledge_graph():
+    """Build the unified knowledge graph with ball-by-ball granularity"""
+    
+    def run_unified_build():
+        """Background task to build unified knowledge graph"""
+        operation_id = "unified_kg_build"
+        
+        try:
+            background_operations[operation_id] = {
+                "status": "running",
+                "progress": 0,
+                "message": "Starting unified knowledge graph build...",
+                "logs": ["🚀 Starting unified knowledge graph construction..."],
+                "_last_log": ""
+            }
+            
+            # Stage 1: Initialize
+            background_operations[operation_id]["progress"] = 10
+            background_operations[operation_id]["message"] = "Initializing unified KG builder..."
+            
+            admin_tools = get_admin_tools_instance()
+
+            def cb(stage: str, message: str, progress: int, details: dict):
+                try:
+                    background_operations[operation_id]["message"] = message
+                    background_operations[operation_id]["progress"] = max(background_operations[operation_id]["progress"], int(progress))
+                    log_line = f"[{stage}] {message}"
+                    last_log = background_operations[operation_id].get("_last_log")
+                    if log_line != last_log:
+                        background_operations[operation_id]["logs"].append(log_line)
+                        background_operations[operation_id]["_last_log"] = log_line
+                    if len(background_operations[operation_id]["logs"]) > 200:
+                        background_operations[operation_id]["logs"] = background_operations[operation_id]["logs"][-200:]
+                    background_operations[operation_id]["details"] = details or {}
+                except Exception:
+                    pass
+
+            def should_cancel():
+                return background_operations.get(operation_id, {}).get("status") == "canceled"
+
+            result = admin_tools.build_unified_knowledge_graph(progress_callback=cb, should_cancel=should_cancel)
+            
+            if result['status'] == 'success':
+                # Success
+                background_operations[operation_id]["status"] = "completed"
+                background_operations[operation_id]["progress"] = 100
+                background_operations[operation_id]["message"] = result['message']
+                background_operations[operation_id]["result"] = result
+                background_operations[operation_id]["logs"].append(f"✅ {result['message']}")
+                background_operations[operation_id]["logs"].append(f"📊 {result['details']['players']:,} players processed")
+                background_operations[operation_id]["logs"].append(f"⚾ {result['details']['balls_processed']:,} balls preserved")
+                background_operations[operation_id]["logs"].append(f"🏟️ {result['details']['venues']:,} venues analyzed")
+            else:
+                # Error
+                background_operations[operation_id]["status"] = "error"
+                background_operations[operation_id]["message"] = result['message']
+                background_operations[operation_id]["logs"].append(f"❌ {result['message']}")
+                
+        except Exception as e:
+            background_operations[operation_id]["status"] = "error"
+            background_operations[operation_id]["message"] = f"Unified KG build failed: {str(e)}"
+            background_operations[operation_id]["logs"].append(f"❌ Error: {str(e)}")
+    
+    # Start background task
+    thread = threading.Thread(target=run_unified_build)
+    thread.daemon = True
+    thread.start()
+    
+    return jsonify({"status": "started", "operation_id": "unified_kg_build"})
+
+@app.route('/api/cancel-operation/<operation_id>', methods=['POST'])
+def cancel_operation(operation_id):
+    """Mark a background operation as canceled (best-effort)."""
+    if operation_id not in background_operations:
+        return jsonify({"error": "Operation not found"}), 404
+    if background_operations[operation_id].get("status") in {"completed", "error"}:
+        return jsonify({"status": background_operations[operation_id]["status"], "message": "Already finished"})
+    background_operations[operation_id]["status"] = "canceled"
+    background_operations[operation_id]["message"] = "Cancellation requested"
+    background_operations[operation_id].setdefault("logs", []).append("🛑 Cancellation requested")
+    return jsonify({"status": "canceled"})
 
 @app.route('/api/operation-status/<operation_id>', methods=['GET'])
 def get_operation_status(operation_id):
@@ -606,6 +709,7 @@ if __name__ == '__main__':
     print("API Endpoints:")
     print("  GET  /api/health - Health check")
     print("  POST /api/build-knowledge-graph - Build knowledge graph")
+    print("  POST /api/build-unified-knowledge-graph - Build unified knowledge graph")
     print("  POST /api/train-model - Train AI model") 
     print("  GET  /api/operation-status/<id> - Get operation status")
     print("  GET  /api/system-status - Get system status")

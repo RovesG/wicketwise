@@ -7,7 +7,7 @@ import torch
 import pickle
 import logging
 import json
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Callable
 from pathlib import Path
 
 # Import configuration
@@ -482,6 +482,93 @@ class AdminTools:
         except Exception as e:
             logger.error(f"Knowledge graph building failed: {str(e)}")
             return f"❌ Knowledge graph building failed: {str(e)}"
+    
+    def build_unified_knowledge_graph(
+        self,
+        progress_callback: Optional[Callable[[str, str, int, Dict[str, Any]], None]] = None,
+        should_cancel: Optional[Callable[[], bool]] = None,
+    ) -> Dict[str, Any]:
+        """Build the unified cricket knowledge graph with ball-by-ball granularity"""
+        try:
+            logger.info("🚀 Starting unified knowledge graph construction...")
+            
+            # Import the unified KG builder
+            from crickformers.gnn.unified_kg_builder import UnifiedKGBuilder
+            
+            # Initialize builder
+            builder = UnifiedKGBuilder(str(self.data_dir))
+            
+            # Check if data files exist (optional - will auto-detect available data)
+            nvplay_exists = self.nvplay_data_path.exists()
+            decimal_exists = self.decimal_data_path.exists()
+            
+            # Build the unified knowledge graph
+            logger.info("📊 Processing available cricket data for unified graph...")
+            graph = builder.build_from_available_data(progress_callback=progress_callback, should_cancel=should_cancel)
+            
+            # Save the unified graph
+            unified_kg_path = self.models_dir / "unified_cricket_kg.pkl"
+            builder.save_graph(str(unified_kg_path))
+            
+            # Save player profiles for analysis
+            profiles_path = self.reports_dir / "unified_player_profiles.json"
+            profiles_path.parent.mkdir(exist_ok=True)
+            builder.save_player_profiles(str(profiles_path))
+            
+            result = {
+                "status": "success",
+                "message": "Unified knowledge graph built successfully",
+                "graph_type": "unified_cricket_kg_v2",
+                "details": {
+                    "total_nodes": graph.number_of_nodes(),
+                    "total_edges": graph.number_of_edges(),
+                    "players": builder.stats['total_players'],
+                    "balls_processed": builder.stats['total_balls'],
+                    "matches": builder.stats['total_matches'],
+                    "venues": builder.stats['total_venues'],
+                    "processing_time": f"{builder.stats['processing_time']:.1f} seconds",
+                    "capabilities": [
+                        "Unified player profiles (batting + bowling + fielding)",
+                        "Situational analysis (vs spinners, death overs, powerplay)",
+                        "Ball-by-ball event preservation",
+                        "Venue-specific performance tracking",
+                        "Advanced cricket analytics",
+                        "Multi-dimensional player comparisons"
+                    ],
+                    "data_sources": [
+                        f"Ball-by-ball data: {self.nvplay_data_path.name}" if nvplay_exists else "Not available",
+                        f"Betting odds data: {self.decimal_data_path.name}" if decimal_exists else "Not available"
+                    ],
+                    "output_files": [
+                        str(unified_kg_path),
+                        str(profiles_path)
+                    ]
+                }
+            }
+            
+            logger.info("✅ Unified knowledge graph construction completed")
+            logger.info(f"   📊 {result['details']['players']:,} players with complete profiles")
+            logger.info(f"   ⚾ {result['details']['balls_processed']:,} ball events preserved")
+            logger.info(f"   🏟️ {result['details']['venues']:,} venues with performance data")
+            
+            return result
+            
+        except ImportError as e:
+            error_msg = f"Failed to import unified KG builder: {str(e)}"
+            logger.error(error_msg)
+            return {
+                "status": "error",
+                "message": error_msg,
+                "suggestion": "Please ensure the unified KG system is properly installed"
+            }
+        except Exception as e:
+            error_msg = f"Unified knowledge graph construction failed: {str(e)}"
+            logger.error(error_msg)
+            return {
+                "status": "error",
+                "message": error_msg,
+                "details": str(e)
+            }
     
     def train_model(self) -> str:
         """

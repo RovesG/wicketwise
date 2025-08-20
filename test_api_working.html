@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - MS Dhoni</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-4">🧪 API Test - MS Dhoni</h1>
+        
+        <button id="testBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+            Test API for MS Dhoni
+        </button>
+        
+        <div id="results" class="mt-6 p-4 bg-white rounded shadow hidden">
+            <h2 class="text-xl font-bold mb-2">Results:</h2>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            const resultsDiv = document.getElementById('results');
+            const contentDiv = document.getElementById('resultContent');
+            
+            try {
+                console.log('🧪 Testing API...');
+                
+                const response = await fetch('http://127.0.0.1:5004/api/cards/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        player_name: 'MS Dhoni',
+                        persona: 'betting'
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('🔍 API Response:', data);
+                
+                let html = `
+                    <div class="space-y-2">
+                        <p><strong>Success:</strong> ${data.success}</p>
+                        <p><strong>Real Data Used:</strong> ${data.real_data_used}</p>
+                        <p><strong>Data Sources:</strong> ${JSON.stringify(data.card_data?.data_sources || [])}</p>
+                        <p><strong>Matches Played:</strong> ${data.card_data?.matches_played || 'N/A'}</p>
+                        <p><strong>Teams:</strong> ${JSON.stringify(data.card_data?.teams || [])}</p>
+                        <p><strong>Image URL:</strong> <a href="${data.card_data?.profile_image_url}" target="_blank" class="text-blue-500">${data.card_data?.profile_image_url?.substring(0, 50)}...</a></p>
+                `;
+                
+                if (data.real_data_used && data.card_data?.data_sources?.includes('Real_KG_Data')) {
+                    html += `<div class="bg-green-100 text-green-800 p-2 rounded mt-2">🟢 SUCCESS: This should show GREEN badge!</div>`;
+                } else {
+                    html += `<div class="bg-orange-100 text-orange-800 p-2 rounded mt-2">🟠 Still using mock data</div>`;
+                }
+                
+                html += `</div>`;
+                contentDiv.innerHTML = html;
+                resultsDiv.classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                contentDiv.innerHTML = `<div class="text-red-600">Error: ${error.message}</div>`;
+                resultsDiv.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
