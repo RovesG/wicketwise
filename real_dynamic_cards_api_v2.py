@@ -50,22 +50,86 @@ def initialize_systems():
     except Exception as e:
         logger.error(f"❌ Failed to initialize GNN: {e}")
 
-def get_player_image_url(player_name):
-    """Get a better image URL for the player"""
-    # Map of known players to actual cricket images
-    player_images = {
-        'Virat Kohli': 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=150&h=150&fit=crop&crop=face&auto=format&q=80',
-        'V Kohli': 'https://images.unsplash.com/photo-1544966503-7cc5ac882d5f?w=150&h=150&fit=crop&crop=face&auto=format&q=80',
-        'MS Dhoni': 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=150&h=150&fit=crop&crop=face&auto=format&q=80',
-        'Rohit Sharma': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=150&h=150&fit=crop&crop=face&auto=format&q=80',
-        'R Sharma': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=150&h=150&fit=crop&crop=face&auto=format&q=80',
-        'KL Rahul': 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=150&h=150&fit=crop&crop=face&auto=format&q=80',
-        'Hardik Pandya': 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=150&h=150&fit=crop&crop=face&auto=format&q=80',
+def get_player_image_url(player_name, teams=None):
+    """Get a cricket-themed image URL for the player with team colors"""
+    
+    # Clean player name for URL encoding
+    clean_name = player_name.replace(' ', '+').replace("'", "").replace('.', '')
+    
+    # Team color mappings for major cricket teams
+    team_colors = {
+        'Chennai Super Kings': 'fbbf24',      # CSK Yellow
+        'Mumbai Indians': '1e40af',           # MI Blue
+        'Royal Challengers Bangalore': 'dc2626',  # RCB Red
+        'Royal Challengers Bengaluru': 'dc2626',  # RCB Red (new name)
+        'Kolkata Knight Riders': '7c3aed',   # KKR Purple
+        'Delhi Capitals': '1e40af',           # DC Blue
+        'Rajasthan Royals': 'ec4899',         # RR Pink
+        'Sunrisers Hyderabad': 'ea580c',     # SRH Orange
+        'Punjab Kings': 'dc2626',             # PBKS Red
+        'Gujarat Titans': '1e40af',           # GT Blue
+        'Lucknow Super Giants': '06b6d4',     # LSG Cyan
+        'India': '1e40af',                    # India Blue
+        'Australia': 'fbbf24',                # Australia Gold
+        'England': 'dc2626',                  # England Red
+        'South Africa': '059669',             # SA Green
+        'Pakistan': '059669',                 # Pakistan Green
+        'West Indies': '7c2d12',              # WI Maroon
+        'New Zealand': '000000',              # NZ Black
+        'Sri Lanka': '1e40af',                # SL Blue
+        'Bangladesh': '059669',               # BD Green
     }
     
-    # Return specific image if available, otherwise use a reliable placeholder
-    return player_images.get(player_name, 
-        f"https://ui-avatars.com/api/?name={player_name.replace(' ', '+')}&background=0d47a1&color=fff&size=150")
+    # Get team-specific color
+    bg_color = '1e40af'  # Default cricket blue
+    if teams and len(teams) > 0:
+        # Use the first team's color
+        primary_team = teams[0]
+        bg_color = team_colors.get(primary_team, '1e40af')
+    
+    # Generate cricket-themed avatar with team colors
+    return (f"https://ui-avatars.com/api/"
+           f"?name={clean_name}"
+           f"&background={bg_color}"
+           f"&color=fff"
+           f"&size=150"
+           f"&font-size=0.4"
+           f"&format=png"
+           f"&rounded=true"
+           f"&bold=true")
+
+def get_openai_player_image(player_name):
+    """
+    Future: Use OpenAI to search for cricket player images
+    This would require OpenAI API key and proper image search integration
+    """
+    # TODO: Implement OpenAI image search
+    # Example prompt: f"Find a professional headshot photo of cricket player {player_name}"
+    # This would use OpenAI's image search capabilities or DALL-E for consistent avatars
+    pass
+
+def generate_cricket_avatar(player_name, team_colors=None):
+    """
+    Generate a cricket-themed avatar for the player
+    """
+    # Clean name for URL
+    clean_name = player_name.replace(' ', '+').replace("'", "")
+    
+    # Cricket-themed colors
+    cricket_colors = {
+        'blue': '1e40af',      # Cricket blue
+        'green': '059669',     # Cricket field green  
+        'orange': 'ea580c',    # Cricket ball orange
+        'red': 'dc2626',       # Test cricket ball red
+        'gold': 'f59e0b',      # Trophy gold
+    }
+    
+    # Use team colors if provided, otherwise default to cricket blue
+    bg_color = cricket_colors['blue']
+    if team_colors:
+        bg_color = team_colors.get('primary', cricket_colors['blue'])
+    
+    return f"https://ui-avatars.com/api/?name={clean_name}&background={bg_color}&color=fff&size=150&font-size=0.4&format=png&rounded=true"
 
 def get_real_player_data(player_name):
     """Get comprehensive real player data from KG"""
@@ -194,7 +258,7 @@ def get_real_player_data(player_name):
                 'style_analysis': player_stats.get('style_analysis', {}),
                 'venues_played': player_stats.get('venues_played', []),
                 'venue_performance': player_stats.get('venue_performance', {}),
-                'profile_image_url': get_player_image_url(player_name),
+                'profile_image_url': get_player_image_url(player_name, real_data.get('teams', [])),
                 'last_updated': datetime.now().isoformat(),
                 'data_sources': ['Real_KG_Data'],
                 'source': 'Real_KG_Data'
@@ -251,7 +315,7 @@ def generate_mock_card_data(player_name, persona):
         },
         'current_match_status': 'MOCK_STATUS',  # OBVIOUSLY FAKE
         'last_6_balls': ['0', '0', '0', '0', '0', '0'],  # OBVIOUSLY FAKE
-        'profile_image_url': get_player_image_url(player_name),
+        'profile_image_url': get_player_image_url(player_name, ['MOCK_TEAM']),
         'profile_image_cached': False,
         'last_updated': datetime.now().isoformat(),
         'data_sources': ['MOCK_DATA_OBVIOUS'],
