@@ -1,0 +1,11 @@
+INFO:crickformers.chat.unified_kg_query_engine:Loaded unified knowledge graph: 11997 nodes, 46 edges
+INFO:__main__:✅ Knowledge Graph Query Engine initialized
+INFO:__main__:ℹ️ GNN initialization skipped (not implemented yet)
+🚀 Starting Enhanced Dynamic Cards API v2.0...
+🌐 API available at: http://127.0.0.1:5005
+📊 Health check: http://127.0.0.1:5005/api/cards/health
+🎴 Ready to generate dynamic player cards!
+ * Serving Flask app 'real_dynamic_cards_api_v2'
+ * Debug mode: on
+Address already in use
+Port 5005 is in use by another program. Either identify and stop that program, or start the server with a different port.

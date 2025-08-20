@@ -51,52 +51,45 @@ def initialize_systems():
         logger.error(f"❌ Failed to initialize GNN: {e}")
 
 def get_player_image_url(player_name, teams=None):
-    """Get a cricket-themed image URL for the player with team colors"""
+    """Get the best available cricket player image from multiple sources"""
+    try:
+        from enhanced_cricket_image_service import get_enhanced_player_image
+        
+        # Use enhanced image service for real cricket photos
+        image_result = get_enhanced_player_image(player_name, teams)
+        
+        logger.info(f"🖼️ Image for {player_name}: {image_result['source']} ({'cached' if image_result['cached'] else 'fresh'})")
+        
+        return image_result['url']
+        
+    except ImportError:
+        logger.warning("Enhanced image service not available, using fallback")
+        # Fallback to team-colored avatar
+        clean_name = player_name.replace(' ', '+').replace("'", "").replace('.', '')
+        bg_color = '1e40af'  # Default cricket blue
+        
+        if teams and len(teams) > 0:
+            team_colors = {
+                'Chennai Super Kings': 'fbbf24', 'Mumbai Indians': '1e40af',
+                'Royal Challengers Bangalore': 'dc2626', 'Royal Challengers Bengaluru': 'dc2626',
+                'Kolkata Knight Riders': '7c3aed', 'Delhi Capitals': '1e40af',
+                'Rajasthan Royals': 'ec4899', 'Sunrisers Hyderabad': 'ea580c',
+                'Punjab Kings': 'dc2626', 'Gujarat Titans': '1e40af',
+                'Lucknow Super Giants': '06b6d4', 'India': '1e40af',
+                'Australia': 'fbbf24', 'England': 'dc2626', 'South Africa': '059669',
+                'Pakistan': '059669', 'West Indies': '7c2d12', 'New Zealand': '000000',
+                'Sri Lanka': '1e40af', 'Bangladesh': '059669'
+            }
+            bg_color = team_colors.get(teams[0], '1e40af')
+        
+        return (f"https://ui-avatars.com/api/"
+               f"?name={clean_name}&background={bg_color}&color=fff&size=150"
+               f"&font-size=0.4&format=png&rounded=true&bold=true")
     
-    # Clean player name for URL encoding
-    clean_name = player_name.replace(' ', '+').replace("'", "").replace('.', '')
-    
-    # Team color mappings for major cricket teams
-    team_colors = {
-        'Chennai Super Kings': 'fbbf24',      # CSK Yellow
-        'Mumbai Indians': '1e40af',           # MI Blue
-        'Royal Challengers Bangalore': 'dc2626',  # RCB Red
-        'Royal Challengers Bengaluru': 'dc2626',  # RCB Red (new name)
-        'Kolkata Knight Riders': '7c3aed',   # KKR Purple
-        'Delhi Capitals': '1e40af',           # DC Blue
-        'Rajasthan Royals': 'ec4899',         # RR Pink
-        'Sunrisers Hyderabad': 'ea580c',     # SRH Orange
-        'Punjab Kings': 'dc2626',             # PBKS Red
-        'Gujarat Titans': '1e40af',           # GT Blue
-        'Lucknow Super Giants': '06b6d4',     # LSG Cyan
-        'India': '1e40af',                    # India Blue
-        'Australia': 'fbbf24',                # Australia Gold
-        'England': 'dc2626',                  # England Red
-        'South Africa': '059669',             # SA Green
-        'Pakistan': '059669',                 # Pakistan Green
-        'West Indies': '7c2d12',              # WI Maroon
-        'New Zealand': '000000',              # NZ Black
-        'Sri Lanka': '1e40af',                # SL Blue
-        'Bangladesh': '059669',               # BD Green
-    }
-    
-    # Get team-specific color
-    bg_color = '1e40af'  # Default cricket blue
-    if teams and len(teams) > 0:
-        # Use the first team's color
-        primary_team = teams[0]
-        bg_color = team_colors.get(primary_team, '1e40af')
-    
-    # Generate cricket-themed avatar with team colors
-    return (f"https://ui-avatars.com/api/"
-           f"?name={clean_name}"
-           f"&background={bg_color}"
-           f"&color=fff"
-           f"&size=150"
-           f"&font-size=0.4"
-           f"&format=png"
-           f"&rounded=true"
-           f"&bold=true")
+    except Exception as e:
+        logger.error(f"❌ Image service failed for {player_name}: {e}")
+        # Ultimate fallback
+        return f"https://ui-avatars.com/api/?name={player_name.replace(' ', '+')}&background=1e40af&color=fff&size=150"
 
 def get_openai_player_image(player_name):
     """
@@ -431,6 +424,101 @@ def get_popular_players():
         'success': True,
         'players': popular_players
     })
+
+@app.route('/api/betting/intelligence', methods=['POST'])
+def get_betting_intelligence():
+    """Get comprehensive betting intelligence for a player"""
+    try:
+        data = request.get_json()
+        player_name = data.get('player_name')
+        player_stats = data.get('player_stats', {})
+        
+        if not player_name:
+            return jsonify({'error': 'Player name is required'}), 400
+        
+        logger.info(f"🎯 Generating betting intelligence for {player_name}")
+        
+        # Import and use betting intelligence system
+        try:
+            from betting_intelligence_system import get_player_betting_intelligence
+            
+            intelligence = get_player_betting_intelligence(player_name, player_stats)
+            
+            # Convert to JSON-serializable format
+            intelligence_dict = {
+                'player_name': intelligence.player_name,
+                'form_rating': intelligence.form_rating,
+                'volatility': intelligence.volatility,
+                'consistency_score': intelligence.consistency_score,
+                'pressure_rating': intelligence.pressure_rating,
+                'venue_factor': intelligence.venue_factor,
+                'matchup_factor': intelligence.matchup_factor,
+                'risk_assessment': intelligence.risk_assessment,
+                'recent_trends': intelligence.recent_trends,
+                'markets': [
+                    {
+                        'market_type': m.market_type,
+                        'line': m.line,
+                        'over_odds': m.over_odds,
+                        'under_odds': m.under_odds,
+                        'model_probability': m.model_probability,
+                        'market_probability': m.market_probability,
+                        'expected_value': m.expected_value,
+                        'confidence': m.confidence,
+                        'volume': m.volume
+                    }
+                    for m in intelligence.markets
+                ],
+                'betting_recommendations': intelligence.betting_recommendations
+            }
+            
+            logger.info(f"✅ Betting intelligence generated: {len(intelligence.markets)} markets, {len(intelligence.betting_recommendations)} recommendations")
+            
+            return jsonify(intelligence_dict)
+            
+        except ImportError as e:
+            logger.error(f"❌ Betting intelligence system not available: {e}")
+            return jsonify({'error': 'Betting intelligence system not available'}), 503
+            
+    except Exception as e:
+        logger.error(f"❌ Error generating betting intelligence: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/betting/query', methods=['POST'])
+def process_betting_query():
+    """Process natural language betting queries"""
+    try:
+        data = request.get_json()
+        player_name = data.get('player_name')
+        query = data.get('query')
+        player_stats = data.get('player_stats', {})
+        
+        if not player_name or not query:
+            return jsonify({'error': 'Player name and query are required'}), 400
+        
+        logger.info(f"🤖 Processing betting query for {player_name}: {query}")
+        
+        # Import and use betting query system
+        try:
+            from betting_intelligence_system import process_player_betting_query
+            
+            result = process_player_betting_query(player_name, query, player_stats)
+            
+            logger.info(f"✅ Betting query processed successfully")
+            
+            return jsonify(result)
+            
+        except ImportError as e:
+            logger.error(f"❌ Betting query system not available: {e}")
+            # Fallback response
+            return jsonify({
+                'response': f"I'd love to help with betting analysis for {player_name}, but the betting intelligence system is currently unavailable. Please try again later.",
+                'confidence': 0.0
+            })
+            
+    except Exception as e:
+        logger.error(f"❌ Error processing betting query: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("🚀 Starting Enhanced Dynamic Cards API v2.0...")
