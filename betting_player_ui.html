@@ -33,6 +33,32 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
+            position: relative;
+        }
+
+        .header-nav {
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn:hover {
+            background: rgba(251, 191, 36, 0.2);
+            border-color: #fbbf24;
+            color: #fbbf24;
+            transform: translateX(-3px);
         }
 
         .header h1 {
@@ -435,6 +461,20 @@
 
         /* Responsive */
         @media (max-width: 768px) {
+            .header-nav {
+                position: static;
+                margin-bottom: 15px;
+            }
+            
+            .back-btn {
+                font-size: 0.8em;
+                padding: 8px 16px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
             .chat-container {
                 width: calc(100vw - 40px);
                 right: 20px;
@@ -456,6 +496,11 @@
 <body>
     <div class="container">
         <div class="header">
+            <div class="header-nav">
+                <button class="back-btn" onclick="returnToDashboard()">
+                    ← Back to Dashboard
+                </button>
+            </div>
             <h1>🏏 WicketWise Betting Intelligence</h1>
             <p>Professional Cricket Betting Analysis & AI Insights</p>
         </div>
@@ -1067,6 +1112,25 @@
             const typingIndicator = document.getElementById('typingIndicator');
             if (typingIndicator) {
                 typingIndicator.remove();
+            }
+        }
+
+        function returnToDashboard() {
+            console.log('🏠 Returning to dashboard...');
+            
+            // Check if we came from the dashboard (has referrer)
+            if (document.referrer && document.referrer.includes('wicketwise_dashboard.html')) {
+                // Go back to the dashboard
+                window.location.href = 'wicketwise_dashboard.html';
+            } else if (window.opener) {
+                // If opened in new tab, close this tab and focus parent
+                window.close();
+                if (window.opener && !window.opener.closed) {
+                    window.opener.focus();
+                }
+            } else {
+                // Direct navigation to dashboard
+                window.location.href = 'wicketwise_dashboard.html';
             }
         }
 
