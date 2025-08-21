@@ -2404,11 +2404,14 @@
 
         function queryPlayer(playerName) {
             // Pre-fill the chat with a player query
-            const chatInput = document.getElementById('userInput');
+            const chatInput = document.getElementById('kg-query-input');
             if (chatInput) {
                 chatInput.value = `Tell me about ${playerName}'s recent performance and key strengths`;
+                console.log(`🤖 Pre-filled query for ${playerName}`);
                 // Trigger the chat query
                 executeMainDashboardQuery();
+            } else {
+                console.error('❌ Chat input not found! Looking for: kg-query-input');
             }
         }
 

@@ -980,6 +980,9 @@
 
         async function processAIQuery(query) {
             try {
+                console.log('🤖 Processing AI query:', query);
+                console.log('📡 Calling API with player:', currentPlayer?.player_name);
+                
                 // Try to call the API
                 const response = await fetch(`${API_BASE}/api/betting/query`, {
                     method: 'POST',
@@ -993,13 +996,22 @@
                     })
                 });
 
+                console.log('📡 API response status:', response.status);
+
                 let aiResponse;
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('✅ API response data:', data);
                     aiResponse = data.response;
+                    
+                    // Add indicator if this is from API vs mock
+                    if (data.confidence) {
+                        aiResponse += `\n\n*[API Response - Confidence: ${(data.confidence * 100).toFixed(1)}%]*`;
+                    }
                 } else {
-                    // Fallback to mock response
+                    console.warn('⚠️ API failed, using mock response');
                     aiResponse = generateMockAIResponse(query);
+                    aiResponse += '\n\n*[Mock Response - API not available]*';
                 }
 
                 // Remove typing indicator and add real response
@@ -1007,9 +1019,10 @@
                 addMessageToChat(aiResponse, 'ai');
 
             } catch (error) {
-                console.error('AI query failed:', error);
+                console.error('❌ AI query failed:', error);
                 removeTypingIndicator();
-                addMessageToChat(generateMockAIResponse(query), 'ai');
+                const mockResponse = generateMockAIResponse(query);
+                addMessageToChat(mockResponse + '\n\n*[Mock Response - Network error]*', 'ai');
             }
         }
 
