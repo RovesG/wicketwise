@@ -1,0 +1,11 @@
+{
+  "train_matches": 3187,
+  "test_matches": 797,
+  "train_balls": 733211,
+  "test_balls": 182879,
+  "player_mappings": 1274,
+  "team_mappings": 0,
+  "venue_mappings": 0,
+  "simulation_matches": 10,
+  "integration_date": "2025-08-21T06:35:31.404514"
+}
