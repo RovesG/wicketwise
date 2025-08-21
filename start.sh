@@ -184,8 +184,10 @@ main() {
     # Kill existing services
     kill_by_name "$API_SCRIPT" "API Server"
     kill_by_name "http.server" "HTTP Server"
+    kill_by_name "admin_backend.py" "Admin Backend"
     kill_port $API_PORT "API Server"
     kill_port $HTTP_PORT "HTTP Server"
+    kill_port 5001 "Admin Backend"
     
     echo ""
     echo "🔧 Phase 2: Environment setup"
