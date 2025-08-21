@@ -2390,7 +2390,16 @@
         function showPlayerDetails(playerName, persona) {
             // Open detailed player analysis
             console.log(`Opening detailed analysis for ${playerName} (${persona} perspective)`);
-            // TODO: Implement detailed player modal
+            
+            if (persona === 'betting') {
+                // Redirect to betting intelligence page with player
+                const bettingUrl = `betting_player_ui.html?player=${encodeURIComponent(playerName)}`;
+                console.log(`🎯 Redirecting to betting analysis: ${bettingUrl}`);
+                window.open(bettingUrl, '_blank');
+            } else {
+                // For other personas, show a coming soon message for now
+                alert(`Detailed ${persona} analysis for ${playerName} is coming soon! For now, try the betting analysis.`);
+            }
         }
 
         function queryPlayer(playerName) {

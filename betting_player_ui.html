@@ -572,15 +572,22 @@
         });
 
         async function loadDefaultPlayer() {
-            const defaultPlayer = 'MS Dhoni'; // You can change this
+            // Check if player is specified in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const playerFromUrl = urlParams.get('player');
+            
+            const defaultPlayer = playerFromUrl || 'MS Dhoni';
+            console.log(`🏏 Loading player: ${defaultPlayer} ${playerFromUrl ? '(from URL)' : '(default)'}`);
+            
             await loadPlayerData(defaultPlayer);
         }
 
         async function loadPlayerData(playerName) {
             try {
-                console.log(`Loading betting data for ${playerName}...`);
+                console.log(`🏏 Loading betting data for ${playerName}...`);
                 
                 // Load player card data
+                console.log('📡 Fetching card data from API...');
                 const cardResponse = await fetch(`${API_BASE}/api/cards/generate`, {
                     method: 'POST',
                     headers: {
@@ -592,14 +599,17 @@
                     })
                 });
 
+                console.log('📡 Card response status:', cardResponse.status);
+                
                 if (!cardResponse.ok) {
                     throw new Error(`HTTP error! status: ${cardResponse.status}`);
                 }
 
                 const cardData = await cardResponse.json();
-                console.log('Card data loaded:', cardData);
+                console.log('✅ Card data loaded:', cardData);
 
                 // Load betting intelligence
+                console.log('🎯 Fetching betting intelligence...');
                 const bettingResponse = await fetch(`${API_BASE}/api/betting/intelligence`, {
                     method: 'POST',
                     headers: {
@@ -611,13 +621,16 @@
                     })
                 });
 
+                console.log('🎯 Betting response status:', bettingResponse.status);
+
                 let bettingData = null;
                 if (bettingResponse.ok) {
                     bettingData = await bettingResponse.json();
-                    console.log('Betting intelligence loaded:', bettingData);
+                    console.log('✅ Betting intelligence loaded from API:', bettingData);
                 } else {
-                    console.warn('Betting intelligence not available, using mock data');
+                    console.warn('⚠️ Betting intelligence not available from API, using mock data');
                     bettingData = generateMockBettingData(playerName, cardData);
+                    console.log('✅ Mock betting data generated:', bettingData);
                 }
 
                 currentPlayer = cardData;
@@ -738,13 +751,19 @@
         }
 
         function openBettingDetails() {
+            console.log('🔍 Opening betting details...');
+            console.log('Betting intelligence loaded:', !!bettingIntelligence);
+            
             if (!bettingIntelligence) {
+                console.error('❌ Betting intelligence not loaded yet');
                 alert('Betting intelligence not loaded yet. Please wait...');
                 return;
             }
 
+            console.log('✅ Loading betting tabs...');
             loadBettingTabs();
             document.getElementById('bettingModal').style.display = 'block';
+            console.log('✅ Modal should be visible now');
         }
 
         function closeBettingDetails() {
@@ -919,7 +938,14 @@
         }
 
         function openAIChat() {
-            document.getElementById('chatContainer').style.display = 'block';
+            console.log('🤖 Opening AI chat...');
+            const chatContainer = document.getElementById('chatContainer');
+            if (chatContainer) {
+                chatContainer.style.display = 'block';
+                console.log('✅ Chat container should be visible now');
+            } else {
+                console.error('❌ Chat container not found!');
+            }
         }
 
         function closeAIChat() {
