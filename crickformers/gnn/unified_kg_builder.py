@@ -631,14 +631,14 @@ class UnifiedKGBuilder:
             for venue in venue_stats.index:
                 if pd.notna(venue) and venue:  # Skip null/empty venues
                     stats = venue_stats.loc[venue]
-            self.graph.add_node(
-                venue,
-                type='venue',
+                    self.graph.add_node(
+                        venue,
+                        type='venue',
                         matches_played=int(stats['matches_played']),
                         balls_played=int(stats['balls_played']),
                         avg_score=float(stats['avg_score']) if pd.notna(stats['avg_score']) else 0.0
-            )
-            self.venues[venue] = {
+                    )
+                    self.venues[venue] = {
                         'matches': int(stats['matches_played']),
                         'balls': int(stats['balls_played']),
                         'avg_score': float(stats['avg_score']) if pd.notna(stats['avg_score']) else 0.0
@@ -662,10 +662,10 @@ class UnifiedKGBuilder:
             for match_id in match_stats.index:
                 if pd.notna(match_id):
                     stats = match_stats.loc[match_id]
-            self.graph.add_node(
-                f"match_{match_id}",
-                type='match',
-                match_id=match_id,
+                    self.graph.add_node(
+                        f"match_{match_id}",
+                        type='match',
+                        match_id=match_id,
                         total_balls=int(stats['total_balls']),
                         venue=stats['venue'] if pd.notna(stats['venue']) else '',
                         competition=stats['competition'] if pd.notna(stats['competition']) else ''

@@ -699,6 +699,160 @@ def clear_chat_session():
         logger.error(f"Error clearing session: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/enrich-matches', methods=['POST'])
+def enrich_matches():
+    """Enrich cricket matches using OpenAI API"""
+    operation_id = "match_enrichment"
+    
+    try:
+        data = request.get_json() or {}
+        max_matches = data.get('max_matches', 50)
+        priority_competitions = data.get('priority_competitions', [
+            'Indian Premier League',
+            'Big Bash League',
+            'Pakistan Super League',
+            'T20I'
+        ])
+        
+        # Check if OpenAI API key is available
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            return jsonify({
+                "error": "OpenAI API key required",
+                "message": "Please set OPENAI_API_KEY environment variable or configure it through the API Keys tab"
+            }), 400
+        
+        # Initialize operation tracking
+        background_operations[operation_id] = {
+            "status": "running",
+            "progress": 0,
+            "message": "Initializing match enrichment...",
+            "logs": ["🚀 Starting OpenAI match enrichment pipeline..."],
+            "details": {
+                "max_matches": max_matches,
+                "priority_competitions": priority_competitions,
+                "total_cost_estimate": max_matches * 0.02
+            }
+        }
+        
+        def run_match_enrichment():
+            try:
+                from openai_match_enrichment_pipeline import MatchEnrichmentPipeline
+                
+                # Update progress
+                background_operations[operation_id]["progress"] = 10
+                background_operations[operation_id]["message"] = "Loading betting dataset..."
+                background_operations[operation_id]["logs"].append("📊 Loading betting dataset for analysis...")
+                
+                # Initialize pipeline
+                pipeline = MatchEnrichmentPipeline(api_key=api_key, output_dir="enriched_data")
+                
+                background_operations[operation_id]["progress"] = 20
+                background_operations[operation_id]["message"] = "Starting match enrichment..."
+                background_operations[operation_id]["logs"].append(f"🎯 Enriching top {max_matches} matches...")
+                
+                # Run enrichment
+                betting_data_path = '/Users/shamusrae/Library/Mobile Documents/com~apple~CloudDocs/Cricket /Data/decimal_data_v3.csv'
+                enriched_file = pipeline.enrich_betting_dataset(
+                    betting_data_path=betting_data_path,
+                    max_matches=max_matches,
+                    priority_competitions=priority_competitions
+                )
+                
+                background_operations[operation_id]["progress"] = 80
+                background_operations[operation_id]["message"] = "Generating summary report..."
+                background_operations[operation_id]["logs"].append("📋 Generating enrichment summary...")
+                
+                # Generate summary
+                report_file = pipeline.generate_summary_report(enriched_file)
+                
+                # Success
+                background_operations[operation_id]["status"] = "completed"
+                background_operations[operation_id]["progress"] = 100
+                background_operations[operation_id]["message"] = f"Match enrichment completed! {max_matches} matches processed."
+                background_operations[operation_id]["logs"].append(f"✅ Enrichment complete! Files saved:")
+                background_operations[operation_id]["logs"].append(f"   📁 Enriched data: {enriched_file}")
+                background_operations[operation_id]["logs"].append(f"   📄 Summary report: {report_file}")
+                background_operations[operation_id]["result"] = {
+                    "enriched_file": enriched_file,
+                    "report_file": report_file,
+                    "matches_processed": max_matches
+                }
+                
+            except Exception as e:
+                background_operations[operation_id]["status"] = "error"
+                background_operations[operation_id]["message"] = f"Match enrichment failed: {str(e)}"
+                background_operations[operation_id]["logs"].append(f"❌ Error: {str(e)}")
+                logger.error(f"Match enrichment failed: {str(e)}")
+        
+        # Start background task
+        thread = threading.Thread(target=run_match_enrichment)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({"status": "started", "operation_id": operation_id})
+        
+    except Exception as e:
+        logger.error(f"Failed to start match enrichment: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/enrichment-settings', methods=['GET'])
+def get_enrichment_settings():
+    """Get match enrichment settings"""
+    try:
+        # Check if OpenAI API key is available
+        api_key = os.getenv('OPENAI_API_KEY')
+        has_api_key = bool(api_key)
+        
+        settings = {
+            "has_openai_key": has_api_key,
+            "default_max_matches": 50,
+            "available_competitions": [
+                "Indian Premier League",
+                "Big Bash League", 
+                "Pakistan Super League",
+                "T20I",
+                "Vitality Blast",
+                "Bangladesh Premier League",
+                "Caribbean Premier League",
+                "Lanka Premier League"
+            ],
+            "cost_per_match": 0.02,
+            "total_matches_available": 3987
+        }
+        
+        return jsonify({"status": "success", "settings": settings})
+        
+    except Exception as e:
+        logger.error(f"Error getting enrichment settings: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/enrichment-settings', methods=['POST'])
+def update_enrichment_settings():
+    """Update match enrichment settings"""
+    try:
+        data = request.get_json() or {}
+        
+        # For now, just validate the data
+        max_matches = data.get('max_matches', 50)
+        priority_competitions = data.get('priority_competitions', [])
+        
+        if max_matches < 1 or max_matches > 1000:
+            return jsonify({"error": "max_matches must be between 1 and 1000"}), 400
+        
+        return jsonify({
+            "status": "success", 
+            "message": "Settings updated",
+            "settings": {
+                "max_matches": max_matches,
+                "priority_competitions": priority_competitions
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error updating enrichment settings: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 400
+
 if __name__ == '__main__':
     print("🚀 Starting WicketWise Admin Backend API...")
     print("📊 Real knowledge graph building enabled")

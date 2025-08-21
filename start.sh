@@ -219,12 +219,26 @@ main() {
     python "$API_SCRIPT" > api.log 2>&1 &
     API_PID=$!
     
+    # Start admin backend server (for match enrichment)
+    print_info "Starting Admin Backend server on port 5001..."
+    python admin_backend.py > admin_backend.log 2>&1 &
+    ADMIN_PID=$!
+    
     # Wait for API server
     if wait_for_service "http://127.0.0.1:$API_PORT/api/cards/health" "API Server"; then
         print_status "API Server started (PID: $API_PID)"
     else
         print_error "Failed to start API Server"
         print_info "Check api.log for details"
+        exit 1
+    fi
+    
+    # Wait for admin backend server
+    if wait_for_service "http://127.0.0.1:5001/api/health" "Admin Backend"; then
+        print_status "Admin Backend started (PID: $ADMIN_PID)"
+    else
+        print_error "Failed to start Admin Backend"
+        print_info "Check admin_backend.log for details"
         exit 1
     fi
     
@@ -243,13 +257,16 @@ main() {
     echo ""
     echo "📊 URLs:"
     echo "  • Main Dashboard:    http://127.0.0.1:$HTTP_PORT/wicketwise_dashboard.html"
+    echo "  • Admin Panel:       http://127.0.0.1:$HTTP_PORT/wicketwise_admin_simple.html"
     echo "  • Standalone Cards:  http://127.0.0.1:$HTTP_PORT/enhanced_player_cards_ui.html"
     echo "  • API Health:        http://127.0.0.1:$API_PORT/api/cards/health"
     echo ""
     echo "🔧 Service Info:"
     echo "  • HTTP Server PID:   $HTTP_PID"
     echo "  • API Server PID:    $API_PID"
+    echo "  • Admin Backend PID: $ADMIN_PID"
     echo "  • API Logs:          api.log"
+    echo "  • Admin Logs:        admin_backend.log"
     echo ""
     echo "🎯 Features Available:"
     echo "  • Real Knowledge Graph data (11,997 nodes)"
@@ -257,15 +274,17 @@ main() {
     echo "  • Format-specific analytics"
     echo "  • Persona-based analysis"
     echo "  • Dynamic player cards"
+    echo "  • OpenAI Match Enrichment (weather, teams, venues)"
     echo ""
     echo "🛑 To stop services:"
-    echo "  kill $HTTP_PID $API_PID"
+    echo "  kill $HTTP_PID $API_PID $ADMIN_PID"
     echo "  # Or use: ./stop.sh"
     echo ""
     
     # Save PIDs for stop script
     echo "$HTTP_PID" > .http_server.pid
     echo "$API_PID" > .api_server.pid
+    echo "$ADMIN_PID" > .admin_backend.pid
     
     print_status "Startup complete! 🎉"
 }
@@ -280,6 +299,11 @@ cleanup() {
     if [ ! -z "$API_PID" ] && kill -0 $API_PID 2>/dev/null; then
         print_warning "Cleaning up API server..."
         kill $API_PID 2>/dev/null || true
+    fi
+    
+    if [ ! -z "$ADMIN_PID" ] && kill -0 $ADMIN_PID 2>/dev/null; then
+        print_warning "Cleaning up Admin Backend..."
+        kill $ADMIN_PID 2>/dev/null || true
     fi
 }
 

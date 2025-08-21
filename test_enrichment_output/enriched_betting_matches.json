@@ -1,0 +1,1335 @@
+[
+  {
+    "competition": "Indian Premier League",
+    "format": "T20",
+    "date": "2024-04-15",
+    "start_time_local": "19:30",
+    "end_time_local": "23:00",
+    "timezone": "Asia/Kolkata",
+    "venue": {
+      "name": "M Chinnaswamy Stadium",
+      "city": "Bengaluru",
+      "country": "India",
+      "latitude": 12.9788,
+      "longitude": 77.5921,
+      "timezone": "Asia/Kolkata"
+    },
+    "teams": [
+      {
+        "name": "Sunrisers Hyderabad",
+        "short_name": "SRH",
+        "is_home": true,
+        "players": [
+          {
+            "name": "Aiden Markram",
+            "role": "allrounder",
+            "batting_style": "RHB",
+            "bowling_style": "OB",
+            "captain": true,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Abhishek Sharma",
+            "role": "allrounder",
+            "batting_style": "LHB",
+            "bowling_style": "SLA",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Rahul Tripathi",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Heinrich Klaasen",
+            "role": "wk",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": true,
+            "playing_xi": true
+          },
+          {
+            "name": "Washington Sundar",
+            "role": "allrounder",
+            "batting_style": "LHB",
+            "bowling_style": "OB",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Bhuvneshwar Kumar",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "RM",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "T Natarajan",
+            "role": "bowler",
+            "batting_style": "LHB",
+            "bowling_style": "LF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Umran Malik",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Marco Jansen",
+            "role": "allrounder",
+            "batting_style": "LHB",
+            "bowling_style": "LF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Mayank Agarwal",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Fazalhaq Farooqi",
+            "role": "bowler",
+            "batting_style": "LHB",
+            "bowling_style": "LF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      },
+      {
+        "name": "Royal Challengers Bengaluru",
+        "short_name": "RCB",
+        "is_home": false,
+        "players": [
+          {
+            "name": "Faf du Plessis",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": true,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Virat Kohli",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Glenn Maxwell",
+            "role": "allrounder",
+            "batting_style": "RHB",
+            "bowling_style": "OB",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Dinesh Karthik",
+            "role": "wk",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": true,
+            "playing_xi": true
+          },
+          {
+            "name": "Harshal Patel",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "RM",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Mohammed Siraj",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Wanindu Hasaranga",
+            "role": "allrounder",
+            "batting_style": "RHB",
+            "bowling_style": "LB",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Josh Hazlewood",
+            "role": "bowler",
+            "batting_style": "LHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Shahbaz Ahmed",
+            "role": "allrounder",
+            "batting_style": "LHB",
+            "bowling_style": "SLA",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Anuj Rawat",
+            "role": "batter",
+            "batting_style": "LHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Karn Sharma",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "LB",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      }
+    ],
+    "toss": {
+      "won_by": "Royal Challengers Bengaluru",
+      "decision": "bat"
+    },
+    "weather_hourly": [
+      {
+        "time_local": "2024-04-15T19:00:00",
+        "time_utc": "2024-04-15T13:30:00Z",
+        "temperature_c": 28.0,
+        "feels_like_c": 30.0,
+        "humidity_pct": 65,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 15.0,
+        "wind_gust_kph": 20.0,
+        "wind_dir_deg": 90,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1012,
+        "uv_index": 6.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-15T20:00:00",
+        "time_utc": "2024-04-15T14:30:00Z",
+        "temperature_c": 27.0,
+        "feels_like_c": 29.0,
+        "humidity_pct": 68,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 14.0,
+        "wind_gust_kph": 18.0,
+        "wind_dir_deg": 95,
+        "cloud_cover_pct": 25,
+        "pressure_hpa": 1011,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-15T21:00:00",
+        "time_utc": "2024-04-15T15:30:00Z",
+        "temperature_c": 26.0,
+        "feels_like_c": 28.0,
+        "humidity_pct": 70,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 13.0,
+        "wind_gust_kph": 17.0,
+        "wind_dir_deg": 100,
+        "cloud_cover_pct": 30,
+        "pressure_hpa": 1010,
+        "uv_index": 4.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-15T22:00:00",
+        "time_utc": "2024-04-15T16:30:00Z",
+        "temperature_c": 25.0,
+        "feels_like_c": 27.0,
+        "humidity_pct": 72,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 12.0,
+        "wind_gust_kph": 16.0,
+        "wind_dir_deg": 105,
+        "cloud_cover_pct": 35,
+        "pressure_hpa": 1009,
+        "uv_index": 3.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-15T23:00:00",
+        "time_utc": "2024-04-15T17:30:00Z",
+        "temperature_c": 24.0,
+        "feels_like_c": 26.0,
+        "humidity_pct": 75,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 11.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 110,
+        "cloud_cover_pct": 40,
+        "pressure_hpa": 1008,
+        "uv_index": 2.0,
+        "weather_code": "clear"
+      }
+    ],
+    "data_sources": {
+      "players": "ESPNCricinfo",
+      "weather": "Historical weather service"
+    },
+    "generated_at": "2025-08-21T07:52:47.764856Z",
+    "confidence_score": 1.0,
+    "enrichment_status": "success"
+  },
+  {
+    "competition": "Indian Premier League",
+    "format": "T20",
+    "date": "2024-05-02",
+    "start_time_local": "19:30",
+    "end_time_local": "23:00",
+    "timezone": "Asia/Kolkata",
+    "venue": {
+      "name": "Rajiv Gandhi International Stadium",
+      "city": "Hyderabad",
+      "country": "India",
+      "latitude": 17.4062,
+      "longitude": 78.5505,
+      "timezone": "Asia/Kolkata"
+    },
+    "teams": [
+      {
+        "name": "Sunrisers Hyderabad",
+        "short_name": "SRH",
+        "is_home": true,
+        "players": [
+          {
+            "name": "Aiden Markram",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "OB",
+            "captain": true,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Abhishek Sharma",
+            "role": "allrounder",
+            "batting_style": "LHB",
+            "bowling_style": "SLA",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Rahul Tripathi",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Heinrich Klaasen",
+            "role": "wk",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": true,
+            "playing_xi": true
+          },
+          {
+            "name": "Bhuvneshwar Kumar",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "RM",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      },
+      {
+        "name": "Rajasthan Royals",
+        "short_name": "RR",
+        "is_home": false,
+        "players": [
+          {
+            "name": "Sanju Samson",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": true,
+            "wicket_keeper": true,
+            "playing_xi": true
+          },
+          {
+            "name": "Jos Buttler",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Yashasvi Jaiswal",
+            "role": "batter",
+            "batting_style": "LHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Trent Boult",
+            "role": "bowler",
+            "batting_style": "LHB",
+            "bowling_style": "LF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Yuzvendra Chahal",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "LB",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      }
+    ],
+    "toss": {
+      "won_by": "Sunrisers Hyderabad",
+      "decision": "bat"
+    },
+    "weather_hourly": [
+      {
+        "time_local": "2024-05-02T19:00:00",
+        "time_utc": "2024-05-02T13:30:00Z",
+        "temperature_c": 30.0,
+        "feels_like_c": 33.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 15.0,
+        "wind_gust_kph": 20.0,
+        "wind_dir_deg": 90,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1010,
+        "uv_index": 7.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-05-02T20:00:00",
+        "time_utc": "2024-05-02T14:30:00Z",
+        "temperature_c": 29.0,
+        "feels_like_c": 32.0,
+        "humidity_pct": 65,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 14.0,
+        "wind_gust_kph": 18.0,
+        "wind_dir_deg": 95,
+        "cloud_cover_pct": 25,
+        "pressure_hpa": 1011,
+        "uv_index": 6.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-05-02T21:00:00",
+        "time_utc": "2024-05-02T15:30:00Z",
+        "temperature_c": 28.0,
+        "feels_like_c": 31.0,
+        "humidity_pct": 70,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 13.0,
+        "wind_gust_kph": 17.0,
+        "wind_dir_deg": 100,
+        "cloud_cover_pct": 30,
+        "pressure_hpa": 1012,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-05-02T22:00:00",
+        "time_utc": "2024-05-02T16:30:00Z",
+        "temperature_c": 27.0,
+        "feels_like_c": 30.0,
+        "humidity_pct": 75,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 12.0,
+        "wind_gust_kph": 16.0,
+        "wind_dir_deg": 105,
+        "cloud_cover_pct": 35,
+        "pressure_hpa": 1013,
+        "uv_index": 4.0,
+        "weather_code": "clear"
+      }
+    ],
+    "data_sources": {
+      "players": "ESPNCricinfo",
+      "weather": "Historical weather service"
+    },
+    "generated_at": "2025-08-21T07:53:09.293606Z",
+    "confidence_score": 0.8,
+    "enrichment_status": "success"
+  },
+  {
+    "competition": "Indian Premier League",
+    "format": "T20",
+    "date": "2020-10-17",
+    "start_time_local": "14:00",
+    "end_time_local": "17:30",
+    "timezone": "Asia/Dubai",
+    "venue": {
+      "name": "Dubai International Cricket Stadium",
+      "city": "Dubai",
+      "country": "United Arab Emirates",
+      "latitude": 25.2333,
+      "longitude": 55.3431,
+      "timezone": "Asia/Dubai"
+    },
+    "teams": [
+      {
+        "name": "Rajasthan Royals",
+        "short_name": "RR",
+        "is_home": true,
+        "players": [
+          {
+            "name": "Steve Smith",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": true,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Jos Buttler",
+            "role": "wk",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": true,
+            "playing_xi": true
+          },
+          {
+            "name": "Sanju Samson",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Ben Stokes",
+            "role": "allrounder",
+            "batting_style": "LHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Jofra Archer",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Rahul Tewatia",
+            "role": "allrounder",
+            "batting_style": "LHB",
+            "bowling_style": "LB",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Robin Uthappa",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Riyan Parag",
+            "role": "allrounder",
+            "batting_style": "RHB",
+            "bowling_style": "OB",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Shreyas Gopal",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "LB",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Kartik Tyagi",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Ankit Rajpoot",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      },
+      {
+        "name": "Royal Challengers Bangalore",
+        "short_name": "RCB",
+        "is_home": false,
+        "players": [
+          {
+            "name": "Virat Kohli",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": true,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "AB de Villiers",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Devdutt Padikkal",
+            "role": "batter",
+            "batting_style": "LHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Aaron Finch",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Chris Morris",
+            "role": "allrounder",
+            "batting_style": "RHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Yuzvendra Chahal",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "LB",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Navdeep Saini",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Isuru Udana",
+            "role": "bowler",
+            "batting_style": "LHB",
+            "bowling_style": "LF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Washington Sundar",
+            "role": "allrounder",
+            "batting_style": "LHB",
+            "bowling_style": "OB",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Shivam Dube",
+            "role": "allrounder",
+            "batting_style": "LHB",
+            "bowling_style": "RM",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Mohammed Siraj",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      }
+    ],
+    "toss": {
+      "won_by": "Royal Challengers Bangalore",
+      "decision": "bowl"
+    },
+    "weather_hourly": [
+      {
+        "time_local": "2020-10-17T14:00:00",
+        "time_utc": "2020-10-17T10:00:00Z",
+        "temperature_c": 33.0,
+        "feels_like_c": 36.0,
+        "humidity_pct": 50,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 0,
+        "wind_speed_kph": 15.0,
+        "wind_gust_kph": 20.0,
+        "wind_dir_deg": 270,
+        "cloud_cover_pct": 10,
+        "pressure_hpa": 1010,
+        "uv_index": 7.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2020-10-17T15:00:00",
+        "time_utc": "2020-10-17T11:00:00Z",
+        "temperature_c": 32.0,
+        "feels_like_c": 35.0,
+        "humidity_pct": 52,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 0,
+        "wind_speed_kph": 14.0,
+        "wind_gust_kph": 18.0,
+        "wind_dir_deg": 275,
+        "cloud_cover_pct": 15,
+        "pressure_hpa": 1011,
+        "uv_index": 6.5,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2020-10-17T16:00:00",
+        "time_utc": "2020-10-17T12:00:00Z",
+        "temperature_c": 31.0,
+        "feels_like_c": 34.0,
+        "humidity_pct": 55,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 0,
+        "wind_speed_kph": 13.0,
+        "wind_gust_kph": 17.0,
+        "wind_dir_deg": 280,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1012,
+        "uv_index": 6.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2020-10-17T17:00:00",
+        "time_utc": "2020-10-17T13:00:00Z",
+        "temperature_c": 30.0,
+        "feels_like_c": 33.0,
+        "humidity_pct": 58,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 0,
+        "wind_speed_kph": 12.0,
+        "wind_gust_kph": 16.0,
+        "wind_dir_deg": 285,
+        "cloud_cover_pct": 25,
+        "pressure_hpa": 1013,
+        "uv_index": 5.5,
+        "weather_code": "clear"
+      }
+    ],
+    "data_sources": {
+      "players": "ESPNCricinfo",
+      "weather": "Historical weather service"
+    },
+    "generated_at": "2025-08-21T07:53:21.672211Z",
+    "confidence_score": 1.0,
+    "enrichment_status": "success"
+  },
+  {
+    "competition": "Indian Premier League",
+    "format": "T20",
+    "date": "2024-05-17",
+    "start_time_local": "19:30",
+    "end_time_local": "23:00",
+    "timezone": "Asia/Kolkata",
+    "venue": {
+      "name": "Wankhede Stadium",
+      "city": "Mumbai",
+      "country": "India",
+      "latitude": 18.9388,
+      "longitude": 72.8258,
+      "timezone": "Asia/Kolkata"
+    },
+    "teams": [
+      {
+        "name": "Lucknow Super Giants",
+        "short_name": "LSG",
+        "is_home": true,
+        "players": [
+          {
+            "name": "KL Rahul",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": true,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Quinton de Kock",
+            "role": "wk",
+            "batting_style": "LHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": true,
+            "playing_xi": true
+          },
+          {
+            "name": "Marcus Stoinis",
+            "role": "allrounder",
+            "batting_style": "RHB",
+            "bowling_style": "RM",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Ravi Bishnoi",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "LB",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Avesh Khan",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Deepak Hooda",
+            "role": "allrounder",
+            "batting_style": "RHB",
+            "bowling_style": "OB",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Krunal Pandya",
+            "role": "allrounder",
+            "batting_style": "LHB",
+            "bowling_style": "SLA",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Mohsin Khan",
+            "role": "bowler",
+            "batting_style": "LHB",
+            "bowling_style": "LF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Jason Holder",
+            "role": "allrounder",
+            "batting_style": "RHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Manish Pandey",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Dushmantha Chameera",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      },
+      {
+        "name": "Mumbai Indians",
+        "short_name": "MI",
+        "is_home": false,
+        "players": [
+          {
+            "name": "Rohit Sharma",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "OB",
+            "captain": true,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Ishan Kishan",
+            "role": "wk",
+            "batting_style": "LHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": true,
+            "playing_xi": true
+          },
+          {
+            "name": "Suryakumar Yadav",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Kieron Pollard",
+            "role": "allrounder",
+            "batting_style": "RHB",
+            "bowling_style": "RM",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Jasprit Bumrah",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Trent Boult",
+            "role": "bowler",
+            "batting_style": "LHB",
+            "bowling_style": "LF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Hardik Pandya",
+            "role": "allrounder",
+            "batting_style": "RHB",
+            "bowling_style": "RM",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Krunal Pandya",
+            "role": "allrounder",
+            "batting_style": "LHB",
+            "bowling_style": "SLA",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Rahul Chahar",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "LB",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Saurabh Tiwary",
+            "role": "batter",
+            "batting_style": "LHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Adam Milne",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      }
+    ],
+    "toss": {
+      "won_by": "unknown",
+      "decision": "unknown"
+    },
+    "weather_hourly": [
+      {
+        "time_local": "2024-05-17T19:00:00",
+        "time_utc": "2024-05-17T13:30:00Z",
+        "temperature_c": 30.0,
+        "feels_like_c": 34.0,
+        "humidity_pct": 70,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 15.0,
+        "wind_gust_kph": 20.0,
+        "wind_dir_deg": 270,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1010,
+        "uv_index": 1.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-05-17T20:00:00",
+        "time_utc": "2024-05-17T14:30:00Z",
+        "temperature_c": 29.0,
+        "feels_like_c": 33.0,
+        "humidity_pct": 72,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 14.0,
+        "wind_gust_kph": 18.0,
+        "wind_dir_deg": 275,
+        "cloud_cover_pct": 25,
+        "pressure_hpa": 1011,
+        "uv_index": 0.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-05-17T21:00:00",
+        "time_utc": "2024-05-17T15:30:00Z",
+        "temperature_c": 28.0,
+        "feels_like_c": 32.0,
+        "humidity_pct": 75,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 13.0,
+        "wind_gust_kph": 17.0,
+        "wind_dir_deg": 280,
+        "cloud_cover_pct": 30,
+        "pressure_hpa": 1012,
+        "uv_index": 0.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-05-17T22:00:00",
+        "time_utc": "2024-05-17T16:30:00Z",
+        "temperature_c": 27.0,
+        "feels_like_c": 31.0,
+        "humidity_pct": 78,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 12.0,
+        "wind_gust_kph": 16.0,
+        "wind_dir_deg": 285,
+        "cloud_cover_pct": 35,
+        "pressure_hpa": 1013,
+        "uv_index": 0.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-05-17T23:00:00",
+        "time_utc": "2024-05-17T17:30:00Z",
+        "temperature_c": 26.0,
+        "feels_like_c": 30.0,
+        "humidity_pct": 80,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 11.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 290,
+        "cloud_cover_pct": 40,
+        "pressure_hpa": 1014,
+        "uv_index": 0.0,
+        "weather_code": "clear"
+      }
+    ],
+    "data_sources": {
+      "players": "ESPNCricinfo",
+      "weather": "Historical weather service"
+    },
+    "generated_at": "2025-08-21T07:53:37.769985Z",
+    "confidence_score": 0.9,
+    "enrichment_status": "success"
+  },
+  {
+    "competition": "Indian Premier League",
+    "format": "T20",
+    "date": "2024-04-16",
+    "start_time_local": "19:30",
+    "end_time_local": "23:00",
+    "timezone": "Asia/Kolkata",
+    "venue": {
+      "name": "Eden Gardens",
+      "city": "Kolkata",
+      "country": "India",
+      "latitude": 22.5646,
+      "longitude": 88.3433,
+      "timezone": "Asia/Kolkata"
+    },
+    "teams": [
+      {
+        "name": "Kolkata Knight Riders",
+        "short_name": "KKR",
+        "is_home": true,
+        "players": [
+          {
+            "name": "Shreyas Iyer",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": true,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Andre Russell",
+            "role": "allrounder",
+            "batting_style": "RHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Sunil Narine",
+            "role": "allrounder",
+            "batting_style": "LHB",
+            "bowling_style": "OB",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Dinesh Karthik",
+            "role": "wk",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": true,
+            "playing_xi": true
+          }
+        ]
+      },
+      {
+        "name": "Rajasthan Royals",
+        "short_name": "RR",
+        "is_home": false,
+        "players": [
+          {
+            "name": "Sanju Samson",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": true,
+            "wicket_keeper": true,
+            "playing_xi": true
+          },
+          {
+            "name": "Jos Buttler",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Ben Stokes",
+            "role": "allrounder",
+            "batting_style": "LHB",
+            "bowling_style": "RM",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Jofra Archer",
+            "role": "bowler",
+            "batting_style": "RHB",
+            "bowling_style": "RF",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      }
+    ],
+    "toss": {
+      "won_by": "Kolkata Knight Riders",
+      "decision": "bat"
+    },
+    "weather_hourly": [
+      {
+        "time_local": "2024-04-16T19:00:00",
+        "time_utc": "2024-04-16T13:30:00Z",
+        "temperature_c": 30.0,
+        "feels_like_c": 33.0,
+        "humidity_pct": 70,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 15.0,
+        "wind_gust_kph": 20.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1012,
+        "uv_index": 6.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-16T20:00:00",
+        "time_utc": "2024-04-16T14:30:00Z",
+        "temperature_c": 29.0,
+        "feels_like_c": 32.0,
+        "humidity_pct": 72,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 14.0,
+        "wind_gust_kph": 18.0,
+        "wind_dir_deg": 185,
+        "cloud_cover_pct": 25,
+        "pressure_hpa": 1011,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-16T21:00:00",
+        "time_utc": "2024-04-16T15:30:00Z",
+        "temperature_c": 28.0,
+        "feels_like_c": 31.0,
+        "humidity_pct": 75,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 13.0,
+        "wind_gust_kph": 17.0,
+        "wind_dir_deg": 190,
+        "cloud_cover_pct": 30,
+        "pressure_hpa": 1010,
+        "uv_index": 4.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-16T22:00:00",
+        "time_utc": "2024-04-16T16:30:00Z",
+        "temperature_c": 27.0,
+        "feels_like_c": 30.0,
+        "humidity_pct": 78,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 12.0,
+        "wind_gust_kph": 16.0,
+        "wind_dir_deg": 195,
+        "cloud_cover_pct": 35,
+        "pressure_hpa": 1009,
+        "uv_index": 3.0,
+        "weather_code": "clear"
+      }
+    ],
+    "data_sources": {
+      "players": "ESPNCricinfo",
+      "weather": "Historical weather service"
+    },
+    "generated_at": "2025-08-21T07:53:55.536371Z",
+    "confidence_score": 0.8,
+    "enrichment_status": "success"
+  }
+]

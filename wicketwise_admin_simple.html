@@ -644,6 +644,10 @@
                     <i data-lucide="brain" class="w-5 h-5"></i>
                     Model Training
                 </div>
+                <div class="nav-item" data-section="match-enrichment">
+                    <i data-lucide="cloud" class="w-5 h-5"></i>
+                    Match Enrichment
+                </div>
                 <div class="nav-item" data-section="system-status">
                     <i data-lucide="activity" class="w-5 h-5"></i>
                     System Status
@@ -986,6 +990,106 @@
                                 <div style="color: #64748b;">Ready to begin training process...</div>
                                 <div style="color: #3b82f6;">→ Use the buttons above to start training steps</div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Match Enrichment Section -->
+                <div id="match-enrichment" class="section">
+                    <h2>
+                        <i data-lucide="cloud" class="w-6 h-6"></i>
+                        OpenAI Match Enrichment
+                    </h2>
+                    
+                    <div class="form-section">
+                        <h3>Enrich Cricket Matches with Weather & Team Data</h3>
+                        <p style="color: #6b7280; margin-bottom: 1.5rem;">
+                            Use OpenAI API to enrich cricket matches with comprehensive data including weather conditions, 
+                            team squads, venue coordinates, and match context. This dramatically improves betting model accuracy.
+                        </p>
+                        
+                        <div class="form-group">
+                            <label for="max-matches">Maximum Matches to Enrich</label>
+                            <input type="number" id="max-matches" value="50" min="1" max="1000" 
+                                   style="padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; width: 200px;">
+                            <small style="color: #6b7280;">Recommended: Start with 50 matches (~$1 cost)</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Priority Competitions</label>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 0.5rem; margin-top: 0.5rem;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" id="comp-ipl" checked>
+                                    <span>Indian Premier League</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" id="comp-bbl" checked>
+                                    <span>Big Bash League</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" id="comp-psl" checked>
+                                    <span>Pakistan Super League</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" id="comp-t20i" checked>
+                                    <span>T20 Internationals</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" id="comp-blast">
+                                    <span>Vitality Blast</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" id="comp-bpl">
+                                    <span>Bangladesh Premier League</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="cost-estimate" style="background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin: 1rem 0;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; color: #0369a1; font-weight: 600; margin-bottom: 0.5rem;">
+                                <i data-lucide="info" class="w-4 h-4"></i>
+                                Cost Estimate
+                            </div>
+                            <div id="cost-breakdown" style="color: #0369a1;">
+                                50 matches × $0.02 = $1.00 total cost
+                            </div>
+                            <small style="color: #0369a1;">Includes: Weather data, team squads, venue coordinates, match context</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div id="enrichment-status" class="status-indicator">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div class="status-dot" id="enrichment-status-dot"></div>
+                                    <span id="enrichment-status-text">Ready to enrich matches</span>
+                                </div>
+                                <div id="openai-key-status" style="margin-top: 0.5rem; font-size: 0.875rem;"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="button-group">
+                            <button class="btn btn-primary" id="start-enrichment-btn" onclick="startMatchEnrichment()">
+                                <i data-lucide="cloud" class="w-4 h-4"></i>
+                                Start Match Enrichment
+                            </button>
+                            <button class="btn btn-secondary" onclick="loadEnrichmentSettings()">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                Refresh Settings
+                            </button>
+                        </div>
+                        
+                        <div id="enrichment-progress" class="progress-container hidden">
+                            <div style="margin-bottom: 0.5rem;">
+                                <span id="enrichment-status-text-progress">Processing...</span>
+                                <span id="enrichment-progress-text" style="float: right;">0%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div id="enrichment-progress-fill" class="progress-fill"></div>
+                            </div>
+                            <div id="enrichment-logs" class="console-output" style="margin-top: 1rem; max-height: 300px; overflow-y: auto;"></div>
+                            <button class="btn btn-secondary" id="cancel-enrichment-btn" onclick="cancelOperation('match_enrichment')" style="margin-top: 1rem;">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                                Cancel Enrichment
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -2268,6 +2372,187 @@
             }
         }
 
+        // Match Enrichment Functions
+        function loadEnrichmentSettings() {
+            fetch('http://localhost:5001/api/enrichment-settings')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        updateEnrichmentUI(data.settings);
+                    } else {
+                        console.error('Failed to load enrichment settings:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading enrichment settings:', error);
+                });
+        }
+
+        function updateEnrichmentUI(settings) {
+            // Update OpenAI key status
+            const keyStatus = document.getElementById('openai-key-status');
+            const startBtn = document.getElementById('start-enrichment-btn');
+            const statusDot = document.getElementById('enrichment-status-dot');
+            const statusText = document.getElementById('enrichment-status-text');
+            
+            if (keyStatus && startBtn && statusDot && statusText) {
+                if (settings.has_openai_key) {
+                    keyStatus.innerHTML = '<span style="color: #10b981;">✅ OpenAI API key configured</span>';
+                    startBtn.disabled = false;
+                    statusDot.className = 'status-dot status-success';
+                    statusText.textContent = 'Ready to enrich matches';
+                } else {
+                    keyStatus.innerHTML = '<span style="color: #ef4444;">❌ OpenAI API key required - configure in API Keys tab</span>';
+                    startBtn.disabled = true;
+                    statusDot.className = 'status-dot status-error';
+                    statusText.textContent = 'OpenAI API key required';
+                }
+            }
+            
+            // Update cost estimate
+            updateCostEstimate();
+        }
+
+        function updateCostEstimate() {
+            const maxMatchesInput = document.getElementById('max-matches');
+            const costBreakdown = document.getElementById('cost-breakdown');
+            
+            if (maxMatchesInput && costBreakdown) {
+                const maxMatches = maxMatchesInput.value || 50;
+                const costPerMatch = 0.02;
+                const totalCost = (maxMatches * costPerMatch).toFixed(2);
+                
+                costBreakdown.textContent = 
+                    `${maxMatches} matches × $${costPerMatch.toFixed(2)} = $${totalCost} total cost`;
+            }
+        }
+
+        function startMatchEnrichment() {
+            const maxMatchesInput = document.getElementById('max-matches');
+            if (!maxMatchesInput) return;
+            
+            const maxMatches = parseInt(maxMatchesInput.value) || 50;
+            const priorityCompetitions = [];
+            
+            // Collect selected competitions
+            const competitionMap = {
+                'comp-ipl': 'Indian Premier League',
+                'comp-bbl': 'Big Bash League',
+                'comp-psl': 'Pakistan Super League',
+                'comp-t20i': 'T20I',
+                'comp-blast': 'Vitality Blast',
+                'comp-bpl': 'Bangladesh Premier League'
+            };
+            
+            Object.entries(competitionMap).forEach(([id, name]) => {
+                const checkbox = document.getElementById(id);
+                if (checkbox && checkbox.checked) {
+                    priorityCompetitions.push(name);
+                }
+            });
+            
+            if (priorityCompetitions.length === 0) {
+                showNotification('❌ Please select at least one competition', 'error');
+                return;
+            }
+            
+            const requestData = {
+                max_matches: maxMatches,
+                priority_competitions: priorityCompetitions
+            };
+            
+            fetch('http://localhost:5001/api/enrich-matches', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'started') {
+                    showNotification('🚀 Match enrichment started!', 'success');
+                    showEnrichmentProgress();
+                    pollEnrichmentStatus('match_enrichment');
+                } else {
+                    showNotification(`❌ Failed to start enrichment: ${data.message || data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error starting enrichment:', error);
+                showNotification('❌ Failed to start match enrichment', 'error');
+            });
+        }
+
+        function showEnrichmentProgress() {
+            const progressContainer = document.getElementById('enrichment-progress');
+            const startBtn = document.getElementById('start-enrichment-btn');
+            
+            if (progressContainer) progressContainer.classList.remove('hidden');
+            if (startBtn) startBtn.disabled = true;
+        }
+
+        function hideEnrichmentProgress() {
+            const progressContainer = document.getElementById('enrichment-progress');
+            const startBtn = document.getElementById('start-enrichment-btn');
+            
+            if (progressContainer) progressContainer.classList.add('hidden');
+            if (startBtn) startBtn.disabled = false;
+        }
+
+        function pollEnrichmentStatus(operationId) {
+            const pollInterval = setInterval(() => {
+                fetch(`http://localhost:5001/api/operation-status/${operationId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        updateEnrichmentProgress(data);
+                        
+                        if (data.status === 'completed') {
+                            clearInterval(pollInterval);
+                            hideEnrichmentProgress();
+                            showNotification('✅ Match enrichment completed successfully!', 'success');
+                            
+                            // Show results
+                            if (data.result) {
+                                const result = data.result;
+                                showNotification(
+                                    `🎉 Enriched ${result.matches_processed} matches! Files saved to enriched_data/`, 
+                                    'success'
+                                );
+                            }
+                        } else if (data.status === 'error') {
+                            clearInterval(pollInterval);
+                            hideEnrichmentProgress();
+                            showNotification(`❌ Enrichment failed: ${data.message}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error polling enrichment status:', error);
+                        clearInterval(pollInterval);
+                        hideEnrichmentProgress();
+                    });
+            }, 2000);
+        }
+
+        function updateEnrichmentProgress(data) {
+            const progressFill = document.getElementById('enrichment-progress-fill');
+            const progressText = document.getElementById('enrichment-progress-text');
+            const statusText = document.getElementById('enrichment-status-text-progress');
+            const logs = document.getElementById('enrichment-logs');
+            
+            // Update progress bar
+            const progress = data.progress || 0;
+            if (progressFill) progressFill.style.width = `${progress}%`;
+            if (progressText) progressText.textContent = `${progress}%`;
+            
+            // Update status text
+            if (statusText) statusText.textContent = data.message || 'Processing...';
+            
+            // Update logs
+            if (logs && data.logs && data.logs.length > 0) {
+                logs.innerHTML = data.logs.map(log => `<div>${log}</div>`).join('');
+                logs.scrollTop = logs.scrollHeight;
+            }
+        }
+
         // Page initialization
         document.addEventListener('DOMContentLoaded', function() {
             console.log('WicketWise Admin Panel initialized');
@@ -2289,6 +2574,15 @@
             
             // Load KG dataset source
             loadKgDatasetSource();
+            
+            // Load enrichment settings
+            loadEnrichmentSettings();
+            
+            // Add event listener for cost estimate updates
+            const maxMatchesInput = document.getElementById('max-matches');
+            if (maxMatchesInput) {
+                maxMatchesInput.addEventListener('input', updateCostEstimate);
+            }
             
             // Initialize icons
             if (typeof lucide !== 'undefined') {

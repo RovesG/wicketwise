@@ -1,0 +1,1489 @@
+[
+  {
+    "competition": "Indian Premier League",
+    "format": "T20",
+    "date": "2024-04-15",
+    "start_time_local": "19:30",
+    "end_time_local": "23:00",
+    "timezone": "UTC",
+    "venue": {
+      "name": "M. Chinnaswamy Stadium",
+      "city": "Test City",
+      "country": "Test Country",
+      "latitude": 20.0,
+      "longitude": 70.0,
+      "timezone": "UTC"
+    },
+    "teams": [
+      {
+        "name": "Royal Challengers Bangalore",
+        "short_name": "ROY",
+        "is_home": true,
+        "players": [
+          {
+            "name": "Royal Challengers Bangalore Player 0",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Royal Challengers Bangalore Player 1",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Royal Challengers Bangalore Player 2",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Royal Challengers Bangalore Player 3",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Royal Challengers Bangalore Player 4",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Royal Challengers Bangalore Player 5",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Royal Challengers Bangalore Player 6",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Royal Challengers Bangalore Player 7",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Royal Challengers Bangalore Player 8",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Royal Challengers Bangalore Player 9",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Royal Challengers Bangalore Player 10",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      },
+      {
+        "name": "Mumbai Indians",
+        "short_name": "MUM",
+        "is_home": false,
+        "players": [
+          {
+            "name": "Mumbai Indians Player 0",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Mumbai Indians Player 1",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Mumbai Indians Player 2",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Mumbai Indians Player 3",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Mumbai Indians Player 4",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Mumbai Indians Player 5",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Mumbai Indians Player 6",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Mumbai Indians Player 7",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Mumbai Indians Player 8",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Mumbai Indians Player 9",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Mumbai Indians Player 10",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      }
+    ],
+    "toss": {
+      "won_by": "Royal Challengers Bangalore",
+      "decision": "bat"
+    },
+    "weather_hourly": [
+      {
+        "time_local": "2024-04-15T14:00:00",
+        "time_utc": "2024-04-15T14:00:00Z",
+        "temperature_c": 25.0,
+        "feels_like_c": 27.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-15T15:00:00",
+        "time_utc": "2024-04-15T15:00:00Z",
+        "temperature_c": 26.0,
+        "feels_like_c": 28.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-15T16:00:00",
+        "time_utc": "2024-04-15T16:00:00Z",
+        "temperature_c": 27.0,
+        "feels_like_c": 29.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-15T17:00:00",
+        "time_utc": "2024-04-15T17:00:00Z",
+        "temperature_c": 28.0,
+        "feels_like_c": 30.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-15T18:00:00",
+        "time_utc": "2024-04-15T18:00:00Z",
+        "temperature_c": 29.0,
+        "feels_like_c": 31.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      }
+    ],
+    "data_sources": {
+      "players": "Test",
+      "weather": "Test"
+    },
+    "generated_at": "2025-08-21T07:30:23.137461",
+    "confidence_score": 0.9,
+    "enrichment_status": "success"
+  },
+  {
+    "competition": "Indian Premier League",
+    "format": "T20",
+    "date": "2024-04-16",
+    "start_time_local": "19:30",
+    "end_time_local": "23:00",
+    "timezone": "UTC",
+    "venue": {
+      "name": "M.A. Chidambaram Stadium",
+      "city": "Test City",
+      "country": "Test Country",
+      "latitude": 21.0,
+      "longitude": 71.0,
+      "timezone": "UTC"
+    },
+    "teams": [
+      {
+        "name": "Chennai Super Kings",
+        "short_name": "CHE",
+        "is_home": true,
+        "players": [
+          {
+            "name": "Chennai Super Kings Player 0",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Chennai Super Kings Player 1",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Chennai Super Kings Player 2",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Chennai Super Kings Player 3",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Chennai Super Kings Player 4",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Chennai Super Kings Player 5",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Chennai Super Kings Player 6",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Chennai Super Kings Player 7",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Chennai Super Kings Player 8",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Chennai Super Kings Player 9",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Chennai Super Kings Player 10",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      },
+      {
+        "name": "Delhi Capitals",
+        "short_name": "DEL",
+        "is_home": false,
+        "players": [
+          {
+            "name": "Delhi Capitals Player 0",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Delhi Capitals Player 1",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Delhi Capitals Player 2",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Delhi Capitals Player 3",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Delhi Capitals Player 4",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Delhi Capitals Player 5",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Delhi Capitals Player 6",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Delhi Capitals Player 7",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Delhi Capitals Player 8",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Delhi Capitals Player 9",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Delhi Capitals Player 10",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      }
+    ],
+    "toss": {
+      "won_by": "Chennai Super Kings",
+      "decision": "bat"
+    },
+    "weather_hourly": [
+      {
+        "time_local": "2024-04-16T14:00:00",
+        "time_utc": "2024-04-16T14:00:00Z",
+        "temperature_c": 25.0,
+        "feels_like_c": 27.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-16T15:00:00",
+        "time_utc": "2024-04-16T15:00:00Z",
+        "temperature_c": 26.0,
+        "feels_like_c": 28.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-16T16:00:00",
+        "time_utc": "2024-04-16T16:00:00Z",
+        "temperature_c": 27.0,
+        "feels_like_c": 29.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-16T17:00:00",
+        "time_utc": "2024-04-16T17:00:00Z",
+        "temperature_c": 28.0,
+        "feels_like_c": 30.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      }
+    ],
+    "data_sources": {
+      "players": "Test",
+      "weather": "Test"
+    },
+    "generated_at": "2025-08-21T07:30:23.137525",
+    "confidence_score": 0.8,
+    "enrichment_status": "success"
+  },
+  {
+    "competition": "Big Bash League",
+    "format": "T20",
+    "date": "2024-04-17",
+    "start_time_local": "19:30",
+    "end_time_local": "23:00",
+    "timezone": "UTC",
+    "venue": {
+      "name": "Sydney Cricket Ground",
+      "city": "Test City",
+      "country": "Test Country",
+      "latitude": 22.0,
+      "longitude": 72.0,
+      "timezone": "UTC"
+    },
+    "teams": [
+      {
+        "name": "Sydney Sixers",
+        "short_name": "SYD",
+        "is_home": true,
+        "players": [
+          {
+            "name": "Sydney Sixers Player 0",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Sydney Sixers Player 1",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Sydney Sixers Player 2",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Sydney Sixers Player 3",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Sydney Sixers Player 4",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Sydney Sixers Player 5",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Sydney Sixers Player 6",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Sydney Sixers Player 7",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Sydney Sixers Player 8",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Sydney Sixers Player 9",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Sydney Sixers Player 10",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      },
+      {
+        "name": "Melbourne Stars",
+        "short_name": "MEL",
+        "is_home": false,
+        "players": [
+          {
+            "name": "Melbourne Stars Player 0",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Melbourne Stars Player 1",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Melbourne Stars Player 2",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Melbourne Stars Player 3",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Melbourne Stars Player 4",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Melbourne Stars Player 5",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Melbourne Stars Player 6",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Melbourne Stars Player 7",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Melbourne Stars Player 8",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Melbourne Stars Player 9",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Melbourne Stars Player 10",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      }
+    ],
+    "toss": {
+      "won_by": "Sydney Sixers",
+      "decision": "bat"
+    },
+    "weather_hourly": [
+      {
+        "time_local": "2024-04-17T14:00:00",
+        "time_utc": "2024-04-17T14:00:00Z",
+        "temperature_c": 25.0,
+        "feels_like_c": 27.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-17T15:00:00",
+        "time_utc": "2024-04-17T15:00:00Z",
+        "temperature_c": 26.0,
+        "feels_like_c": 28.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-17T16:00:00",
+        "time_utc": "2024-04-17T16:00:00Z",
+        "temperature_c": 27.0,
+        "feels_like_c": 29.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-17T17:00:00",
+        "time_utc": "2024-04-17T17:00:00Z",
+        "temperature_c": 28.0,
+        "feels_like_c": 30.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      }
+    ],
+    "data_sources": {
+      "players": "Test",
+      "weather": "Test"
+    },
+    "generated_at": "2025-08-21T07:30:23.137571",
+    "confidence_score": 0.7,
+    "enrichment_status": "success"
+  },
+  {
+    "competition": "Pakistan Super League",
+    "format": "T20",
+    "date": "2024-04-18",
+    "start_time_local": "19:30",
+    "end_time_local": "23:00",
+    "timezone": "UTC",
+    "venue": {
+      "name": "National Stadium",
+      "city": "Test City",
+      "country": "Test Country",
+      "latitude": 23.0,
+      "longitude": 73.0,
+      "timezone": "UTC"
+    },
+    "teams": [
+      {
+        "name": "Karachi Kings",
+        "short_name": "KAR",
+        "is_home": true,
+        "players": [
+          {
+            "name": "Karachi Kings Player 0",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Karachi Kings Player 1",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Karachi Kings Player 2",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Karachi Kings Player 3",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Karachi Kings Player 4",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Karachi Kings Player 5",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Karachi Kings Player 6",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Karachi Kings Player 7",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Karachi Kings Player 8",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Karachi Kings Player 9",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Karachi Kings Player 10",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      },
+      {
+        "name": "Lahore Qalandars",
+        "short_name": "LAH",
+        "is_home": false,
+        "players": [
+          {
+            "name": "Lahore Qalandars Player 0",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Lahore Qalandars Player 1",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Lahore Qalandars Player 2",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Lahore Qalandars Player 3",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Lahore Qalandars Player 4",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Lahore Qalandars Player 5",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Lahore Qalandars Player 6",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Lahore Qalandars Player 7",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Lahore Qalandars Player 8",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Lahore Qalandars Player 9",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Lahore Qalandars Player 10",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      }
+    ],
+    "toss": {
+      "won_by": "Karachi Kings",
+      "decision": "bat"
+    },
+    "weather_hourly": [
+      {
+        "time_local": "2024-04-18T14:00:00",
+        "time_utc": "2024-04-18T14:00:00Z",
+        "temperature_c": 25.0,
+        "feels_like_c": 27.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-18T15:00:00",
+        "time_utc": "2024-04-18T15:00:00Z",
+        "temperature_c": 26.0,
+        "feels_like_c": 28.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      },
+      {
+        "time_local": "2024-04-18T16:00:00",
+        "time_utc": "2024-04-18T16:00:00Z",
+        "temperature_c": 27.0,
+        "feels_like_c": 29.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      }
+    ],
+    "data_sources": {
+      "players": "Test",
+      "weather": "Test"
+    },
+    "generated_at": "2025-08-21T07:30:23.137616",
+    "confidence_score": 0.6,
+    "enrichment_status": "success"
+  },
+  {
+    "competition": "Unknown League",
+    "format": "T20",
+    "date": "2024-04-19",
+    "start_time_local": "19:30",
+    "end_time_local": "23:00",
+    "timezone": "UTC",
+    "venue": {
+      "name": "Unknown Stadium",
+      "city": "Test City",
+      "country": "Test Country",
+      "latitude": 24.0,
+      "longitude": 74.0,
+      "timezone": "UTC"
+    },
+    "teams": [
+      {
+        "name": "Test Team A",
+        "short_name": "TES",
+        "is_home": true,
+        "players": [
+          {
+            "name": "Test Team A Player 0",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team A Player 1",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team A Player 2",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team A Player 3",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team A Player 4",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team A Player 5",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team A Player 6",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team A Player 7",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team A Player 8",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team A Player 9",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team A Player 10",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      },
+      {
+        "name": "Test Team B",
+        "short_name": "TES",
+        "is_home": false,
+        "players": [
+          {
+            "name": "Test Team B Player 0",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team B Player 1",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team B Player 2",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team B Player 3",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team B Player 4",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team B Player 5",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team B Player 6",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team B Player 7",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team B Player 8",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team B Player 9",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          },
+          {
+            "name": "Test Team B Player 10",
+            "role": "batter",
+            "batting_style": "RHB",
+            "bowling_style": "unknown",
+            "captain": false,
+            "wicket_keeper": false,
+            "playing_xi": true
+          }
+        ]
+      }
+    ],
+    "toss": {
+      "won_by": "Test Team A",
+      "decision": "bat"
+    },
+    "weather_hourly": [
+      {
+        "time_local": "2024-04-19T14:00:00",
+        "time_utc": "2024-04-19T14:00:00Z",
+        "temperature_c": 25.0,
+        "feels_like_c": 27.0,
+        "humidity_pct": 60,
+        "precip_mm": 0.0,
+        "precip_prob_pct": 10,
+        "wind_speed_kph": 10.0,
+        "wind_gust_kph": 15.0,
+        "wind_dir_deg": 180,
+        "cloud_cover_pct": 20,
+        "pressure_hpa": 1013,
+        "uv_index": 5.0,
+        "weather_code": "clear"
+      }
+    ],
+    "data_sources": {
+      "players": "Test",
+      "weather": "Test"
+    },
+    "generated_at": "2025-08-21T07:30:23.137656",
+    "confidence_score": 0.2,
+    "enrichment_status": "fallback"
+  }
+]
