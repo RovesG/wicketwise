@@ -1,457 +1,427 @@
 #!/usr/bin/env python3
 """
-Weather-Aware Cricket GNN
-Extends the existing GNN to incorporate weather conditions, venue coordinates, 
-and team squad information for enhanced predictions.
+Weather-Aware Graph Neural Network for Cricket Analysis
+Extends the existing GNN to process weather, venue coordinates, and team squad data
 
-Author: WicketWise Team, Last Modified: 2025-01-19
+Author: WicketWise Team, Last Modified: 2025-01-21
 """
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
-import networkx as nx
-from typing import Dict, List, Tuple, Optional, Any
+from torch_geometric.nn import GCNConv, GATv2Conv, HGTConv, global_mean_pool
 from torch_geometric.data import HeteroData
-from torch_geometric.nn import HeteroConv, GCNConv, SAGEConv, GATv2Conv, Linear
+from typing import Dict, List, Optional, Tuple, Any
+import numpy as np
 import logging
 
 logger = logging.getLogger(__name__)
 
-class WeatherFeatureExtractor:
-    """
-    Extracts weather-based features for cricket prediction
-    """
+class WeatherEncoder(nn.Module):
+    """Encodes weather conditions into dense representations"""
     
-    @staticmethod
-    def extract_weather_features(weather_data: Dict[str, Any]) -> torch.Tensor:
-        """
-        Extract numerical features from weather data
-        
-        Returns:
-            torch.Tensor: Weather features (16 dimensions)
-        """
-        features = []
-        
-        # Temperature features (4 dims)
-        temp_c = weather_data.get('temperature_c', 25.0)
-        feels_like = weather_data.get('feels_like_c', 25.0)
-        features.extend([
-            temp_c / 50.0,  # Normalized temperature
-            feels_like / 50.0,  # Normalized feels-like
-            max(0, (temp_c - 35) / 10),  # Extreme heat indicator
-            max(0, (15 - temp_c) / 10)   # Cold weather indicator
-        ])
-        
-        # Humidity and precipitation (4 dims)
-        humidity = weather_data.get('humidity_pct', 50) / 100.0
-        precip_mm = weather_data.get('precip_mm', 0.0)
-        precip_prob = weather_data.get('precip_prob_pct', 0) / 100.0
-        features.extend([
-            humidity,
-            min(precip_mm / 10.0, 1.0),  # Capped precipitation
-            precip_prob,
-            1.0 if precip_mm > 0.5 else 0.0  # Rain indicator
-        ])
-        
-        # Wind conditions (4 dims)
-        wind_speed = weather_data.get('wind_speed_kph', 0.0)
-        wind_gust = weather_data.get('wind_gust_kph', 0.0)
-        wind_dir = weather_data.get('wind_dir_deg', 0)
-        features.extend([
-            min(wind_speed / 50.0, 1.0),  # Normalized wind speed
-            min(wind_gust / 80.0, 1.0),   # Normalized gusts
-            np.sin(np.radians(wind_dir)),  # Wind direction (sin)
-            np.cos(np.radians(wind_dir))   # Wind direction (cos)
-        ])
-        
-        # Atmospheric conditions (4 dims)
-        cloud_cover = weather_data.get('cloud_cover_pct', 50) / 100.0
-        pressure = weather_data.get('pressure_hpa', 1013)
-        uv_index = weather_data.get('uv_index', 5.0)
-        features.extend([
-            cloud_cover,
-            (pressure - 1000) / 50.0,  # Normalized pressure deviation
-            min(uv_index / 12.0, 1.0),  # Normalized UV index
-            1.0 if cloud_cover > 0.8 else 0.0  # Overcast indicator
-        ])
-        
-        return torch.tensor(features, dtype=torch.float32)
-    
-    @staticmethod
-    def extract_venue_features(venue_data: Dict[str, Any]) -> torch.Tensor:
-        """
-        Extract venue-based features including coordinates
-        
-        Returns:
-            torch.Tensor: Venue features (8 dimensions)
-        """
-        features = []
-        
-        # Geographic features (4 dims)
-        lat = venue_data.get('latitude', 0.0)
-        lon = venue_data.get('longitude', 0.0)
-        features.extend([
-            lat / 90.0,  # Normalized latitude
-            lon / 180.0,  # Normalized longitude
-            1.0 if abs(lat) < 23.5 else 0.0,  # Tropical zone
-            1.0 if abs(lat) > 40.0 else 0.0   # High latitude
-        ])
-        
-        # Altitude and climate proxies (4 dims)
-        # These could be enhanced with actual altitude data
-        altitude_proxy = abs(lat) * 100  # Rough altitude estimation
-        features.extend([
-            min(altitude_proxy / 3000.0, 1.0),  # Normalized altitude proxy
-            1.0 if venue_data.get('country', '').lower() in ['india', 'australia', 'england'] else 0.0,  # Major cricket nations
-            1.0 if 'stadium' in venue_data.get('city', '').lower() else 0.0,  # Stadium indicator
-            1.0 if venue_data.get('coordinates_available', False) else 0.0  # Data quality
-        ])
-        
-        return torch.tensor(features, dtype=torch.float32)
-
-class TeamSquadEncoder(nn.Module):
-    """
-    Encodes team squad information into embeddings
-    """
-    
-    def __init__(self, embed_dim: int = 32):
+    def __init__(self, weather_dim: int = 64):
         super().__init__()
-        self.embed_dim = embed_dim
+        self.weather_dim = weather_dim
         
-        # Role embeddings
-        self.role_embedding = nn.Embedding(5, embed_dim // 4)  # batter, bowler, allrounder, wk, unknown
+        # Weather feature processing
+        self.temperature_encoder = nn.Linear(1, 16)
+        self.humidity_encoder = nn.Linear(1, 16)
+        self.wind_encoder = nn.Linear(2, 16)  # speed + direction
+        self.precipitation_encoder = nn.Linear(2, 16)  # amount + probability
         
-        # Style embeddings
-        self.batting_style_embedding = nn.Embedding(3, embed_dim // 4)  # RHB, LHB, unknown
-        self.bowling_style_embedding = nn.Embedding(9, embed_dim // 4)  # Various bowling styles
-        
-        # Experience features
-        self.experience_encoder = nn.Linear(4, embed_dim // 4)  # captain, wk, playing_xi, other stats
-        
-        # Squad aggregation
-        self.squad_aggregator = nn.Linear(embed_dim, embed_dim)
-        
-    def forward(self, squad_data: Dict[str, Any]) -> torch.Tensor:
-        """
-        Encode team squad into a fixed-size embedding
-        
-        Args:
-            squad_data: Dictionary with player information
-            
-        Returns:
-            torch.Tensor: Squad embedding (embed_dim dimensions)
-        """
-        player_embeddings = []
-        
-        for player_name, player_info in squad_data.items():
-            # Role embedding
-            role_map = {'batter': 0, 'bowler': 1, 'allrounder': 2, 'wk': 3, 'unknown': 4}
-            role_idx = role_map.get(player_info.get('role', 'unknown'), 4)
-            role_emb = self.role_embedding(torch.tensor(role_idx))
-            
-            # Batting style embedding
-            batting_map = {'RHB': 0, 'LHB': 1, 'unknown': 2}
-            batting_idx = batting_map.get(player_info.get('batting_style', 'unknown'), 2)
-            batting_emb = self.batting_style_embedding(torch.tensor(batting_idx))
-            
-            # Bowling style embedding (simplified)
-            bowling_map = {'RF': 0, 'RM': 1, 'LF': 2, 'LM': 3, 'OB': 4, 'LB': 5, 'SLA': 6, 'SLC': 7, 'unknown': 8}
-            bowling_idx = bowling_map.get(player_info.get('bowling_style', 'unknown'), 8)
-            bowling_emb = self.bowling_style_embedding(torch.tensor(bowling_idx))
-            
-            # Experience features
-            exp_features = torch.tensor([
-                1.0 if player_info.get('captain', False) else 0.0,
-                1.0 if player_info.get('wicket_keeper', False) else 0.0,
-                1.0 if player_info.get('playing_xi', True) else 0.0,
-                player_info.get('captain_experience', 0) / 100.0  # Normalized
-            ], dtype=torch.float32)
-            exp_emb = self.experience_encoder(exp_features)
-            
-            # Combine player features
-            player_emb = torch.cat([role_emb, batting_emb, bowling_emb, exp_emb], dim=0)
-            player_embeddings.append(player_emb)
-        
-        if not player_embeddings:
-            # Return zero embedding if no squad data
-            return torch.zeros(self.embed_dim)
-        
-        # Aggregate squad embeddings (mean pooling)
-        squad_tensor = torch.stack(player_embeddings)
-        squad_mean = torch.mean(squad_tensor, dim=0)
-        
-        return self.squad_aggregator(squad_mean)
-
-class WeatherAwareCricketGNN(nn.Module):
-    """
-    Enhanced Cricket GNN that incorporates weather conditions,
-    venue coordinates, and team squad information
-    """
-    
-    def __init__(self, 
-                 node_feature_dims: Dict[str, int],
-                 hidden_dim: int = 64,
-                 num_layers: int = 3,
-                 weather_dim: int = 16,
-                 venue_dim: int = 8,
-                 squad_dim: int = 32):
-        super().__init__()
-        
-        self.hidden_dim = hidden_dim
-        self.num_layers = num_layers
-        
-        # Weather and venue feature extractors
-        self.weather_encoder = nn.Linear(weather_dim, hidden_dim)
-        self.venue_encoder = nn.Linear(venue_dim, hidden_dim)
-        
-        # Team squad encoder
-        self.squad_encoder = TeamSquadEncoder(squad_dim)
-        self.squad_projector = nn.Linear(squad_dim, hidden_dim)
-        
-        # Node feature encoders
-        self.node_encoders = nn.ModuleDict()
-        for node_type, input_dim in node_feature_dims.items():
-            self.node_encoders[node_type] = nn.Linear(input_dim, hidden_dim)
-        
-        # Heterogeneous graph convolutions
-        self.convs = nn.ModuleList()
-        for _ in range(num_layers):
-            conv_dict = {}
-            # Define edge types for heterogeneous convolution
-            edge_types = [
-                ('player', 'faced', 'player'),
-                ('player', 'bowled_to', 'player'), 
-                ('player', 'played_at', 'venue'),
-                ('player', 'plays_for', 'team'),
-                ('match', 'played_at', 'venue'),
-                ('match', 'had_weather', 'weather'),
-                ('team', 'played_in', 'match')
-            ]
-            
-            for edge_type in edge_types:
-                conv_dict[edge_type] = SAGEConv(hidden_dim, hidden_dim)
-            
-            self.convs.append(HeteroConv(conv_dict, aggr='mean'))
-        
-        # Attention mechanism for weather impact
-        self.weather_attention = nn.MultiheadAttention(hidden_dim, num_heads=4, batch_first=True)
-        
-        # Final prediction layers
-        self.match_predictor = nn.Sequential(
-            nn.Linear(hidden_dim * 4, hidden_dim * 2),  # player + weather + venue + team
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(hidden_dim * 2, hidden_dim),
+        # Weather fusion
+        self.weather_fusion = nn.Sequential(
+            nn.Linear(64, weather_dim),  # 4 * 16 = 64
             nn.ReLU(),
             nn.Dropout(0.1),
-            nn.Linear(hidden_dim, 1)  # Single output for win probability
-        )
-        
-        # Weather impact predictor
-        self.weather_impact_predictor = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim // 2),
-            nn.ReLU(),
-            nn.Linear(hidden_dim // 2, 3)  # Favorable, neutral, unfavorable
+            nn.Linear(weather_dim, weather_dim)
         )
     
-    def forward(self, 
-                hetero_data: HeteroData,
-                weather_features: torch.Tensor,
-                venue_features: torch.Tensor,
-                team_squad_data: Dict[str, Dict[str, Any]]) -> Dict[str, torch.Tensor]:
+    def forward(self, weather_features: torch.Tensor) -> torch.Tensor:
         """
-        Forward pass through the weather-aware GNN
+        Encode weather features
         
         Args:
-            hetero_data: Heterogeneous graph data
-            weather_features: Weather condition features
-            venue_features: Venue coordinate and location features
-            team_squad_data: Team squad information
-            
+            weather_features: [batch_size, 6] tensor with:
+                [temp_c, humidity_pct, wind_speed_kph, wind_dir_deg, precip_mm, precip_prob_pct]
+        
         Returns:
-            Dictionary with predictions and embeddings
+            Weather embeddings [batch_size, weather_dim]
         """
+        batch_size = weather_features.shape[0]
         
-        # Encode node features
-        x_dict = {}
-        for node_type, features in hetero_data.x_dict.items():
-            if node_type in self.node_encoders:
-                x_dict[node_type] = self.node_encoders[node_type](features)
-            else:
-                x_dict[node_type] = torch.zeros(features.size(0), self.hidden_dim)
+        # Extract individual weather components
+        temp = weather_features[:, 0:1]  # Temperature
+        humidity = weather_features[:, 1:2]  # Humidity
+        wind = weather_features[:, 2:4]  # Wind speed + direction
+        precip = weather_features[:, 4:6]  # Precipitation + probability
         
-        # Process through graph convolutions
-        for conv in self.convs:
-            x_dict = conv(x_dict, hetero_data.edge_index_dict)
-            # Apply activation
-            x_dict = {key: F.relu(x) for key, x in x_dict.items()}
+        # Encode each component
+        temp_emb = self.temperature_encoder(temp)
+        humidity_emb = self.humidity_encoder(humidity)
+        wind_emb = self.wind_encoder(wind)
+        precip_emb = self.precipitation_encoder(precip)
         
-        # Encode weather features
+        # Concatenate and fuse
+        weather_concat = torch.cat([temp_emb, humidity_emb, wind_emb, precip_emb], dim=1)
+        weather_embedding = self.weather_fusion(weather_concat)
+        
+        return weather_embedding
+
+class VenueCoordinateEncoder(nn.Module):
+    """Encodes venue coordinates and timezone into dense representations"""
+    
+    def __init__(self, coord_dim: int = 32):
+        super().__init__()
+        self.coord_dim = coord_dim
+        
+        # Coordinate processing with geographical awareness
+        self.lat_encoder = nn.Sequential(
+            nn.Linear(1, 16),
+            nn.ReLU(),
+            nn.Linear(16, 16)
+        )
+        
+        self.lon_encoder = nn.Sequential(
+            nn.Linear(1, 16),
+            nn.ReLU(),
+            nn.Linear(16, 16)
+        )
+        
+        # Coordinate fusion
+        self.coord_fusion = nn.Sequential(
+            nn.Linear(32, coord_dim),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(coord_dim, coord_dim)
+        )
+    
+    def forward(self, coordinates: torch.Tensor) -> torch.Tensor:
+        """
+        Encode venue coordinates
+        
+        Args:
+            coordinates: [batch_size, 2] tensor with [latitude, longitude]
+        
+        Returns:
+            Coordinate embeddings [batch_size, coord_dim]
+        """
+        lat = coordinates[:, 0:1]
+        lon = coordinates[:, 1:2]
+        
+        # Normalize coordinates to [-1, 1] range
+        lat_norm = lat / 90.0  # Latitude range: -90 to 90
+        lon_norm = lon / 180.0  # Longitude range: -180 to 180
+        
+        # Encode
+        lat_emb = self.lat_encoder(lat_norm)
+        lon_emb = self.lon_encoder(lon_norm)
+        
+        # Fuse
+        coord_concat = torch.cat([lat_emb, lon_emb], dim=1)
+        coord_embedding = self.coord_fusion(coord_concat)
+        
+        return coord_embedding
+
+class TeamSquadEncoder(nn.Module):
+    """Encodes team squad composition and roles"""
+    
+    def __init__(self, squad_dim: int = 48):
+        super().__init__()
+        self.squad_dim = squad_dim
+        
+        # Role encodings
+        self.role_embedding = nn.Embedding(5, 12)  # batter, bowler, allrounder, wk, unknown
+        self.batting_style_embedding = nn.Embedding(3, 8)  # RHB, LHB, unknown
+        self.bowling_style_embedding = nn.Embedding(9, 8)  # RF, RM, LF, LM, OB, LB, SLA, SLC, unknown
+        
+        # Squad composition encoder
+        self.squad_fusion = nn.Sequential(
+            nn.Linear(28, squad_dim),  # 12 + 8 + 8 = 28
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(squad_dim, squad_dim)
+        )
+    
+    def forward(self, squad_features: torch.Tensor) -> torch.Tensor:
+        """
+        Encode team squad features
+        
+        Args:
+            squad_features: [batch_size, 3] tensor with role indices:
+                [primary_role_id, batting_style_id, bowling_style_id]
+        
+        Returns:
+            Squad embeddings [batch_size, squad_dim]
+        """
+        role_ids = squad_features[:, 0].long()
+        batting_ids = squad_features[:, 1].long()
+        bowling_ids = squad_features[:, 2].long()
+        
+        # Embed each component
+        role_emb = self.role_embedding(role_ids)
+        batting_emb = self.batting_style_embedding(batting_ids)
+        bowling_emb = self.bowling_style_embedding(bowling_ids)
+        
+        # Concatenate and fuse
+        squad_concat = torch.cat([role_emb, batting_emb, bowling_emb], dim=1)
+        squad_embedding = self.squad_fusion(squad_concat)
+        
+        return squad_embedding
+
+class WeatherAwareGNN(nn.Module):
+    """
+    Enhanced GNN that incorporates weather, venue coordinates, and team squad data
+    for improved cricket match prediction
+    """
+    
+    def __init__(
+        self,
+        player_feature_dim: int = 128,
+        venue_feature_dim: int = 64,
+        match_feature_dim: int = 96,
+        weather_dim: int = 64,
+        coord_dim: int = 32,
+        squad_dim: int = 48,
+        hidden_dim: int = 256,
+        output_dim: int = 128,
+        num_layers: int = 3,
+        dropout: float = 0.1
+    ):
+        super().__init__()
+        
+        self.player_feature_dim = player_feature_dim
+        self.venue_feature_dim = venue_feature_dim
+        self.match_feature_dim = match_feature_dim
+        self.weather_dim = weather_dim
+        self.coord_dim = coord_dim
+        self.squad_dim = squad_dim
+        self.hidden_dim = hidden_dim
+        self.output_dim = output_dim
+        self.num_layers = num_layers
+        
+        # Enhanced feature encoders
+        self.weather_encoder = WeatherEncoder(weather_dim)
+        self.coord_encoder = VenueCoordinateEncoder(coord_dim)
+        self.squad_encoder = TeamSquadEncoder(squad_dim)
+        
+        # Feature projection layers
+        self.player_proj = nn.Linear(player_feature_dim, hidden_dim)
+        self.venue_proj = nn.Linear(venue_feature_dim + coord_dim, hidden_dim)  # venue + coordinates
+        self.match_proj = nn.Linear(match_feature_dim + weather_dim, hidden_dim)  # match + weather
+        
+        # Heterogeneous Graph Transformer layers
+        self.hgt_layers = nn.ModuleList([
+            HGTConv(
+                in_channels=hidden_dim,
+                out_channels=hidden_dim,
+                metadata=(['player', 'venue', 'match'], [
+                    ('player', 'played_at', 'venue'),
+                    ('player', 'played_in', 'match'),
+                    ('venue', 'hosted', 'match')
+                ]),
+                heads=4
+            ) for _ in range(num_layers)
+        ])
+        
+        # Graph attention for final aggregation
+        self.attention_layers = nn.ModuleList([
+            GATv2Conv(hidden_dim, hidden_dim // 4, heads=4, dropout=dropout)
+            for _ in range(2)
+        ])
+        
+        # Output projection
+        self.output_proj = nn.Sequential(
+            nn.Linear(hidden_dim, output_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(output_dim, output_dim)
+        )
+        
+        # Weather impact prediction head
+        self.weather_impact_head = nn.Sequential(
+            nn.Linear(weather_dim + coord_dim, 64),
+            nn.ReLU(),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, 1),
+            nn.Sigmoid()
+        )
+        
+        self.dropout = nn.Dropout(dropout)
+    
+    def forward(
+        self,
+        hetero_data: HeteroData,
+        weather_features: Optional[torch.Tensor] = None,
+        venue_coordinates: Optional[torch.Tensor] = None,
+        squad_features: Optional[torch.Tensor] = None
+    ) -> Dict[str, torch.Tensor]:
+        """
+        Forward pass through weather-aware GNN
+        
+        Args:
+            hetero_data: Heterogeneous graph data with player, venue, match nodes
+            weather_features: Weather conditions [num_matches, 6]
+            venue_coordinates: Venue coordinates [num_venues, 2]
+            squad_features: Squad composition [num_players, 3]
+        
+        Returns:
+            Dictionary with node embeddings and weather impact predictions
+        """
+        # Extract node features
+        player_x = hetero_data['player'].x
+        venue_x = hetero_data['venue'].x
+        match_x = hetero_data['match'].x
+        
+        # Encode enhanced features
+        enhanced_features = {}
+        
+        # Weather encoding
+        if weather_features is not None:
+            weather_emb = self.weather_encoder(weather_features)
+            enhanced_features['weather'] = weather_emb
+            
+            # Enhance match features with weather
+            if match_x.shape[0] == weather_emb.shape[0]:
+                match_x = torch.cat([match_x, weather_emb], dim=1)
+        
+        # Venue coordinate encoding
+        if venue_coordinates is not None:
+            coord_emb = self.coord_encoder(venue_coordinates)
+            enhanced_features['coordinates'] = coord_emb
+            
+            # Enhance venue features with coordinates
+            if venue_x.shape[0] == coord_emb.shape[0]:
+                venue_x = torch.cat([venue_x, coord_emb], dim=1)
+        
+        # Squad encoding
+        if squad_features is not None and squad_features.shape[0] > 0:
+            # Ensure squad_features has valid indices
+            squad_features = torch.clamp(squad_features, 0, 4)  # Clamp to valid range
+            squad_emb = self.squad_encoder(squad_features)
+            enhanced_features['squad'] = squad_emb
+        
+        # Project features to hidden dimension
+        player_h = self.player_proj(player_x)
+        venue_h = self.venue_proj(venue_x)
+        match_h = self.match_proj(match_x)
+        
+        # Create heterogeneous node features
+        hetero_h = {
+            'player': player_h,
+            'venue': venue_h,
+            'match': match_h
+        }
+        
+        # Apply HGT layers
+        for hgt_layer in self.hgt_layers:
+            hetero_h = hgt_layer(hetero_h, hetero_data.edge_index_dict)
+            
+            # Apply dropout and residual connections
+            for node_type in hetero_h:
+                hetero_h[node_type] = self.dropout(hetero_h[node_type])
+        
+        # Final embeddings
+        final_embeddings = {}
+        for node_type, node_h in hetero_h.items():
+            final_embeddings[node_type] = self.output_proj(node_h)
+        
+        # Weather impact prediction
+        weather_impact = None
+        if weather_features is not None and venue_coordinates is not None:
+            weather_venue_concat = torch.cat([
+                enhanced_features['weather'], 
+                enhanced_features['coordinates']
+            ], dim=1)
+            weather_impact = self.weather_impact_head(weather_venue_concat)
+        
+        return {
+            'node_embeddings': final_embeddings,
+            'enhanced_features': enhanced_features,
+            'weather_impact': weather_impact
+        }
+    
+    def get_player_embeddings(self, player_indices: torch.Tensor, node_embeddings: Dict[str, torch.Tensor]) -> torch.Tensor:
+        """Extract embeddings for specific players"""
+        return node_embeddings['player'][player_indices]
+    
+    def get_venue_embeddings(self, venue_indices: torch.Tensor, node_embeddings: Dict[str, torch.Tensor]) -> torch.Tensor:
+        """Extract embeddings for specific venues"""
+        return node_embeddings['venue'][venue_indices]
+    
+    def predict_weather_advantage(self, weather_features: torch.Tensor, venue_coordinates: torch.Tensor) -> torch.Tensor:
+        """Predict weather advantage for batting/bowling"""
         weather_emb = self.weather_encoder(weather_features)
+        coord_emb = self.coord_encoder(venue_coordinates)
         
-        # Encode venue features
-        venue_emb = self.venue_encoder(venue_features)
+        combined = torch.cat([weather_emb, coord_emb], dim=1)
+        advantage = self.weather_impact_head(combined)
         
-        # Encode team squad features
-        team_embeddings = []
-        for team_name, squad_data in team_squad_data.items():
-            squad_emb = self.squad_encoder(squad_data)
-            team_emb = self.squad_projector(squad_emb)
-            team_embeddings.append(team_emb)
-        
-        # Aggregate team embeddings
-        if team_embeddings:
-            team_emb = torch.mean(torch.stack(team_embeddings), dim=0)
-        else:
-            team_emb = torch.zeros(self.hidden_dim)
-        
-        # Get player embeddings (aggregate all players)
-        if 'player' in x_dict:
-            player_emb = torch.mean(x_dict['player'], dim=0)
-        else:
-            player_emb = torch.zeros(self.hidden_dim)
-        
-        # Apply weather attention
-        weather_context = weather_emb.unsqueeze(0).unsqueeze(0)  # Add batch and sequence dims
-        player_context = player_emb.unsqueeze(0).unsqueeze(0)
-        
-        attended_weather, _ = self.weather_attention(player_context, weather_context, weather_context)
-        attended_weather = attended_weather.squeeze(0).squeeze(0)
-        
-        # Combine all features for final prediction
-        combined_features = torch.cat([player_emb, attended_weather, venue_emb, team_emb], dim=0)
-        
-        # Make predictions
-        match_prediction = self.match_predictor(combined_features)
-        weather_impact = self.weather_impact_predictor(attended_weather)
-        
-        return {
-            'match_prediction': match_prediction,
-            'weather_impact': weather_impact,
-            'player_embedding': player_emb,
-            'weather_embedding': attended_weather,
-            'venue_embedding': venue_emb,
-            'team_embedding': team_emb
-        }
+        return advantage
 
-class WeatherAwareTrainer:
-    """
-    Trainer for the weather-aware cricket GNN
-    """
-    
-    def __init__(self, model: WeatherAwareCricketGNN, device: str = 'cpu'):
-        self.model = model.to(device)
-        self.device = device
-        self.optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-        self.loss_fn = nn.MSELoss()
-        self.weather_loss_fn = nn.CrossEntropyLoss()
-    
-    def train_step(self, 
-                   hetero_data: HeteroData,
-                   weather_features: torch.Tensor,
-                   venue_features: torch.Tensor,
-                   team_squad_data: Dict[str, Dict[str, Any]],
-                   target_win_prob: torch.Tensor,
-                   target_weather_impact: torch.Tensor) -> Dict[str, float]:
-        """
-        Single training step
-        """
-        
-        self.model.train()
-        self.optimizer.zero_grad()
-        
-        # Forward pass
-        outputs = self.model(hetero_data, weather_features, venue_features, team_squad_data)
-        
-        # Calculate losses
-        match_loss = self.loss_fn(outputs['match_prediction'], target_win_prob)
-        weather_loss = self.weather_loss_fn(outputs['weather_impact'], target_weather_impact)
-        
-        total_loss = match_loss + 0.3 * weather_loss  # Weight weather loss
-        
-        # Backward pass
-        total_loss.backward()
-        self.optimizer.step()
-        
-        return {
-            'total_loss': total_loss.item(),
-            'match_loss': match_loss.item(),
-            'weather_loss': weather_loss.item()
-        }
-    
-    def evaluate(self,
-                 hetero_data: HeteroData,
-                 weather_features: torch.Tensor,
-                 venue_features: torch.Tensor,
-                 team_squad_data: Dict[str, Dict[str, Any]],
-                 target_win_prob: torch.Tensor,
-                 target_weather_impact: torch.Tensor) -> Dict[str, float]:
-        """
-        Evaluation step
-        """
-        
-        self.model.eval()
-        
-        with torch.no_grad():
-            outputs = self.model(hetero_data, weather_features, venue_features, team_squad_data)
-            
-            match_loss = self.loss_fn(outputs['match_prediction'], target_win_prob)
-            weather_loss = self.weather_loss_fn(outputs['weather_impact'], target_weather_impact)
-            
-            # Calculate accuracy for weather impact
-            weather_pred = torch.argmax(outputs['weather_impact'], dim=-1)
-            weather_acc = (weather_pred == target_weather_impact).float().mean()
-        
-        return {
-            'match_loss': match_loss.item(),
-            'weather_loss': weather_loss.item(),
-            'weather_accuracy': weather_acc.item(),
-            'match_prediction': outputs['match_prediction'].item(),
-            'weather_impact_probs': F.softmax(outputs['weather_impact'], dim=-1).tolist()
-        }
-
-def create_weather_aware_model(enriched_kg: nx.Graph) -> WeatherAwareCricketGNN:
-    """
-    Create a weather-aware GNN model from an enriched knowledge graph
-    """
-    
-    # Analyze node types and their feature dimensions
-    node_feature_dims = {}
-    for node_id, node_data in enriched_kg.nodes(data=True):
-        node_type = node_data.get('type', 'unknown')
-        
-        if node_type not in node_feature_dims:
-            # Estimate feature dimensions based on node type
-            if node_type == 'player':
-                node_feature_dims[node_type] = 32  # Player stats
-            elif node_type == 'venue':
-                node_feature_dims[node_type] = 16  # Venue stats + coordinates
-            elif node_type == 'team':
-                node_feature_dims[node_type] = 24  # Team stats
-            elif node_type == 'weather':
-                node_feature_dims[node_type] = 16  # Weather features
-            elif node_type == 'match':
-                node_feature_dims[node_type] = 20  # Match context
-            else:
-                node_feature_dims[node_type] = 8   # Default
-    
-    # Create model
-    model = WeatherAwareCricketGNN(
-        node_feature_dims=node_feature_dims,
-        hidden_dim=64,
-        num_layers=3,
-        weather_dim=16,
-        venue_dim=8,
-        squad_dim=32
+def create_weather_aware_gnn(config: Dict[str, Any]) -> WeatherAwareGNN:
+    """Factory function to create weather-aware GNN from config"""
+    return WeatherAwareGNN(
+        player_feature_dim=config.get('player_feature_dim', 128),
+        venue_feature_dim=config.get('venue_feature_dim', 64),
+        match_feature_dim=config.get('match_feature_dim', 96),
+        weather_dim=config.get('weather_dim', 64),
+        coord_dim=config.get('coord_dim', 32),
+        squad_dim=config.get('squad_dim', 48),
+        hidden_dim=config.get('hidden_dim', 256),
+        output_dim=config.get('output_dim', 128),
+        num_layers=config.get('num_layers', 3),
+        dropout=config.get('dropout', 0.1)
     )
-    
-    logger.info(f"Created weather-aware GNN with node types: {list(node_feature_dims.keys())}")
-    return model
 
 if __name__ == "__main__":
-    # Example usage
-    print("🌤️ Weather-Aware Cricket GNN")
-    print("This module provides enhanced GNN capabilities for cricket prediction")
-    print("incorporating weather conditions, venue coordinates, and team squad data.")
+    # Test the weather-aware GNN
+    print("🌦️ Testing Weather-Aware GNN...")
+    
+    # Create sample data
+    batch_size = 32
+    num_players = 100
+    num_venues = 20
+    num_matches = 50
+    
+    # Sample weather features: [temp, humidity, wind_speed, wind_dir, precip, precip_prob]
+    weather_features = torch.randn(batch_size, 6)
+    
+    # Sample venue coordinates: [lat, lon]
+    venue_coordinates = torch.randn(batch_size, 2) * 90  # Random coordinates
+    
+    # Sample squad features: [role_id, batting_style_id, bowling_style_id]
+    squad_features = torch.randint(0, 5, (batch_size, 3))
+    
+    # Create weather-aware GNN
+    config = {
+        'player_feature_dim': 128,
+        'venue_feature_dim': 64,
+        'match_feature_dim': 96,
+        'weather_dim': 64,
+        'coord_dim': 32,
+        'squad_dim': 48,
+        'hidden_dim': 256,
+        'output_dim': 128,
+        'num_layers': 3,
+        'dropout': 0.1
+    }
+    
+    gnn = create_weather_aware_gnn(config)
+    
+    # Test weather and coordinate encoding
+    weather_emb = gnn.weather_encoder(weather_features)
+    coord_emb = gnn.coord_encoder(venue_coordinates)
+    squad_emb = gnn.squad_encoder(squad_features)
+    
+    print(f"✅ Weather embeddings shape: {weather_emb.shape}")
+    print(f"✅ Coordinate embeddings shape: {coord_emb.shape}")
+    print(f"✅ Squad embeddings shape: {squad_emb.shape}")
+    
+    # Test weather advantage prediction
+    weather_advantage = gnn.predict_weather_advantage(weather_features, venue_coordinates)
+    print(f"✅ Weather advantage shape: {weather_advantage.shape}")
+    
+    print("🎉 Weather-Aware GNN test completed successfully!")

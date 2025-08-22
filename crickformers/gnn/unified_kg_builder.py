@@ -117,13 +117,15 @@ class UnifiedKGBuilder:
     - Efficient querying capabilities
     """
     
-    def __init__(self, data_dir: str):
+    def __init__(self, data_dir: str, enriched_data_path: Optional[str] = None):
         self.data_dir = Path(data_dir)
+        self.enriched_data_path = Path(enriched_data_path) if enriched_data_path else None
         self.graph = nx.Graph()
         self.players = {}  # player_name -> PlayerProfile
         self.balls = []    # List of BallEvent objects
         self.matches = {}  # match_id -> match_info
         self.venues = {}   # venue_name -> venue_info
+        self.enrichments = {}  # match_key -> enriched_data
         
         # Statistics tracking
         self.stats = {
@@ -131,6 +133,7 @@ class UnifiedKGBuilder:
             'total_balls': 0,
             'total_matches': 0,
             'total_venues': 0,
+            'enriched_matches': 0,
             'processing_time': 0
         }
     
@@ -151,6 +154,10 @@ class UnifiedKGBuilder:
         """
         logger.info("🏗️ Building Unified Cricket Knowledge Graph")
         start_time = datetime.now()
+        
+        # Step 0: Load enrichment data if available
+        logger.info("🌟 Loading enrichment data...")
+        self.enrichments = self._load_enrichment_data()
         
         # Step 1: Find and load available cricket data
         logger.info("📊 Auto-detecting available cricket data...")
@@ -253,6 +260,86 @@ class UnifiedKGBuilder:
         logger.info(f"   🕒 {self.stats['processing_time']:.1f}s processing time")
         
         return self.graph
+    
+    def _load_enrichment_data(self) -> Dict[str, Any]:
+        """Load enriched match data if available"""
+        if not self.enriched_data_path or not self.enriched_data_path.exists():
+            logger.info("📊 No enriched data found, building KG without weather/squad enhancements")
+            return {}
+        
+        logger.info(f"📊 Loading enriched data from {self.enriched_data_path}")
+        try:
+            with open(self.enriched_data_path, 'r') as f:
+                enriched_data = json.load(f)
+            
+            # Convert to match_key -> enrichment mapping
+            enrichments = {}
+            for match in enriched_data:
+                # Create match key from enriched data
+                date = match.get('date', '')
+                teams = [team['name'] for team in match.get('teams', [])]
+                venue = match.get('venue', {}).get('name', '')
+                
+                if len(teams) >= 2:
+                    match_key = self._create_match_key(date, teams[0], teams[1], venue)
+                    enrichments[match_key] = match
+            
+            logger.info(f"✅ Loaded {len(enrichments)} enriched matches")
+            return enrichments
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to load enriched data: {e}")
+            return {}
+    
+    def _create_match_key(self, date: str, team1: str, team2: str, venue: str) -> str:
+        """Create standardized match key for enrichment matching"""
+        # Normalize team names for consistent matching
+        team1_norm = team1.strip().lower()
+        team2_norm = team2.strip().lower()
+        venue_norm = venue.strip().lower()
+        
+        # Sort teams alphabetically for consistency
+        teams_sorted = sorted([team1_norm, team2_norm])
+        
+        return f"{date}_{teams_sorted[0]}_{teams_sorted[1]}_{venue_norm}"
+    
+    def _find_venue_enrichment(self, venue_name: str) -> Optional[Dict[str, Any]]:
+        """Find enrichment data for a venue using fuzzy matching"""
+        if not self.enrichments:
+            return None
+        
+        venue_norm = venue_name.strip().lower()
+        
+        # Look for exact matches first
+        for enrichment in self.enrichments.values():
+            enriched_venue = enrichment.get('venue', {})
+            if enriched_venue.get('name', '').strip().lower() == venue_norm:
+                return enriched_venue
+        
+        # Fuzzy matching for venue names
+        from difflib import SequenceMatcher
+        best_match = None
+        best_score = 0.6  # Minimum similarity threshold
+        
+        for enrichment in self.enrichments.values():
+            enriched_venue = enrichment.get('venue', {})
+            enriched_name = enriched_venue.get('name', '').strip().lower()
+            
+            if enriched_name:
+                similarity = SequenceMatcher(None, venue_norm, enriched_name).ratio()
+                if similarity > best_score:
+                    best_score = similarity
+                    best_match = enriched_venue
+        
+        return best_match
+    
+    def _find_match_enrichment(self, date: str, teams: List[str], venue: str) -> Optional[Dict[str, Any]]:
+        """Find enrichment data for a specific match"""
+        if not self.enrichments or len(teams) < 2:
+            return None
+        
+        match_key = self._create_match_key(date, teams[0], teams[1], venue)
+        return self.enrichments.get(match_key)
     
     def _load_available_data(self, data_path: Optional[str] = None) -> pd.DataFrame:
         """Load and clean available cricket data"""
@@ -631,17 +718,38 @@ class UnifiedKGBuilder:
             for venue in venue_stats.index:
                 if pd.notna(venue) and venue:  # Skip null/empty venues
                     stats = venue_stats.loc[venue]
-                    self.graph.add_node(
-                        venue,
-                        type='venue',
-                        matches_played=int(stats['matches_played']),
-                        balls_played=int(stats['balls_played']),
-                        avg_score=float(stats['avg_score']) if pd.notna(stats['avg_score']) else 0.0
-                    )
+                    
+                    # Base venue attributes
+                    venue_attrs = {
+                        'type': 'venue',
+                        'matches_played': int(stats['matches_played']),
+                        'balls_played': int(stats['balls_played']),
+                        'avg_score': float(stats['avg_score']) if pd.notna(stats['avg_score']) else 0.0
+                    }
+                    
+                    # Add enrichment data if available
+                    venue_enrichment = self._find_venue_enrichment(venue)
+                    if venue_enrichment:
+                        venue_attrs.update({
+                            'latitude': venue_enrichment.get('latitude', 0.0),
+                            'longitude': venue_enrichment.get('longitude', 0.0),
+                            'timezone': venue_enrichment.get('timezone', ''),
+                            'city': venue_enrichment.get('city', ''),
+                            'country': venue_enrichment.get('country', ''),
+                            'has_enrichment': True
+                        })
+                        self.stats['enriched_matches'] += 1
+                    else:
+                        venue_attrs['has_enrichment'] = False
+                    
+                    self.graph.add_node(venue, **venue_attrs)
+                    
+                    # Store in venues dict
                     self.venues[venue] = {
                         'matches': int(stats['matches_played']),
                         'balls': int(stats['balls_played']),
-                        'avg_score': float(stats['avg_score']) if pd.notna(stats['avg_score']) else 0.0
+                        'avg_score': float(stats['avg_score']) if pd.notna(stats['avg_score']) else 0.0,
+                        'has_enrichment': venue_enrichment is not None
                     }
             
             self.stats['total_venues'] = len(venue_stats)

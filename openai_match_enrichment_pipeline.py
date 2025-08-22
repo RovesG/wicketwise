@@ -484,12 +484,9 @@ class MatchEnrichmentPipeline:
         # Sort by total balls (more complete matches first)
         matches = matches.sort_values('total_balls', ascending=False)
         
-        if max_matches:
-            matches = matches.head(max_matches)
+        logger.info(f"📊 Analyzing {len(matches)} matches...")
         
-        logger.info(f"📊 Processing {len(matches)} matches...")
-        
-        # Separate cached vs new matches
+        # Separate cached vs new matches FIRST
         cached_matches = []
         new_matches = []
         
@@ -507,6 +504,11 @@ class MatchEnrichmentPipeline:
                 cached_matches.append(cached_match['enriched_data'])
             else:
                 new_matches.append(match_info)
+        
+        # NOW apply max_matches limit to NEW matches only
+        if max_matches and len(new_matches) > max_matches:
+            logger.info(f"🎯 Limiting to {max_matches} new matches (from {len(new_matches)} available)")
+            new_matches = new_matches[:max_matches]
         
         logger.info(f"📦 Found {len(cached_matches)} cached matches")
         logger.info(f"🆕 Need to enrich {len(new_matches)} new matches")
@@ -587,10 +589,10 @@ class MatchEnrichmentPipeline:
             if cache_dates:
                 cache_stats['oldest_cache_entry'] = min(cache_dates)
                 cache_stats['newest_cache_entry'] = max(cache_dates)
-            
-            # Convert sets to lists for JSON serialization
-            cache_stats['competitions_cached'] = list(cache_stats['competitions_cached'])
-            cache_stats['venues_cached'] = list(cache_stats['venues_cached'])
+        
+        # Convert sets to lists for JSON serialization (always, even if empty)
+        cache_stats['competitions_cached'] = list(cache_stats['competitions_cached'])
+        cache_stats['venues_cached'] = list(cache_stats['venues_cached'])
         
         return cache_stats
     

@@ -13,6 +13,7 @@ from flask_cors import CORS
 import logging
 import threading
 import time
+from datetime import datetime
 
 # Load environment variables from .env file
 try:
@@ -852,6 +853,95 @@ def update_enrichment_settings():
     except Exception as e:
         logger.error(f"Error updating enrichment settings: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 400
+
+@app.route('/api/enrichment-statistics', methods=['GET'])
+def get_enrichment_statistics():
+    """Get enrichment cache statistics and dataset analysis"""
+    try:
+        from openai_match_enrichment_pipeline import MatchEnrichmentPipeline
+        import pandas as pd
+        
+        # Initialize pipeline to get cache stats
+        api_key = os.getenv('OPENAI_API_KEY', 'dummy')  # Use dummy if no key for stats only
+        pipeline = MatchEnrichmentPipeline(api_key=api_key)
+        
+        # Get cache statistics
+        cache_stats = pipeline.get_cache_statistics()
+        
+        # Analyze the betting dataset to get total available matches
+        betting_data_path = '/Users/shamusrae/Library/Mobile Documents/com~apple~CloudDocs/Cricket /Data/decimal_data_v3.csv'
+        
+        dataset_stats = {
+            "total_matches": 0,
+            "competitions": [],
+            "date_range": {"earliest": None, "latest": None},
+            "venues": 0,
+            "data_available": False
+        }
+        
+        if os.path.exists(betting_data_path):
+            try:
+                betting_data = pd.read_csv(betting_data_path)
+                
+                # Get unique matches
+                matches = betting_data.groupby(['date', 'competition', 'venue', 'home', 'away']).size().reset_index(name='balls')
+                
+                dataset_stats.update({
+                    "total_matches": int(len(matches)),
+                    "competitions": sorted([str(comp) for comp in betting_data['competition'].unique()]),
+                    "date_range": {
+                        "earliest": str(betting_data['date'].min()),
+                        "latest": str(betting_data['date'].max())
+                    },
+                    "venues": int(betting_data['venue'].nunique()),
+                    "data_available": True
+                })
+                
+                # Competition breakdown
+                comp_stats = {}
+                for comp in betting_data['competition'].unique():
+                    comp_data = betting_data[betting_data['competition'] == comp]
+                    unique_dates = len(set(comp_data['date'].str[:10]))
+                    unique_venues = comp_data['venue'].nunique()
+                    home_teams = set(comp_data['home'])
+                    away_teams = set(comp_data['away'])
+                    unique_teams = len(home_teams | away_teams)
+                    
+                    comp_stats[str(comp)] = {
+                        'matches': int(unique_dates),
+                        'venues': int(unique_venues),
+                        'teams': int(unique_teams)
+                    }
+                
+                dataset_stats["competition_breakdown"] = comp_stats
+                
+            except Exception as e:
+                logger.error(f"Error analyzing betting dataset: {e}")
+                dataset_stats["error"] = str(e)
+        
+        # Calculate enrichment progress
+        enriched_count = cache_stats.get('total_cached_matches', 0)
+        total_available = dataset_stats.get('total_matches', 0)
+        
+        progress_stats = {
+            "enriched_matches": enriched_count,
+            "total_available_matches": total_available,
+            "enrichment_percentage": round((enriched_count / total_available * 100), 1) if total_available > 0 else 0,
+            "remaining_matches": max(0, total_available - enriched_count),
+            "estimated_cost_remaining": round((total_available - enriched_count) * 0.02, 2) if total_available > enriched_count else 0
+        }
+        
+        return jsonify({
+            "status": "success",
+            "cache_statistics": cache_stats,
+            "dataset_statistics": dataset_stats,
+            "progress_statistics": progress_stats,
+            "last_updated": datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting enrichment statistics: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
     print("🚀 Starting WicketWise Admin Backend API...")

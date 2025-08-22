@@ -214,6 +214,30 @@
             color: #374151;
         }
         
+        /* Override for checkbox labels to allow flex layout */
+        .form-group label.checkbox-label {
+            display: flex !important;
+            align-items: center;
+            margin-bottom: 0;
+            font-weight: 400;
+            gap: 0.5rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        
+        .checkbox-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-top: 0.75rem;
+        }
+        
+        .checkbox-container input[type="checkbox"] {
+            width: auto !important;
+            margin: 0;
+            flex-shrink: 0;
+        }
+        
         .form-group input {
             width: 100%;
             padding: 0.75rem;
@@ -1008,6 +1032,26 @@
                             team squads, venue coordinates, and match context. This dramatically improves betting model accuracy.
                         </p>
                         
+                        <!-- Enrichment Statistics -->
+                        <div id="enrichment-statistics" class="stats-container" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
+                            <h4 style="margin: 0 0 1rem 0; color: #1e293b; display: flex; align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                                    Enrichment Progress
+                                </div>
+                                <button onclick="loadEnrichmentStatistics()" style="background: none; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.25rem 0.5rem; cursor: pointer; color: #6b7280; display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem;" title="Refresh Statistics">
+                                    <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                                    Refresh
+                                </button>
+                            </h4>
+                            <div id="stats-content">
+                                <div style="text-align: center; color: #64748b; padding: 1rem;">
+                                    <i data-lucide="loader" class="w-6 h-6 animate-spin"></i>
+                                    <p style="margin: 0.5rem 0 0 0;">Loading statistics...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="form-group">
                             <label for="max-matches">Maximum Matches to Enrich</label>
                             <input type="number" id="max-matches" value="50" min="1" max="1000" 
@@ -1017,28 +1061,28 @@
                         
                         <div class="form-group">
                             <label>Priority Competitions</label>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 0.5rem; margin-top: 0.5rem;">
-                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div class="checkbox-container">
+                                <label class="checkbox-label">
                                     <input type="checkbox" id="comp-ipl" checked>
                                     <span>Indian Premier League</span>
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <label class="checkbox-label">
                                     <input type="checkbox" id="comp-bbl" checked>
                                     <span>Big Bash League</span>
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <label class="checkbox-label">
                                     <input type="checkbox" id="comp-psl" checked>
                                     <span>Pakistan Super League</span>
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <label class="checkbox-label">
                                     <input type="checkbox" id="comp-t20i" checked>
                                     <span>T20 Internationals</span>
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <label class="checkbox-label">
                                     <input type="checkbox" id="comp-blast">
                                     <span>Vitality Blast</span>
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <label class="checkbox-label">
                                     <input type="checkbox" id="comp-bpl">
                                     <span>Bangladesh Premier League</span>
                                 </label>
@@ -2374,7 +2418,7 @@
 
         // Match Enrichment Functions
         function loadEnrichmentSettings() {
-            fetch('http://localhost:5001/api/enrichment-settings')
+            fetch('http://127.0.0.1:5001/api/enrichment-settings')
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
@@ -2424,6 +2468,131 @@
                 
                 costBreakdown.textContent = 
                     `${maxMatches} matches × $${costPerMatch.toFixed(2)} = $${totalCost} total cost`;
+            }
+        }
+
+        function loadEnrichmentStatistics() {
+            const statsContent = document.getElementById('stats-content');
+            if (!statsContent) return;
+            
+            // Show loading state
+            statsContent.innerHTML = `
+                <div style="text-align: center; color: #64748b; padding: 1rem;">
+                    <i data-lucide="loader" class="w-6 h-6 animate-spin"></i>
+                    <p style="margin: 0.5rem 0 0 0;">Loading statistics...</p>
+                </div>
+            `;
+            
+            fetch('http://127.0.0.1:5001/api/enrichment-statistics')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        displayEnrichmentStatistics(data);
+                    } else {
+                        statsContent.innerHTML = `
+                            <div style="text-align: center; color: #ef4444; padding: 1rem;">
+                                <i data-lucide="alert-circle" class="w-6 h-6"></i>
+                                <p style="margin: 0.5rem 0 0 0;">Error loading statistics: ${data.message}</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading enrichment statistics:', error);
+                    statsContent.innerHTML = `
+                        <div style="text-align: center; color: #ef4444; padding: 1rem;">
+                            <i data-lucide="wifi-off" class="w-6 h-6"></i>
+                            <p style="margin: 0.5rem 0 0 0;">Failed to load statistics</p>
+                        </div>
+                    `;
+                });
+        }
+
+        function displayEnrichmentStatistics(data) {
+            const statsContent = document.getElementById('stats-content');
+            if (!statsContent) return;
+            
+            const progress = data.progress_statistics;
+            const dataset = data.dataset_statistics;
+            const cache = data.cache_statistics;
+            
+            const progressPercentage = progress.enrichment_percentage || 0;
+            
+            statsContent.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <!-- Progress Overview -->
+                    <div style="background: white; border-radius: 8px; padding: 1rem; border: 1px solid #e5e7eb;">
+                        <h5 style="margin: 0 0 0.75rem 0; color: #374151; font-size: 0.875rem; font-weight: 600;">Progress Overview</h5>
+                        <div style="margin-bottom: 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                <span style="font-size: 0.875rem; color: #6b7280;">Enriched Matches</span>
+                                <span style="font-weight: 600; color: #059669;">${progress.enriched_matches.toLocaleString()}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                <span style="font-size: 0.875rem; color: #6b7280;">Total Available</span>
+                                <span style="font-weight: 600; color: #374151;">${progress.total_available_matches.toLocaleString()}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.875rem; color: #6b7280;">Remaining</span>
+                                <span style="font-weight: 600; color: #dc2626;">${progress.remaining_matches.toLocaleString()}</span>
+                            </div>
+                        </div>
+                        <!-- Progress Bar -->
+                        <div style="background: #f3f4f6; border-radius: 6px; height: 8px; overflow: hidden; margin-bottom: 0.5rem;">
+                            <div style="background: linear-gradient(90deg, #10b981, #059669); height: 100%; width: ${progressPercentage}%; transition: width 0.3s ease;"></div>
+                        </div>
+                        <div style="text-align: center; font-size: 0.875rem; color: #6b7280;">
+                            ${progressPercentage}% Complete
+                        </div>
+                    </div>
+                    
+                    <!-- Cost Analysis -->
+                    <div style="background: white; border-radius: 8px; padding: 1rem; border: 1px solid #e5e7eb;">
+                        <h5 style="margin: 0 0 0.75rem 0; color: #374151; font-size: 0.875rem; font-weight: 600;">Cost Analysis</h5>
+                        <div style="margin-bottom: 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                <span style="font-size: 0.875rem; color: #6b7280;">Already Spent</span>
+                                <span style="font-weight: 600; color: #059669;">$${(progress.enriched_matches * 0.02).toFixed(2)}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                <span style="font-size: 0.875rem; color: #6b7280;">Remaining Cost</span>
+                                <span style="font-weight: 600; color: #dc2626;">$${progress.estimated_cost_remaining.toFixed(2)}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.875rem; color: #6b7280;">Total Est. Cost</span>
+                                <span style="font-weight: 600; color: #374151;">$${(progress.total_available_matches * 0.02).toFixed(2)}</span>
+                            </div>
+                        </div>
+                        ${cache.cache_file_size_mb ? `
+                        <div style="text-align: center; font-size: 0.875rem; color: #6b7280;">
+                            Cache: ${cache.cache_file_size_mb} MB
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                ${dataset.competitions && dataset.competitions.length > 0 ? `
+                <div style="margin-top: 1rem; background: white; border-radius: 8px; padding: 1rem; border: 1px solid #e5e7eb;">
+                    <h5 style="margin: 0 0 0.75rem 0; color: #374151; font-size: 0.875rem; font-weight: 600;">Available Competitions</h5>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        ${dataset.competitions.slice(0, 8).map(comp => `
+                            <span style="background: #f3f4f6; color: #374151; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">
+                                ${comp}
+                            </span>
+                        `).join('')}
+                        ${dataset.competitions.length > 8 ? `
+                            <span style="background: #e5e7eb; color: #6b7280; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">
+                                +${dataset.competitions.length - 8} more
+                            </span>
+                        ` : ''}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+            
+            // Re-initialize Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
             }
         }
 
@@ -2577,6 +2746,9 @@
             
             // Load enrichment settings
             loadEnrichmentSettings();
+            
+            // Load enrichment statistics
+            loadEnrichmentStatistics();
             
             // Add event listener for cost estimate updates
             const maxMatchesInput = document.getElementById('max-matches');

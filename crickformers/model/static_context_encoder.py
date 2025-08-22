@@ -9,7 +9,7 @@ and encodes them into a single contextual vector.
 
 import torch
 from torch import nn
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 class StaticContextEncoder(nn.Module):
     """
@@ -25,6 +25,8 @@ class StaticContextEncoder(nn.Module):
         video_dim: int,
         hidden_dims: List[int],
         context_dim: int,
+        weather_dim: int = 6,  # temp, humidity, wind_speed, wind_dir, precip, precip_prob
+        venue_coord_dim: int = 2,  # latitude, longitude
         dropout_rate: float = 0.1,
     ):
         """
@@ -48,7 +50,24 @@ class StaticContextEncoder(nn.Module):
 
         total_embedding_dim = sum(categorical_embedding_dims.values())
         
-        mlp_input_dim = numeric_dim + total_embedding_dim + video_dim
+        # Enhanced feature encoders for weather and venue data
+        self.weather_encoder = nn.Sequential(
+            nn.Linear(weather_dim, weather_dim * 2),
+            nn.ReLU(),
+            nn.Linear(weather_dim * 2, weather_dim)
+        ) if weather_dim > 0 else None
+        
+        self.venue_coord_encoder = nn.Sequential(
+            nn.Linear(venue_coord_dim, venue_coord_dim * 4),
+            nn.ReLU(),
+            nn.Linear(venue_coord_dim * 4, venue_coord_dim * 2)
+        ) if venue_coord_dim > 0 else None
+        
+        # Calculate input dimension including weather and venue features
+        weather_encoded_dim = weather_dim if weather_dim > 0 else 0
+        venue_encoded_dim = venue_coord_dim * 2 if venue_coord_dim > 0 else 0
+        
+        mlp_input_dim = numeric_dim + total_embedding_dim + video_dim + weather_encoded_dim + venue_encoded_dim
         
         layers = []
         current_dim = mlp_input_dim
@@ -67,6 +86,8 @@ class StaticContextEncoder(nn.Module):
         categorical_features: torch.Tensor,
         video_features: torch.Tensor,
         video_mask: torch.Tensor,
+        weather_features: Optional[torch.Tensor] = None,
+        venue_coordinates: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
         Forward pass for the context encoder.
@@ -93,11 +114,20 @@ class StaticContextEncoder(nn.Module):
         
         masked_video_features = video_features * video_mask
         
-        combined_features = torch.cat([
-            numeric_features,
-            all_embeddings,
-            masked_video_features
-        ], dim=1)
+        # Prepare feature list for concatenation
+        feature_list = [numeric_features, all_embeddings, masked_video_features]
+        
+        # Add weather features if available
+        if weather_features is not None and self.weather_encoder is not None:
+            weather_encoded = self.weather_encoder(weather_features)
+            feature_list.append(weather_encoded)
+        
+        # Add venue coordinate features if available
+        if venue_coordinates is not None and self.venue_coord_encoder is not None:
+            venue_encoded = self.venue_coord_encoder(venue_coordinates)
+            feature_list.append(venue_encoded)
+        
+        combined_features = torch.cat(feature_list, dim=1)
         
         context_vector = self.encoder_mlp(combined_features)
         
