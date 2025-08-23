@@ -90,22 +90,21 @@ class EnhancedTrainer:
         
         static_encoder_config = model_config.get("static_context_encoder", {})
         
-        # Define categorical features with reasonable vocabulary sizes and embedding dimensions
+        # Match the original CrickformerTrainer architecture exactly
         categorical_vocab_sizes = {
-            "batter": 1000,        # Approximate number of unique batters
-            "bowler": 500,         # Approximate number of unique bowlers  
-            "venue": 100,          # Approximate number of unique venues
-            "team_batting": 50,    # Approximate number of unique teams
-            "team_bowling": 50,    # Approximate number of unique teams
+            "competition": 100,    # Original: competition
+            "batter_hand": 100,    # Original: batter_hand  
+            "bowler_type": 100,    # Original: bowler_type
+            "innings": 10,         # Original: innings
         }
         
+        # Use original embedding dimensions (total: 8+4+8+4 = 24)
         categorical_embedding_dims = {
-            "batter": 32,          # Embedding dimension for batters
-            "bowler": 32,          # Embedding dimension for bowlers
-            "venue": 16,           # Embedding dimension for venues
-            "team_batting": 16,    # Embedding dimension for batting teams
-            "team_bowling": 16,    # Embedding dimension for bowling teams
-        }
+            "competition": 8,      # Original embedding dimension
+            "batter_hand": 4,      # Original embedding dimension
+            "bowler_type": 8,      # Original embedding dimension
+            "innings": 4,          # Original embedding dimension
+        }  # Total: 8+4+8+4 = 24 dimensions (matches original)
         
         # Initialize categorical encoders (string to integer mapping)
         self.categorical_encoders = {}
@@ -117,7 +116,7 @@ class EnhancedTrainer:
             "numeric_dim": 15,  # Match the 15 numeric features we extract from CSV data
             "categorical_vocab_sizes": categorical_vocab_sizes,
             "categorical_embedding_dims": categorical_embedding_dims,
-            "video_dim": model_config.get("video_dim", 10),  # Match our mock video signals
+            "video_dim": 99,  # Match our 99-dimensional video features
             "hidden_dims": [static_encoder_config.get("hidden_dim", 128)],
             "context_dim": static_encoder_config.get("output_dim", 128),
             "dropout_rate": static_encoder_config.get("dropout", 0.1)
@@ -963,32 +962,9 @@ class EnhancedTrainer:
                     # Stack ball history: [batch_size, 5, 128] 
                     batch_inputs[key] = torch.stack([item['inputs'][key] for item in batch])
                 elif key == 'categorical_features':
-                    # Handle categorical features - convert strings to integers
+                    # Handle categorical features - they're already integer tensors
                     # The static encoder expects shape [batch_size, num_categorical_features]
-                    batch_size = len(batch)
-                    cat_feature_names = list(batch[0]['inputs'][key].keys())
-                    num_cat_features = len(cat_feature_names)
-                    
-                    # Create tensor to hold all categorical features
-                    categorical_tensor = torch.zeros(batch_size, num_cat_features, dtype=torch.long)
-                    
-                    for cat_idx, cat_feature in enumerate(cat_feature_names):
-                        # Convert string categorical features to integer indices
-                        for batch_idx, item in enumerate(batch):
-                            cat_value = item['inputs'][key][cat_feature]
-                            # Get or create integer index for this categorical value
-                            if cat_value not in self.categorical_encoders[cat_feature]:
-                                new_idx = len(self.categorical_encoders[cat_feature])
-                                # Ensure we don't exceed vocabulary size - use actual vocab size from config
-                                vocab_size = self.categorical_vocab_sizes.get(cat_feature, 1000)
-                                if new_idx < vocab_size:
-                                    self.categorical_encoders[cat_feature][cat_value] = new_idx
-                                else:
-                                    # Use index 0 for unknown/overflow values
-                                    self.categorical_encoders[cat_feature][cat_value] = 0
-                            categorical_tensor[batch_idx, cat_idx] = self.categorical_encoders[cat_feature][cat_value]
-                    
-                    batch_inputs[key] = categorical_tensor
+                    batch_inputs[key] = torch.stack([item['inputs'][key] for item in batch])
                 elif key in ['gnn_embeddings']:
                     # Keep these as they are (2D tensors)
                     batch_inputs[key] = torch.stack([item['inputs'][key] for item in batch])

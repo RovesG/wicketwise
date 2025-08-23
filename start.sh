@@ -18,10 +18,13 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-API_PORT=5005
+API_GATEWAY_PORT=5005
+ADMIN_BACKEND_PORT=5001
 HTTP_PORT=8000
-API_SCRIPT="real_dynamic_cards_api_v2.py"
+API_GATEWAY_SCRIPT="real_dynamic_cards_api_v2.py"
+ADMIN_BACKEND_SCRIPT="admin_backend.py"
 VENV_PATH=".venv"
+ENVIRONMENT="development"
 
 # Function to print colored output
 print_status() {
@@ -92,8 +95,15 @@ setup_venv() {
         
         if [ -f "requirements.txt" ]; then
             print_info "Installing requirements..."
+            pip install --upgrade pip
             pip install -r requirements.txt
-            print_status "Requirements installed"
+            
+            # Install additional dependencies from refactoring
+            print_info "Installing additional dependencies..."
+            pip install fastapi uvicorn aiofiles httpx pytest-asyncio pytest-benchmark bandit safety psutil
+            pip install pyjwt cryptography python-multipart
+            
+            print_status "All requirements installed"
         fi
     fi
 }
@@ -103,28 +113,58 @@ check_requirements() {
     print_info "Checking required files..."
     
     local missing_files=()
+    local optional_files=()
     
-    if [ ! -f "$API_SCRIPT" ]; then
-        missing_files+=("$API_SCRIPT")
+    # Critical files
+    if [ ! -f "$API_GATEWAY_SCRIPT" ]; then
+        missing_files+=("$API_GATEWAY_SCRIPT")
+    fi
+    
+    if [ ! -f "$ADMIN_BACKEND_SCRIPT" ]; then
+        missing_files+=("$ADMIN_BACKEND_SCRIPT")
     fi
     
     if [ ! -f "wicketwise_dashboard.html" ]; then
         missing_files+=("wicketwise_dashboard.html")
     fi
     
+    if [ ! -f "wicketwise_admin_redesigned.html" ]; then
+        missing_files+=("wicketwise_admin_redesigned.html")
+    fi
+    
+    if [ ! -f "security_framework.py" ]; then
+        missing_files+=("security_framework.py")
+    fi
+    
+    if [ ! -f "unified_configuration.py" ]; then
+        missing_files+=("unified_configuration.py")
+    fi
+    
+    # Optional files (warn but don't fail)
     if [ ! -f "models/unified_cricket_kg.pkl" ]; then
-        missing_files+=("models/unified_cricket_kg.pkl")
+        optional_files+=("models/unified_cricket_kg.pkl (will use mock data)")
+    fi
+    
+    if [ ! -f "service_container.py" ]; then
+        optional_files+=("service_container.py (microservices disabled)")
     fi
     
     if [ ${#missing_files[@]} -ne 0 ]; then
-        print_error "Missing required files:"
+        print_error "Missing critical files:"
         for file in "${missing_files[@]}"; do
             echo "  - $file"
         done
         exit 1
     fi
     
-    print_status "All required files found"
+    if [ ${#optional_files[@]} -ne 0 ]; then
+        print_warning "Optional files missing (system will still work):"
+        for file in "${optional_files[@]}"; do
+            echo "  - $file"
+        done
+    fi
+    
+    print_status "All critical files found"
 }
 
 # Function to wait for service to be ready
@@ -153,26 +193,34 @@ wait_for_service() {
 
 # Function to test API health
 test_api_health() {
-    print_info "Testing API health..."
+    print_info "Testing API Gateway health..."
     
-    local health_response=$(curl -s "http://127.0.0.1:$API_PORT/api/cards/health" 2>/dev/null || echo "failed")
+    local health_response=$(curl -s "http://127.0.0.1:$API_GATEWAY_PORT/api/cards/health" 2>/dev/null || echo "failed")
     
     if [ "$health_response" = "failed" ] || [ -z "$health_response" ]; then
-        print_warning "API health check couldn't connect - but API may still be starting"
-        print_info "You can manually check: http://127.0.0.1:$API_PORT/api/cards/health"
+        print_warning "API Gateway health check couldn't connect - but API may still be starting"
+        print_info "You can manually check: http://127.0.0.1:$API_GATEWAY_PORT/api/health"
         return 0  # Don't fail the startup for this
     elif echo "$health_response" | grep -q '"status":"healthy"'; then
-        print_status "API health check passed"
+        print_status "API Gateway health check passed"
         
-        # Extract KG status
-        if echo "$health_response" | grep -q '"kg_available":true'; then
-            print_status "Knowledge Graph loaded successfully"
-        else
-            print_warning "Knowledge Graph not available - using mock data"
+        # Extract service status
+        if echo "$health_response" | grep -q '"services"'; then
+            print_status "Microservices architecture active"
         fi
     else
-        print_warning "API returned unexpected response, but may be working"
+        print_warning "API Gateway returned unexpected response, but may be working"
         print_info "Response: $health_response"
+    fi
+    
+    # Test Admin Backend health
+    print_info "Testing Admin Backend health..."
+    local admin_health=$(curl -s "http://127.0.0.1:$ADMIN_BACKEND_PORT/api/health" 2>/dev/null || echo "failed")
+    
+    if echo "$admin_health" | grep -q '"status":"healthy"'; then
+        print_status "Admin Backend health check passed"
+    else
+        print_warning "Admin Backend may not be fully ready yet"
     fi
 }
 
@@ -182,12 +230,17 @@ main() {
     echo "------------------------------------"
     
     # Kill existing services
-    kill_by_name "$API_SCRIPT" "API Server"
+    kill_by_name "$API_GATEWAY_SCRIPT" "API Gateway"
+    kill_by_name "$ADMIN_BACKEND_SCRIPT" "Admin Backend"
     kill_by_name "http.server" "HTTP Server"
-    kill_by_name "admin_backend.py" "Admin Backend"
-    kill_port $API_PORT "API Server"
+    kill_by_name "uvicorn" "FastAPI Server"
+    kill_port $API_GATEWAY_PORT "API Gateway"
+    kill_port $ADMIN_BACKEND_PORT "Admin Backend"
     kill_port $HTTP_PORT "HTTP Server"
-    kill_port 5001 "Admin Backend"
+    
+    # Set environment variables
+    export WICKETWISE_ENV="$ENVIRONMENT"
+    export WICKETWISE_JWT_SECRET="dev-secret-key-$(date +%s)-$(openssl rand -hex 16 2>/dev/null || echo 'fallback-secret')"
     
     echo ""
     echo "🔧 Phase 2: Environment setup"
@@ -216,28 +269,28 @@ main() {
         exit 1
     fi
     
-    # Start API server
-    print_info "Starting Enhanced API server on port $API_PORT..."
-    python "$API_SCRIPT" > api.log 2>&1 &
-    API_PID=$!
+    # Start API Gateway (FastAPI with modern architecture)
+    print_info "Starting API Gateway on port $API_GATEWAY_PORT..."
+    python "$API_GATEWAY_SCRIPT" > api_gateway.log 2>&1 &
+    API_GATEWAY_PID=$!
     
-    # Start admin backend server (for match enrichment)
-    print_info "Starting Admin Backend server on port 5001..."
-    python admin_backend.py > admin_backend.log 2>&1 &
-    ADMIN_PID=$!
+    # Start Admin Backend server (for match enrichment and admin operations)
+    print_info "Starting Admin Backend server on port $ADMIN_BACKEND_PORT..."
+    python "$ADMIN_BACKEND_SCRIPT" > admin_backend.log 2>&1 &
+    ADMIN_BACKEND_PID=$!
     
-    # Wait for API server
-    if wait_for_service "http://127.0.0.1:$API_PORT/api/cards/health" "API Server"; then
-        print_status "API Server started (PID: $API_PID)"
+    # Wait for API Gateway
+    if wait_for_service "http://127.0.0.1:$API_GATEWAY_PORT/api/cards/health" "API Gateway"; then
+        print_status "API Gateway started (PID: $API_GATEWAY_PID)"
     else
-        print_error "Failed to start API Server"
-        print_info "Check api.log for details"
+        print_error "Failed to start API Gateway"
+        print_info "Check api_gateway.log for details"
         exit 1
     fi
     
-    # Wait for admin backend server
-    if wait_for_service "http://127.0.0.1:5001/api/health" "Admin Backend"; then
-        print_status "Admin Backend started (PID: $ADMIN_PID)"
+    # Wait for Admin Backend server
+    if wait_for_service "http://127.0.0.1:$ADMIN_BACKEND_PORT/api/health" "Admin Backend"; then
+        print_status "Admin Backend started (PID: $ADMIN_BACKEND_PID)"
     else
         print_error "Failed to start Admin Backend"
         print_info "Check admin_backend.log for details"
@@ -259,54 +312,68 @@ main() {
     echo ""
     echo "📊 URLs:"
     echo "  • Main Dashboard:    http://127.0.0.1:$HTTP_PORT/wicketwise_dashboard.html"
-    echo "  • Admin Panel:       http://127.0.0.1:$HTTP_PORT/wicketwise_admin_simple.html"
+    echo "  • Admin Panel:       http://127.0.0.1:$HTTP_PORT/wicketwise_admin_redesigned.html"
     echo "  • Standalone Cards:  http://127.0.0.1:$HTTP_PORT/enhanced_player_cards_ui.html"
-    echo "  • API Health:        http://127.0.0.1:$API_PORT/api/cards/health"
+    echo "  • API Gateway:       http://127.0.0.1:$API_GATEWAY_PORT/api/health"
+    echo "  • Admin Backend:     http://127.0.0.1:$ADMIN_BACKEND_PORT/api/health"
+    echo "  • API Documentation: http://127.0.0.1:$API_GATEWAY_PORT/docs"
     echo ""
     echo "🔧 Service Info:"
-    echo "  • HTTP Server PID:   $HTTP_PID"
-    echo "  • API Server PID:    $API_PID"
-    echo "  • Admin Backend PID: $ADMIN_PID"
-    echo "  • API Logs:          api.log"
-    echo "  • Admin Logs:        admin_backend.log"
+    echo "  • HTTP Server PID:     $HTTP_PID"
+    echo "  • API Gateway PID:     $API_GATEWAY_PID"
+    echo "  • Admin Backend PID:   $ADMIN_BACKEND_PID"
+    echo "  • API Gateway Logs:    api_gateway.log"
+    echo "  • Admin Backend Logs:  admin_backend.log"
+    echo "  • Environment:         $ENVIRONMENT"
     echo ""
     echo "🎯 Features Available:"
-    echo "  • Real Knowledge Graph data (11,997 nodes)"
+    echo "  • Modern FastAPI Gateway with authentication"
+    echo "  • Security Framework (JWT, Rate Limiting, Input Validation)"
+    echo "  • Real Knowledge Graph data (11,997+ nodes)"
     echo "  • Comprehensive player statistics"
     echo "  • Format-specific analytics"
     echo "  • Persona-based analysis"
     echo "  • Dynamic player cards"
     echo "  • OpenAI Match Enrichment (weather, teams, venues)"
+    echo "  • Performance monitoring and benchmarks"
+    echo "  • Microservices-ready architecture"
     echo ""
     echo "🛑 To stop services:"
-    echo "  kill $HTTP_PID $API_PID $ADMIN_PID"
+    echo "  kill $HTTP_PID $API_GATEWAY_PID $ADMIN_BACKEND_PID"
     echo "  # Or use: ./stop.sh"
     echo ""
     
     # Save PIDs for stop script
     echo "$HTTP_PID" > .http_server.pid
-    echo "$API_PID" > .api_server.pid
-    echo "$ADMIN_PID" > .admin_backend.pid
+    echo "$API_GATEWAY_PID" > .api_gateway.pid
+    echo "$ADMIN_BACKEND_PID" > .admin_backend.pid
     
     print_status "Startup complete! 🎉"
 }
 
 # Trap to cleanup on script exit
 cleanup() {
+    print_warning "Shutting down services..."
+    
     if [ ! -z "$HTTP_PID" ] && kill -0 $HTTP_PID 2>/dev/null; then
         print_warning "Cleaning up HTTP server..."
         kill $HTTP_PID 2>/dev/null || true
     fi
     
-    if [ ! -z "$API_PID" ] && kill -0 $API_PID 2>/dev/null; then
-        print_warning "Cleaning up API server..."
-        kill $API_PID 2>/dev/null || true
+    if [ ! -z "$API_GATEWAY_PID" ] && kill -0 $API_GATEWAY_PID 2>/dev/null; then
+        print_warning "Cleaning up API Gateway..."
+        kill $API_GATEWAY_PID 2>/dev/null || true
     fi
     
-    if [ ! -z "$ADMIN_PID" ] && kill -0 $ADMIN_PID 2>/dev/null; then
+    if [ ! -z "$ADMIN_BACKEND_PID" ] && kill -0 $ADMIN_BACKEND_PID 2>/dev/null; then
         print_warning "Cleaning up Admin Backend..."
-        kill $ADMIN_PID 2>/dev/null || true
+        kill $ADMIN_BACKEND_PID 2>/dev/null || true
     fi
+    
+    # Clean up PID files
+    rm -f .http_server.pid .api_gateway.pid .admin_backend.pid
+    
+    print_status "All services stopped"
 }
 
 trap cleanup EXIT INT TERM

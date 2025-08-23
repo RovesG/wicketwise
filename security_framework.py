@@ -69,6 +69,7 @@ class JWTAuthManager:
         self.token_expiry_hours = token_expiry_hours
         self.algorithm = "HS256"
         self.users: Dict[str, User] = {}  # In-memory user store (use database in production)
+        self._password_store: Dict[str, str] = {}  # Password hash store
     
     def create_user(self, username: str, email: str, password: str, roles: Set[UserRole]) -> User:
         """Create a new user with hashed password"""

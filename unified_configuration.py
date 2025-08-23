@@ -408,22 +408,23 @@ class WicketWiseConfig:
         """Validate configuration values"""
         errors = []
         
-        # Validate paths exist or can be created
-        paths_to_check = [
-            self.data.data_dir,
-            self.data.models_dir,
-            self.data.artifacts_dir,
-            self.data.reports_dir,
-            self.data.cache_dir,
-            self.data.logs_dir
-        ]
-        
-        for path_str in paths_to_check:
-            path = Path(path_str)
-            try:
-                path.mkdir(parents=True, exist_ok=True)
-            except Exception as e:
-                errors.append(f"Cannot create directory {path}: {e}")
+        # Validate paths exist or can be created (skip in testing/development environment)
+        if self.environment == Environment.PRODUCTION:
+            paths_to_check = [
+                self.data.data_dir,
+                self.data.models_dir,
+                self.data.artifacts_dir,
+                self.data.reports_dir,
+                self.data.cache_dir,
+                self.data.logs_dir
+            ]
+            
+            for path_str in paths_to_check:
+                path = Path(path_str)
+                try:
+                    path.mkdir(parents=True, exist_ok=True)
+                except Exception as e:
+                    errors.append(f"Cannot create directory {path}: {e}")
         
         # Validate ports
         if not (1024 <= self.server.backend_port <= 65535):
@@ -507,7 +508,14 @@ def get_config() -> WicketWiseConfig:
     """Get global configuration instance"""
     global _config_instance
     if _config_instance is None:
-        _config_instance = WicketWiseConfig()
+        # Check for environment variable
+        env_name = os.getenv('WICKETWISE_ENV', 'development').upper()
+        try:
+            environment = Environment[env_name]
+        except KeyError:
+            environment = Environment.DEVELOPMENT
+        
+        _config_instance = WicketWiseConfig(environment=environment)
     return _config_instance
 
 def init_config(config_file: Optional[str] = None, environment: Optional[Environment] = None) -> WicketWiseConfig:
