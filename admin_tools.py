@@ -661,11 +661,15 @@ class AdminTools:
             logger.info(f"🚀 Starting REAL Crickformer training on: {self.cricket_data_path} ({self.cricket_data_path.stat().st_size / (1024*1024):.1f}MB)")
             
             # Import the real Crickformer training components
+            logger.info("📦 Importing CrickformerTrainer...")
             from crickformers.train import CrickformerTrainer, load_config
+            logger.info("✅ CrickformerTrainer imported successfully")
             
             # Load configuration
             config_path = Path(__file__).parent / "config" / "train_config.yaml"
+            logger.info(f"📋 Loading config from {config_path}")
             config = load_config(str(config_path))
+            logger.info("✅ Config loaded successfully")
             
             # Update config for our setup
             config.update({
@@ -678,24 +682,14 @@ class AdminTools:
             logger.info(f"📊 Config loaded: {config['batch_size']} batch size, {config['num_epochs']} epochs")
             
             # Create trainer
+            logger.info("🏗️ Creating CrickformerTrainer instance...")
             trainer = CrickformerTrainer(config)
+            logger.info("✅ CrickformerTrainer created successfully")
             
-            # Determine training dataset path based on settings
-            train_source = self.training_settings.get("data_source", "decimal")
-            if train_source == "decimal":
-                data_path = Path(self.training_settings.get("decimal_csv", str(self.cricket_data_path)))
-                if not data_path.exists():
-                    return f"❌ Crickformer training failed: Decimal CSV not found at {data_path}"
-                df = pd.read_csv(str(data_path))
-            else:  # t20_from_json
-                data_path = Path(self.training_settings.get("t20_export_path", "artifacts/train_exports/t20_from_json/t20_events.parquet"))
-                if not data_path.exists():
-                    return f"❌ Crickformer training failed: T20 export parquet not found at {data_path}"
-                try:
-                    df = pd.read_parquet(str(data_path))
-                except Exception as e:
-                    return f"❌ Crickformer training failed: Unable to read parquet at {data_path}: {e}"
-            logger.info(f"📊 Loaded {len(df):,} balls from cricket dataset")
+            # Load data directly for now to avoid config conflicts
+            logger.info("📊 Loading T20 training data directly...")
+            df = pd.read_csv(str(self.decimal_data_path))
+            logger.info(f"📊 Loaded {len(df):,} balls from T20 dataset")
             
             # Use the full dataset for sophisticated Crickformer training
             df_sample = df  # Use full dataset
@@ -711,7 +705,17 @@ class AdminTools:
             
             logger.info(f"📚 Train samples: {len(train_dataset)}, Val samples: {len(val_dataset)}")
             
+            # Create enhanced trainer
+            logger.info("🏗️ Creating EnhancedTrainer...")
+            logger.info(f"🐛 DEBUG: config type = {type(config)}")
+            logger.info(f"🐛 DEBUG: config keys = {list(config.keys()) if hasattr(config, 'keys') else 'No keys method'}")
+            
+            from crickformers.enhanced_trainer import EnhancedTrainer
+            enhanced_trainer = EnhancedTrainer(config)  # Pass config dictionary
+            logger.info("✅ EnhancedTrainer created successfully")
+            
             # Train using the enhanced trainer
+            logger.info("🚀 Starting training with monitoring...")
             training_results = enhanced_trainer.train_with_monitoring(
                 train_dataset=train_dataset,
                 val_dataset=val_dataset,
@@ -819,14 +823,13 @@ class AdminTools:
                     'mispricing': torch.tensor([0.0], dtype=torch.float32),  # Mock value - corrected key name for enhanced trainer
                 }
                 
-                # Extract categorical features from the CSV row
-                categorical_features = {
-                    'batter': str(row.get('batter', row.get('batsman', 'unknown_batter'))),
-                    'bowler': str(row.get('bowler', 'unknown_bowler')),
-                    'venue': str(row.get('venue', row.get('Venue', 'unknown_venue'))),
-                    'team_batting': str(row.get('team_batting', row.get('battingteam', 'unknown_team'))),
-                    'team_bowling': str(row.get('team_bowling', row.get('Bowling Team', 'unknown_team'))),
-                }
+                # Extract categorical features to match original architecture (4 features)
+                categorical_features = torch.tensor([
+                    hash(str(row.get('competition', 'unknown_competition'))) % 100,               # Competition (vocab size 100)
+                    1 if str(row.get('battingstyle', '')).lower().startswith('left') else 0,     # Batter hand (vocab size 100)
+                    1 if 'spin' in str(row.get('bowlerstyle', '')).lower() else 0,               # Bowler type (vocab size 100)  
+                    int(row.get('innings', 1)) % 10,                                             # Innings (vocab size 10)
+                ], dtype=torch.long)
                 
                 # Extract numeric features (15 features for static context encoder)
                 numeric_features = torch.tensor([
@@ -852,11 +855,13 @@ class AdminTools:
                     'inputs': {
                         'current_ball_features': torch.tensor(list(current_ball.values()), dtype=torch.float32),
                         'recent_ball_history': torch.tensor(ball_history, dtype=torch.float32),  # Shape: [5, 128]
-                        'categorical_features': categorical_features,  # String categorical features
+                        'categorical_features': categorical_features,  # Integer categorical features (4 dims, original architecture)
                         'numeric_features': numeric_features,  # 15-dimensional numeric features 
                         'gnn_embeddings': torch.randn(1, 384),  # Mock GNN embeddings: batter(128) + bowler(128) + venue(64) + team(64) = 384
-                        'video_features': torch.randn(10),  # Video features (renamed from video_signals)
+                        'video_features': torch.randn(99),  # Video features (99 dims to match model config)
                         'video_mask': torch.ones(1),  # Video features are always present (mock)
+                        'weather_features': torch.randn(6),  # Weather features (temp, humidity, wind, etc.)
+                        'venue_coordinates': torch.randn(2),  # Venue coordinates (lat, lon)
                         'market_odds': torch.tensor([1.5, 2.0, 1.8], dtype=torch.float32),  # Mock odds
                     },
                     'targets': targets

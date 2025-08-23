@@ -239,6 +239,11 @@ def get_operation_status(operation_id):
 def train_model():
     """Train AI model using real training pipeline"""
     
+    # Check if training is already running
+    operation_id = "model_training"
+    if operation_id in background_operations and background_operations[operation_id].get("status") == "running":
+        return jsonify({"error": "Training is already running", "operation_id": operation_id}), 400
+    
     def run_training():
         """Background task to train model"""
         operation_id = "model_training"
@@ -251,8 +256,19 @@ def train_model():
                 "logs": ["Initializing sophisticated Crickformer model..."]
             }
             
-            # Actually run training immediately (no fake progress)
-            result = get_admin_tools_instance().train_model()
+            logger.info("🐛 DEBUG: About to call train_model()")
+            
+            # Actually run training (removed signal timeout as it doesn't work in threads)
+            try:
+                logger.info("🐛 DEBUG: Starting train_model()...")
+                result = get_admin_tools_instance().train_model()
+                logger.info(f"🐛 DEBUG: train_model() returned: {result}")
+                
+            except Exception as train_error:
+                logger.error(f"🐛 DEBUG: train_model() failed with error: {train_error}")
+                import traceback
+                logger.error(f"🐛 DEBUG: Full traceback: {traceback.format_exc()}")
+                raise train_error
             
             # Update with results
             background_operations[operation_id]["progress"] = 100
@@ -369,19 +385,39 @@ def ingest_alljson():
                 if count % 50 == 0:
                     background_operations[operation_id]["message"] = f"Processed {count}/{total} files"
                     background_operations[operation_id]["progress"] = int(count * 100 / max(1, total))
-            # Write a consolidated parquet shard (simple first version)
+            # Write consolidated CSV directly (more efficient than parquet → CSV conversion)
             import pandas as pd
             if dfs:
                 big = pd.concat(dfs, ignore_index=True)
                 
+                # Write both formats for compatibility
+                csv_path = out_dir / 'complete_ball_by_ball_data.csv'
+                parquet_path = out_dir / 'events.parquet'
+                
+                # Write CSV directly for KG pipeline
+                big.to_csv(csv_path, index=False)
+                
+                # Keep parquet for backup/alternative use
                 # Fix data type issues for parquet conversion
-                # Convert object columns with mixed types to strings
                 for col in big.columns:
                     if big[col].dtype == 'object':
-                        # Convert to string, handling NaN values
-                        big[col] = big[col].astype(str).replace('nan', None)
+                        # Check if column contains lists/arrays
+                        sample_values = big[col].dropna().head(10)
+                        if len(sample_values) > 0 and any(isinstance(val, (list, tuple)) for val in sample_values):
+                            # Convert lists to JSON strings
+                            big[col] = big[col].apply(
+                                lambda x: json.dumps(x) if isinstance(x, (list, tuple)) else str(x) if x is not None else None
+                            )
+                        else:
+                            # Convert to string, handling NaN values
+                            big[col] = big[col].astype(str).replace('nan', None)
                 
-                big.to_parquet(out_dir / 'events.parquet', index=False)
+                big.to_parquet(parquet_path, index=False)
+                
+                # Copy CSV to main data directory for easy access
+                import shutil
+                main_data_csv = Path("/Users/shamusrae/Library/Mobile Documents/com~apple~CloudDocs/Cricket /Data/complete_ball_by_ball_data.csv")
+                shutil.copy2(csv_path, main_data_csv)
             background_operations[operation_id]["status"] = "completed"
             background_operations[operation_id]["progress"] = 100
             background_operations[operation_id]["message"] = "All JSON ingestion completed"
@@ -707,13 +743,22 @@ def enrich_matches():
     
     try:
         data = request.get_json() or {}
-        max_matches = data.get('max_matches', 50)
-        priority_competitions = data.get('priority_competitions', [
-            'Indian Premier League',
-            'Big Bash League',
-            'Pakistan Super League',
-            'T20I'
-        ])
+        logger.info(f"🐛 DEBUG: Received enrichment request data: {data}")
+        
+        additional_matches = data.get('max_matches', 50)  # Keep 'max_matches' for UI compatibility
+        priority_competitions = data.get('priority_competitions', [])
+        
+        # If no priority competitions specified, use defaults (but allow empty for all competitions)
+        if 'priority_competitions' not in data:
+            priority_competitions = [
+                'Indian Premier League',
+                'Big Bash League',
+                'Pakistan Super League',
+                'T20I'
+            ]
+            
+        logger.info(f"🐛 DEBUG: Final priority_competitions: {priority_competitions}")
+        logger.info(f"🐛 DEBUG: Additional matches requested: {additional_matches}")
         
         # Check if OpenAI API key is available
         api_key = os.getenv('OPENAI_API_KEY')
@@ -730,9 +775,9 @@ def enrich_matches():
             "message": "Initializing match enrichment...",
             "logs": ["🚀 Starting OpenAI match enrichment pipeline..."],
             "details": {
-                "max_matches": max_matches,
+                "additional_matches": additional_matches,
                 "priority_competitions": priority_competitions,
-                "total_cost_estimate": max_matches * 0.02
+                "total_cost_estimate": additional_matches * 0.02
             }
         }
         
@@ -750,34 +795,66 @@ def enrich_matches():
                 
                 background_operations[operation_id]["progress"] = 20
                 background_operations[operation_id]["message"] = "Starting match enrichment..."
-                background_operations[operation_id]["logs"].append(f"🎯 Enriching top {max_matches} matches...")
+                background_operations[operation_id]["logs"].append(f"🎯 Enriching {additional_matches} additional matches...")
                 
                 # Run enrichment
                 betting_data_path = '/Users/shamusrae/Library/Mobile Documents/com~apple~CloudDocs/Cricket /Data/decimal_data_v3.csv'
                 enriched_file = pipeline.enrich_betting_dataset(
                     betting_data_path=betting_data_path,
-                    max_matches=max_matches,
+                    additional_matches=additional_matches,
                     priority_competitions=priority_competitions
                 )
                 
                 background_operations[operation_id]["progress"] = 80
-                background_operations[operation_id]["message"] = "Generating summary report..."
-                background_operations[operation_id]["logs"].append("📋 Generating enrichment summary...")
+                background_operations[operation_id]["message"] = "Analyzing enrichment results..."
+                background_operations[operation_id]["logs"].append("📋 Analyzing enrichment results...")
                 
-                # Generate summary
-                report_file = pipeline.generate_summary_report(enriched_file)
+                # Get detailed summary
+                try:
+                    enrichment_summary = pipeline.get_last_enrichment_summary()
+                    logger.info(f"📋 Retrieved enrichment summary: {enrichment_summary}")
+                except Exception as e:
+                    logger.error(f"Failed to get enrichment summary: {e}")
+                    enrichment_summary = {}
+                
+                # Generate summary report
+                try:
+                    report_file = pipeline.generate_summary_report(enriched_file)
+                    logger.info(f"📄 Generated summary report: {report_file}")
+                except Exception as e:
+                    logger.error(f"Failed to generate summary report: {e}")
+                    report_file = "Error generating report"
+                
+                # Create detailed completion message
+                new_matches = enrichment_summary.get('new_matches_enriched', 0)
+                cached_matches = enrichment_summary.get('cached_matches_used', 0)
+                api_calls = enrichment_summary.get('api_calls_made', 0)
+                
+                if enrichment_summary.get('enrichment_status', {}).get('no_matches_found', False):
+                    completion_message = f"No matches found for the selected competitions."
+                    background_operations[operation_id]["logs"].append(f"⚠️ The selected competitions don't exist in the dataset")
+                    background_operations[operation_id]["logs"].append(f"💡 Try selecting from: IPL, Big Bash League, Pakistan Super League, T20I, etc.")
+                elif enrichment_summary.get('enrichment_status', {}).get('all_requested_matches_cached', False):
+                    completion_message = f"No additional matches to enrich! All available matches are already cached."
+                    background_operations[operation_id]["logs"].append(f"ℹ️ No new matches available to enrich beyond the {cached_matches} already cached")
+                    background_operations[operation_id]["logs"].append(f"💡 All top priority matches are already enriched. Try different competitions or wait for new data.")
+                elif new_matches > 0:
+                    completion_message = f"Successfully enriched {new_matches} new matches! ({cached_matches} from cache)"
+                    background_operations[operation_id]["logs"].append(f"✅ {new_matches} new matches enriched, {cached_matches} from cache")
+                else:
+                    completion_message = f"No new matches to enrich. {cached_matches} matches available from cache."
                 
                 # Success
                 background_operations[operation_id]["status"] = "completed"
                 background_operations[operation_id]["progress"] = 100
-                background_operations[operation_id]["message"] = f"Match enrichment completed! {max_matches} matches processed."
-                background_operations[operation_id]["logs"].append(f"✅ Enrichment complete! Files saved:")
-                background_operations[operation_id]["logs"].append(f"   📁 Enriched data: {enriched_file}")
-                background_operations[operation_id]["logs"].append(f"   📄 Summary report: {report_file}")
+                background_operations[operation_id]["message"] = completion_message
+                background_operations[operation_id]["logs"].append(f"📁 Enriched data: {enriched_file}")
+                background_operations[operation_id]["logs"].append(f"📄 Summary report: {report_file}")
+                background_operations[operation_id]["logs"].append(f"💰 API calls made: {api_calls} (~${api_calls * 0.02:.2f})")
                 background_operations[operation_id]["result"] = {
                     "enriched_file": enriched_file,
                     "report_file": report_file,
-                    "matches_processed": max_matches
+                    "enrichment_summary": enrichment_summary
                 }
                 
             except Exception as e:
@@ -873,10 +950,13 @@ def get_enrichment_statistics():
         
         dataset_stats = {
             "total_matches": 0,
+            "total_enriched": len(pipeline.enrichment_cache),
+            "total_remaining": 0,
             "competitions": [],
             "date_range": {"earliest": None, "latest": None},
             "venues": 0,
-            "data_available": False
+            "data_available": False,
+            "enrichment_percentage": 0
         }
         
         if os.path.exists(betting_data_path):
@@ -886,8 +966,14 @@ def get_enrichment_statistics():
                 # Get unique matches
                 matches = betting_data.groupby(['date', 'competition', 'venue', 'home', 'away']).size().reset_index(name='balls')
                 
+                total_matches = int(len(matches))
+                total_enriched = len(pipeline.enrichment_cache)
+                
                 dataset_stats.update({
-                    "total_matches": int(len(matches)),
+                    "total_matches": total_matches,
+                    "total_enriched": total_enriched,
+                    "total_remaining": max(0, total_matches - total_enriched),
+                    "enrichment_percentage": round((total_enriched / total_matches * 100) if total_matches > 0 else 0, 1),
                     "competitions": sorted([str(comp) for comp in betting_data['competition'].unique()]),
                     "date_range": {
                         "earliest": str(betting_data['date'].min()),
@@ -942,6 +1028,188 @@ def get_enrichment_statistics():
     except Exception as e:
         logger.error(f"Error getting enrichment statistics: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
+# Cricsheet Auto Update endpoints
+@app.route('/api/cricsheet/check-updates', methods=['GET'])
+def check_cricsheet_updates():
+    """Check if newer Cricsheet data is available"""
+    try:
+        from cricsheet_auto_updater import get_cricsheet_updater
+        updater = get_cricsheet_updater()
+        result = updater.check_for_updates()
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Failed to check Cricsheet updates: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/cricsheet/update', methods=['POST'])
+def trigger_cricsheet_update():
+    """Trigger full Cricsheet update pipeline"""
+    operation_id = "cricsheet_update"
+    
+    if operation_id in background_operations and background_operations[operation_id]["status"] == "running":
+        return jsonify({"error": "Cricsheet update already in progress"}), 400
+    
+    background_operations[operation_id] = {
+        "status": "running",
+        "progress": 0,
+        "message": "Starting Cricsheet update pipeline...",
+        "logs": [],
+        "started_at": datetime.now().isoformat()
+    }
+    
+    def run_update():
+        try:
+            from cricsheet_auto_updater import get_cricsheet_updater
+            updater = get_cricsheet_updater()
+            
+            # Update progress - Check for updates
+            background_operations[operation_id]["message"] = "Checking for updates..."
+            background_operations[operation_id]["progress"] = 10
+            
+            check_result = updater.check_for_updates()
+            if not check_result.get("update_available", False):
+                background_operations[operation_id]["status"] = "completed"
+                background_operations[operation_id]["message"] = "No updates available"
+                background_operations[operation_id]["progress"] = 100
+                return
+            
+            # Update progress - Download and process
+            background_operations[operation_id]["message"] = "Downloading and processing new data..."
+            background_operations[operation_id]["progress"] = 30
+            
+            process_result = updater.download_and_process_updates()
+            if not process_result.success:
+                raise Exception(process_result.error_message)
+            
+            # Update progress - Update KG
+            background_operations[operation_id]["message"] = "Updating Knowledge Graph..."
+            background_operations[operation_id]["progress"] = 60
+            
+            kg_success = updater.trigger_incremental_kg_update()
+            
+            # Update progress - Retrain GNN
+            background_operations[operation_id]["message"] = "Retraining GNN embeddings..."
+            background_operations[operation_id]["progress"] = 80
+            
+            gnn_success = updater.trigger_gnn_retrain(incremental=True)
+            
+            # Create result summary
+            result = {
+                "overall_success": process_result.success and kg_success and gnn_success,
+                "summary": f"Successfully processed {process_result.new_files_count} new files ({process_result.total_new_balls:,} balls), KG {'✅' if kg_success else '❌'}, GNN {'✅' if gnn_success else '❌'}",
+                "steps": {
+                    "download_process": process_result.__dict__,
+                    "kg_update": {"success": kg_success},
+                    "gnn_retrain": {"success": gnn_success}
+                }
+            }
+            
+            # Update final status
+            if result["overall_success"]:
+                background_operations[operation_id]["status"] = "completed"
+                background_operations[operation_id]["message"] = result["summary"]
+                background_operations[operation_id]["result"] = result
+            else:
+                background_operations[operation_id]["status"] = "failed"
+                background_operations[operation_id]["message"] = f"Update failed: {result['summary']}"
+                background_operations[operation_id]["error"] = result["summary"]
+            
+            background_operations[operation_id]["progress"] = 100
+            background_operations[operation_id]["completed_at"] = datetime.now().isoformat()
+            
+        except Exception as e:
+            logger.error(f"Cricsheet update failed: {e}")
+            background_operations[operation_id]["status"] = "failed"
+            background_operations[operation_id]["message"] = f"Update failed: {str(e)}"
+            background_operations[operation_id]["error"] = str(e)
+            background_operations[operation_id]["progress"] = 100
+    
+    # Start background thread
+    import threading
+    thread = threading.Thread(target=run_update)
+    thread.start()
+    
+    return jsonify({
+        "status": "started",
+        "operation_id": operation_id,
+        "message": "Cricsheet update pipeline started"
+    })
+
+@app.route('/api/cricsheet/download-process', methods=['POST'])
+def download_and_process_only():
+    """Download and process new Cricsheet data without KG/GNN updates"""
+    try:
+        from cricsheet_auto_updater import get_cricsheet_updater
+        updater = get_cricsheet_updater()
+        result = updater.download_and_process_updates()
+        
+        return jsonify({
+            "success": result.success,
+            "new_files_count": result.new_files_count,
+            "total_new_balls": result.total_new_balls,
+            "summary": result.update_summary,
+            "error": result.error_message
+        })
+    except Exception as e:
+        logger.error(f"Failed to download/process Cricsheet data: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# New API endpoints for redesigned UI
+@app.route('/api/training-pipeline/stats', methods=['GET'])
+def get_training_pipeline_stats():
+    """Get comprehensive training pipeline statistics"""
+    try:
+        from enriched_training_pipeline import get_enriched_training_pipeline
+        pipeline = get_enriched_training_pipeline()
+        stats = pipeline.get_training_statistics()
+        return jsonify(stats)
+    except Exception as e:
+        logger.error(f"Failed to get training pipeline stats: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/training-pipeline/validate', methods=['GET'])
+def validate_training_pipeline():
+    """Validate data integrity across all training pipeline sources"""
+    try:
+        from enriched_training_pipeline import get_enriched_training_pipeline
+        pipeline = get_enriched_training_pipeline()
+        validation = pipeline.validate_data_integrity()
+        return jsonify(validation)
+    except Exception as e:
+        logger.error(f"Failed to validate training pipeline: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/clear-caches', methods=['POST'])
+def clear_all_caches():
+    """Clear all system caches"""
+    try:
+        import shutil
+        from pathlib import Path
+        
+        cache_dirs = [
+            "cache/entity_harmonizer",
+            "cache/training_pipeline", 
+            "cache/enrichment",
+            "enriched_data/cache"
+        ]
+        
+        cleared = []
+        for cache_dir in cache_dirs:
+            cache_path = Path(cache_dir)
+            if cache_path.exists():
+                shutil.rmtree(cache_path)
+                cleared.append(cache_dir)
+        
+        logger.info(f"Cleared caches: {cleared}")
+        return jsonify({
+            "status": "success",
+            "cleared_caches": cleared,
+            "message": f"Cleared {len(cleared)} cache directories"
+        })
+    except Exception as e:
+        logger.error(f"Failed to clear caches: {e}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     print("🚀 Starting WicketWise Admin Backend API...")

@@ -463,9 +463,13 @@ class MatchEnrichmentPipeline:
             'cache_version': '1.0'
         }
         
-    def enrich_betting_dataset(self, betting_data_path: str, max_matches: Optional[int] = None, 
+    def enrich_betting_dataset(self, betting_data_path: str, additional_matches: Optional[int] = None, 
                               priority_competitions: Optional[List[str]] = None, force_refresh: bool = False) -> str:
-        """Enrich the betting dataset with OpenAI match data (with intelligent caching)"""
+        """Enrich the betting dataset with OpenAI match data (with intelligent caching)
+        
+        Args:
+            additional_matches: Number of NEW matches to enrich beyond what's already cached
+        """
         
         logger.info(f"🚀 Starting betting dataset enrichment from {betting_data_path}")
         
@@ -480,6 +484,35 @@ class MatchEnrichmentPipeline:
         # Prioritize matches
         if priority_competitions:
             matches = matches[matches['competition'].isin(priority_competitions)]
+            
+        # Check if any matches remain after filtering
+        if len(matches) == 0:
+            logger.warning(f"⚠️ No matches found for competitions: {priority_competitions}")
+            logger.info(f"Available competitions in dataset: {list(betting_data['competition'].unique())}")
+            
+            # Create empty summary for this case
+            self._last_enrichment_summary = {
+                'total_matches_in_dataset': 0,
+                'additional_matches_requested': additional_matches if additional_matches else 0,
+                'total_matches_available': 0,
+                'cached_matches_used': 0,
+                'new_matches_enriched': 0,
+                'new_matches_available': 0,
+                'api_calls_made': 0,
+                'estimated_cost_usd': 0,
+                'output_file': self.master_file,
+                'cache_file': self.cache_file,
+                'enrichment_status': {
+                    'all_requested_matches_cached': False,
+                    'partial_enrichment': False,
+                    'completed_new_enrichment': False,
+                    'no_matches_found': True
+                }
+            }
+            
+            # Return empty result gracefully
+            logger.info(f"✅ No matches to process - returning empty result")
+            return self.master_file
         
         # Sort by total balls (more complete matches first)
         matches = matches.sort_values('total_balls', ascending=False)
@@ -505,10 +538,10 @@ class MatchEnrichmentPipeline:
             else:
                 new_matches.append(match_info)
         
-        # NOW apply max_matches limit to NEW matches only
-        if max_matches and len(new_matches) > max_matches:
-            logger.info(f"🎯 Limiting to {max_matches} new matches (from {len(new_matches)} available)")
-            new_matches = new_matches[:max_matches]
+        # NOW apply additional_matches limit to NEW matches only
+        if additional_matches and len(new_matches) > additional_matches:
+            logger.info(f"🎯 Limiting to {additional_matches} additional matches (from {len(new_matches)} available)")
+            new_matches = new_matches[:additional_matches]
         
         logger.info(f"📦 Found {len(cached_matches)} cached matches")
         logger.info(f"🆕 Need to enrich {len(new_matches)} new matches")
@@ -547,16 +580,43 @@ class MatchEnrichmentPipeline:
         with open(output_file, 'w') as f:
             json.dump(all_enriched_matches, f, indent=2)
         
-        # Log summary
+        # Create detailed summary
         total_cost = api_calls_made * 0.02
+        summary = {
+            'total_matches_in_dataset': len(matches),
+            'additional_matches_requested': additional_matches if additional_matches else len(new_matches),
+            'total_matches_available': len(all_enriched_matches),
+            'cached_matches_used': len(cached_matches),
+            'new_matches_enriched': len(newly_enriched),
+            'new_matches_available': len(new_matches),
+            'api_calls_made': api_calls_made,
+            'estimated_cost_usd': total_cost,
+            'output_file': output_file,
+            'cache_file': self.cache_file,
+            'enrichment_status': {
+                'all_requested_matches_cached': len(new_matches) == 0,
+                'partial_enrichment': additional_matches and len(new_matches) > additional_matches,
+                'completed_new_enrichment': api_calls_made > 0
+            }
+        }
+        
+        # Store summary for retrieval by admin backend
+        self._last_enrichment_summary = summary
+        
+        # Log summary
         logger.info(f"✅ Enrichment complete!")
         logger.info(f"📊 Total matches: {len(all_enriched_matches)}")
         logger.info(f"📦 From cache: {len(cached_matches)}")
         logger.info(f"🆕 Newly enriched: {len(newly_enriched)}")
+        logger.info(f"🎯 New matches available: {len(new_matches)}")
         logger.info(f"💰 API calls made: {api_calls_made} (~${total_cost:.2f})")
         logger.info(f"💾 Saved to: {output_file}")
         
         return output_file
+    
+    def get_last_enrichment_summary(self) -> Dict[str, Any]:
+        """Get the summary from the last enrichment run"""
+        return getattr(self, '_last_enrichment_summary', {})
     
     def get_cache_statistics(self) -> Dict[str, Any]:
         """Get statistics about the enrichment cache"""
@@ -621,8 +681,31 @@ class MatchEnrichmentPipeline:
             enriched_data = json.load(f)
         
         total_matches = len(enriched_data)
+        
+        # Handle empty data case
+        if total_matches == 0:
+            report = """
+🎯 MATCH ENRICHMENT SUMMARY REPORT
+{'='*50}
+
+⚠️ NO MATCHES PROCESSED
+• No matches found for the selected competitions
+• Try selecting different competitions or check available data
+• Available competitions listed in the logs above
+
+✅ NEXT STEPS:
+1. Select from available competitions (IPL, Big Bash League, etc.)
+2. Check that the selected competitions exist in your dataset
+3. Consider expanding competition filters
+"""
+            
+            report_path = f"{self.output_dir}/enrichment_summary.txt"
+            with open(report_path, 'w') as f:
+                f.write(report)
+            return report_path
+        
         successful_enrichments = len([m for m in enriched_data if m['enrichment_status'] == 'success'])
-        avg_confidence = sum(m['confidence_score'] for m in enriched_data) / total_matches
+        avg_confidence = sum(m['confidence_score'] for m in enriched_data) / total_matches if total_matches > 0 else 0
         
         # Venue analysis
         venues_with_coords = len([m for m in enriched_data if m['venue']['latitude'] != 0])
@@ -641,21 +724,21 @@ class MatchEnrichmentPipeline:
 
 📊 OVERALL STATISTICS:
 • Total matches processed: {total_matches:,}
-• Successful enrichments: {successful_enrichments:,} ({successful_enrichments/total_matches*100:.1f}%)
+• Successful enrichments: {successful_enrichments:,} ({successful_enrichments/total_matches*100:.1f if total_matches > 0 else 0}%)
 • Average confidence score: {avg_confidence:.2f}
 
 🌍 VENUE ENRICHMENT:
-• Venues with coordinates: {venues_with_coords:,} ({venues_with_coords/total_matches*100:.1f}%)
+• Venues with coordinates: {venues_with_coords:,} ({venues_with_coords/total_matches*100:.1f if total_matches > 0 else 0}%)
 
 🌤️ WEATHER ENRICHMENT:
-• Matches with weather data: {matches_with_weather:,} ({matches_with_weather/total_matches*100:.1f}%)
+• Matches with weather data: {matches_with_weather:,} ({matches_with_weather/total_matches*100:.1f if total_matches > 0 else 0}%)
 
 👥 TEAM ENRICHMENT:
-• Matches with full squads: {matches_with_full_squads:,} ({matches_with_full_squads/total_matches*100:.1f}%)
+• Matches with full squads: {matches_with_full_squads:,} ({matches_with_full_squads/total_matches*100:.1f if total_matches > 0 else 0}%)
 
 💰 COST ANALYSIS:
 • Estimated API cost: ${total_matches * 0.02:.2f}
-• Cost per successful enrichment: ${(total_matches * 0.02) / successful_enrichments:.3f}
+• Cost per successful enrichment: ${(total_matches * 0.02) / successful_enrichments:.3f if successful_enrichments > 0 else 0}
 
 ✅ NEXT STEPS:
 1. Integrate enriched data into Knowledge Graph

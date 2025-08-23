@@ -1,27 +1,13 @@
 
 🎯 MATCH ENRICHMENT SUMMARY REPORT
-==================================================
+{'='*50}
 
-📊 OVERALL STATISTICS:
-• Total matches processed: 1,799
-• Successful enrichments: 1,121 (62.3%)
-• Average confidence score: 0.60
-
-🌍 VENUE ENRICHMENT:
-• Venues with coordinates: 1,121 (62.3%)
-
-🌤️ WEATHER ENRICHMENT:
-• Matches with weather data: 1,120 (62.3%)
-
-👥 TEAM ENRICHMENT:
-• Matches with full squads: 689 (38.3%)
-
-💰 COST ANALYSIS:
-• Estimated API cost: $35.98
-• Cost per successful enrichment: $0.032
+⚠️ NO MATCHES PROCESSED
+• No matches found for the selected competitions
+• Try selecting different competitions or check available data
+• Available competitions listed in the logs above
 
 ✅ NEXT STEPS:
-1. Integrate enriched data into Knowledge Graph
-2. Update betting model with weather features
-3. Validate team-player mappings
-4. Build venue-based performance models
+1. Select from available competitions (IPL, Big Bash League, etc.)
+2. Check that the selected competitions exist in your dataset
+3. Consider expanding competition filters
