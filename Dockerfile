@@ -1,42 +1,52 @@
-# Use an official Python runtime as a parent image
+# WicketWise Cricket Intelligence Platform - Production Dockerfile
+# Author: WicketWise AI, Last Modified: 2024
+
+# Use Python 3.11 slim image for production
 FROM python:3.11-slim
 
-# Set the working directory in the container
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    DEBIAN_FRONTEND=noninteractive
+
+# Set working directory
 WORKDIR /app
 
-# Add a non-root user for security
-RUN useradd -m --uid 1001 --gid 0 appuser
-COPY . /app
-RUN chown -R 0:0 /app
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Switch to the non-root user
-USER appuser
-WORKDIR /home/appuser/app
+# Create non-root user for security
+RUN groupadd -r wicketwise && useradd -r -g wicketwise wicketwise
 
-# Install dependencies
-# First, install torch and its related packages using the extra index URL
-# to ensure compatibility for torch-geometric.
-# This is for a CPU-only build. For GPU, the torch version and index URL
-# would need to be adjusted.
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu && \
-    pip install --no-cache-dir \
-        torch-scatter \
-        torch-sparse \
-        torch-cluster \
-        torch-spline-conv \
-        --index-url https://data.pyg.org/whl/torch-2.5.1+cpu.html
-
-# Install the remaining dependencies from requirements.txt
+# Copy requirements first for better caching
 COPY requirements.txt .
-RUN --mount=type=cache,target=/root/.cache/pip \
+
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application's code
+# Copy application code
 COPY . .
 
-# Expose the port that Streamlit runs on
-EXPOSE 8501
+# Create necessary directories
+RUN mkdir -p logs data models cache && \
+    chown -R wicketwise:wicketwise /app
 
-# Set the default command to run the Streamlit app
-CMD ["streamlit", "run", "ui_streamlit.py"] 
+# Switch to non-root user
+USER wicketwise
+
+# Expose ports
+EXPOSE 5001 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:5001/api/health || exit 1
+
+# Default command
+CMD ["python", "agent_dashboard_backend.py"]

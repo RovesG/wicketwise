@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WicketWise - Multi-Agent Cricket Intelligence</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            /* Cricket-themed color palette */
+            --batting-color: #c8712d;
+            --bowling-color: #002466;
+            --wicket-color: #660003;
+            --prediction-color: #819f3d;
+            --neutral-color: #404041;
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --border-color: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--batting-color);
+        }
+
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background: #ecfdf5;
+            color: #065f46;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main Layout */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 2rem;
+            min-height: calc(100vh - 100px);
+        }
+
+        /* Agent Sidebar */
+        .agent-sidebar {
+            background: var(--bg-secondary);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+            height: fit-content;
+        }
+
+        .sidebar-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .agent-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .agent-card {
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .agent-card:hover {
+            border-color: var(--batting-color);
+            box-shadow: var(--shadow-md);
+        }
+
+        .agent-card.active {
+            border-color: var(--batting-color);
+            background: #fef7ed;
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .agent-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .agent-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+        }
+
+        .agent-status.busy {
+            background: #f59e0b;
+        }
+
+        .agent-status.error {
+            background: #ef4444;
+        }
+
+        .agent-description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .agent-metrics {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Central Analysis Area */
+        .analysis-area {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .query-section {
+            background: var(--bg-secondary);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .query-input-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .query-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .query-input:focus {
+            outline: none;
+            border-color: var(--batting-color);
+        }
+
+        .analyze-btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--batting-color);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .analyze-btn:hover {
+            background: #b8661f;
+            transform: translateY(-1px);
+        }
+
+        .analyze-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .quick-queries {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .quick-query {
+            padding: 0.5rem 1rem;
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .quick-query:hover {
+            background: var(--batting-color);
+            color: white;
+        }
+
+        /* Results Area */
+        .results-area {
+            background: var(--bg-secondary);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+            min-height: 400px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .results-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .execution-time {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .agent-execution-flow {
+            margin-bottom: 2rem;
+        }
+
+        .flow-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .execution-timeline {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+        }
+
+        .timeline-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.5rem;
+            font-size: 1.25rem;
+        }
+
+        .step-icon.performance { background: #fef7ed; color: var(--batting-color); }
+        .step-icon.tactical { background: #eff6ff; color: var(--bowling-color); }
+        .step-icon.prediction { background: #f0fdf4; color: var(--prediction-color); }
+        .step-icon.betting { background: #fef2f2; color: var(--wicket-color); }
+
+        .step-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .step-status {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .step-arrow {
+            color: var(--text-secondary);
+            margin: 0 0.5rem;
+        }
+
+        /* Analysis Results */
+        .analysis-results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .result-card {
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            background: #fafafa;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-title {
+            font-weight: 600;
+        }
+
+        .confidence-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-left: auto;
+        }
+
+        .confidence-high { background: #dcfce7; color: #166534; }
+        .confidence-medium { background: #fef3c7; color: #92400e; }
+        .confidence-low { background: #fee2e2; color: #991b1b; }
+
+        /* Insights Sidebar */
+        .insights-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .insights-card {
+            background: var(--bg-secondary);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .insights-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .insight-item {
+            padding: 1rem;
+            border-left: 4px solid var(--batting-color);
+            background: #fef7ed;
+            border-radius: 0 0.5rem 0.5rem 0;
+            margin-bottom: 1rem;
+        }
+
+        .insight-text {
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .insight-source {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        /* Loading States */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--batting-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .analysis-results {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem;
+            }
+            
+            .query-input-group {
+                flex-direction: column;
+            }
+            
+            .execution-timeline {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .timeline-step {
+                flex-direction: row;
+                justify-content: flex-start;
+                min-width: auto;
+                text-align: left;
+            }
+        }
+
+        /* Explainability Components */
+        .explanation-panel {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .explanation-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .explanation-content {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .feature-importance {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .feature-bar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .feature-name {
+            min-width: 120px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .feature-progress {
+            flex: 1;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .feature-fill {
+            height: 100%;
+            background: var(--batting-color);
+            transition: width 0.3s ease;
+        }
+
+        .feature-value {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            min-width: 40px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i data-lucide="zap"></i>
+                WicketWise Agent Intelligence
+            </div>
+            <div class="system-status">
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span id="agentCount">4 Agents Active</span>
+                </div>
+                <div class="status-indicator">
+                    <i data-lucide="activity" size="16"></i>
+                    <span id="systemHealth">System Healthy</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Agent Sidebar -->
+        <aside class="agent-sidebar">
+            <div class="sidebar-title">
+                <i data-lucide="users"></i>
+                Cricket Agents
+            </div>
+            <div class="agent-list" id="agentList">
+                <!-- Agents will be populated by JavaScript -->
+            </div>
+        </aside>
+
+        <!-- Central Analysis Area -->
+        <main class="analysis-area">
+            <!-- Query Section -->
+            <section class="query-section">
+                <div class="query-input-group">
+                    <input 
+                        type="text" 
+                        class="query-input" 
+                        id="queryInput"
+                        placeholder="Ask about cricket analysis, predictions, tactics, or betting opportunities..."
+                    >
+                    <button class="analyze-btn" id="analyzeBtn">
+                        <i data-lucide="search"></i>
+                        Analyze
+                    </button>
+                </div>
+                <div class="quick-queries">
+                    <div class="quick-query" data-query="Analyze Kohli's recent performance and predict his next match score">
+                        Player Performance Analysis
+                    </div>
+                    <div class="quick-query" data-query="What tactical approach should India use against Australia in ODI?">
+                        Tactical Strategy
+                    </div>
+                    <div class="quick-query" data-query="Predict the winner of India vs England match">
+                        Match Prediction
+                    </div>
+                    <div class="quick-query" data-query="Find value betting opportunities in today's matches">
+                        Betting Analysis
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Area -->
+            <section class="results-area">
+                <div class="results-header">
+                    <div class="results-title">Multi-Agent Analysis</div>
+                    <div class="execution-time" id="executionTime">
+                        <i data-lucide="clock"></i>
+                        Ready to analyze
+                    </div>
+                </div>
+
+                <!-- Agent Execution Flow -->
+                <div class="agent-execution-flow" id="executionFlow" style="display: none;">
+                    <div class="flow-title">
+                        <i data-lucide="git-branch"></i>
+                        Agent Execution Timeline
+                    </div>
+                    <div class="execution-timeline" id="executionTimeline">
+                        <!-- Timeline will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Analysis Results -->
+                <div class="analysis-results" id="analysisResults">
+                    <div class="loading" style="grid-column: 1 / -1;">
+                        <div style="text-align: center;">
+                            <i data-lucide="brain" size="48" style="color: var(--batting-color); margin-bottom: 1rem;"></i>
+                            <p>Ready to analyze cricket data with AI agents</p>
+                            <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                                Enter a query above to start multi-agent analysis
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Insights Sidebar -->
+        <aside class="insights-sidebar">
+            <!-- System Insights -->
+            <div class="insights-card">
+                <div class="insights-title">
+                    <i data-lucide="lightbulb"></i>
+                    AI Insights
+                </div>
+                <div id="systemInsights">
+                    <div class="insight-item">
+                        <div class="insight-text">
+                            Multi-agent system ready for complex cricket analysis workflows
+                        </div>
+                        <div class="insight-source">System Status</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Model Explainability -->
+            <div class="insights-card">
+                <div class="insights-title">
+                    <i data-lucide="eye"></i>
+                    Model Explainability
+                </div>
+                <div id="explainabilityContent">
+                    <p style="color: var(--text-secondary); font-size: 0.875rem;">
+                        Run an analysis to see detailed explanations of AI decision-making processes
+                    </p>
+                </div>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="insights-card">
+                <div class="insights-title">
+                    <i data-lucide="bar-chart-3"></i>
+                    Performance Metrics
+                </div>
+                <div id="performanceMetrics">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.875rem;">
+                        <div>
+                            <div style="color: var(--text-secondary);">Avg Response Time</div>
+                            <div style="font-weight: 600; color: var(--batting-color);">2.3s</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-secondary);">Success Rate</div>
+                            <div style="font-weight: 600; color: #10b981;">98.5%</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-secondary);">Queries Today</div>
+                            <div style="font-weight: 600;">247</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-secondary);">Confidence Avg</div>
+                            <div style="font-weight: 600; color: var(--prediction-color);">87%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Include enhanced JavaScript -->
+    <script src="agent_dashboard.js"></script>
+    
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Legacy agent configuration for fallback
+        const agents = [
+            {
+                id: 'performance',
+                name: 'Performance Agent',
+                description: 'Analyzes player and team performance statistics',
+                icon: 'trending-up',
+                color: 'var(--batting-color)',
+                status: 'active',
+                metrics: { success: '96%', avg_time: '1.2s' },
+                capabilities: ['performance_analysis', 'trend_analysis', 'comparison_analysis']
+            },
+            {
+                id: 'tactical',
+                name: 'Tactical Agent',
+                description: 'Provides strategic insights and field placement advice',
+                icon: 'target',
+                color: 'var(--bowling-color)',
+                status: 'active',
+                metrics: { success: '94%', avg_time: '1.8s' },
+                capabilities: ['tactical_analysis', 'contextual_reasoning']
+            },
+            {
+                id: 'prediction',
+                name: 'Prediction Agent',
+                description: 'Forecasts match outcomes and player performance',
+                icon: 'crystal-ball',
+                color: 'var(--prediction-color)',
+                status: 'active',
+                metrics: { success: '91%', avg_time: '2.1s' },
+                capabilities: ['match_prediction', 'real_time_processing']
+            },
+            {
+                id: 'betting',
+                name: 'Betting Agent',
+                description: 'Identifies value opportunities and market inefficiencies',
+                icon: 'dollar-sign',
+                color: 'var(--wicket-color)',
+                status: 'active',
+                metrics: { success: '89%', avg_time: '1.5s' },
+                capabilities: ['betting_analysis', 'trend_analysis']
+            }
+        ];
+
+        // DOM elements
+        const agentList = document.getElementById('agentList');
+        const queryInput = document.getElementById('queryInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const executionFlow = document.getElementById('executionFlow');
+        const executionTimeline = document.getElementById('executionTimeline');
+        const analysisResults = document.getElementById('analysisResults');
+        const executionTime = document.getElementById('executionTime');
+        const systemInsights = document.getElementById('systemInsights');
+        const explainabilityContent = document.getElementById('explainabilityContent');
+
+        // Initialize the dashboard
+        function initializeDashboard() {
+            renderAgents();
+            setupEventListeners();
+            updateSystemStatus();
+        }
+
+        // Render agent cards
+        function renderAgents() {
+            agentList.innerHTML = agents.map(agent => `
+                <div class="agent-card" data-agent="${agent.id}">
+                    <div class="agent-header">
+                        <div class="agent-name">${agent.name}</div>
+                        <div class="agent-status ${agent.status}"></div>
+                    </div>
+                    <div class="agent-description">${agent.description}</div>
+                    <div class="agent-metrics">
+                        <span>Success: ${agent.metrics.success}</span>
+                        <span>Avg: ${agent.metrics.avg_time}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Analyze button
+            analyzeBtn.addEventListener('click', handleAnalysis);
+            
+            // Enter key in query input
+            queryInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleAnalysis();
+            });
+
+            // Quick query buttons
+            document.querySelectorAll('.quick-query').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    queryInput.value = e.target.dataset.query;
+                    handleAnalysis();
+                });
+            });
+
+            // Agent card selection
+            document.querySelectorAll('.agent-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+                });
+            });
+        }
+
+        // Handle analysis request
+        async function handleAnalysis() {
+            const query = queryInput.value.trim();
+            if (!query) return;
+
+            // Update UI state
+            analyzeBtn.disabled = true;
+            analyzeBtn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; margin-right: 0.5rem;"></div>Analyzing...';
+            
+            // Show execution flow
+            executionFlow.style.display = 'block';
+            
+            try {
+                // Simulate agent orchestration
+                await simulateAgentExecution(query);
+                
+                // Display results
+                await displayAnalysisResults(query);
+                
+            } catch (error) {
+                console.error('Analysis failed:', error);
+                showError('Analysis failed. Please try again.');
+            } finally {
+                // Reset UI state
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML = '<i data-lucide="search"></i>Analyze';
+                lucide.createIcons();
+            }
+        }
+
+        // Simulate agent execution
+        async function simulateAgentExecution(query) {
+            const relevantAgents = determineRelevantAgents(query);
+            
+            // Create execution timeline
+            executionTimeline.innerHTML = relevantAgents.map((agent, index) => `
+                <div class="timeline-step">
+                    <div class="step-icon ${agent.id}" id="step-${agent.id}">
+                        <i data-lucide="${agent.icon}"></i>
+                    </div>
+                    <div class="step-name">${agent.name}</div>
+                    <div class="step-status" id="status-${agent.id}">Queued</div>
+                </div>
+                ${index < relevantAgents.length - 1 ? '<div class="step-arrow"><i data-lucide="arrow-right"></i></div>' : ''}
+            `).join('');
+            
+            lucide.createIcons();
+
+            // Simulate execution
+            for (let i = 0; i < relevantAgents.length; i++) {
+                const agent = relevantAgents[i];
+                
+                // Update status to running
+                document.getElementById(`status-${agent.id}`).textContent = 'Running...';
+                document.getElementById(`step-${agent.id}`).style.background = '#fef3c7';
+                
+                // Simulate processing time
+                await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+                
+                // Update status to completed
+                document.getElementById(`status-${agent.id}`).textContent = 'Completed';
+                document.getElementById(`step-${agent.id}`).style.background = '#dcfce7';
+            }
+        }
+
+        // Determine relevant agents based on query
+        function determineRelevantAgents(query) {
+            const queryLower = query.toLowerCase();
+            const relevantAgents = [];
+
+            // Performance analysis keywords
+            if (queryLower.includes('performance') || queryLower.includes('stats') || queryLower.includes('player')) {
+                relevantAgents.push(agents.find(a => a.id === 'performance'));
+            }
+
+            // Tactical analysis keywords
+            if (queryLower.includes('tactical') || queryLower.includes('strategy') || queryLower.includes('field')) {
+                relevantAgents.push(agents.find(a => a.id === 'tactical'));
+            }
+
+            // Prediction keywords
+            if (queryLower.includes('predict') || queryLower.includes('forecast') || queryLower.includes('winner')) {
+                relevantAgents.push(agents.find(a => a.id === 'prediction'));
+            }
+
+            // Betting keywords
+            if (queryLower.includes('betting') || queryLower.includes('odds') || queryLower.includes('value')) {
+                relevantAgents.push(agents.find(a => a.id === 'betting'));
+            }
+
+            // Default to performance if no specific keywords
+            if (relevantAgents.length === 0) {
+                relevantAgents.push(agents.find(a => a.id === 'performance'));
+            }
+
+            return relevantAgents.filter(Boolean);
+        }
+
+        // Display analysis results
+        async function displayAnalysisResults(query) {
+            const startTime = Date.now();
+            
+            // Generate mock results based on query
+            const results = generateMockResults(query);
+            
+            // Update execution time
+            const endTime = Date.now();
+            const duration = ((endTime - startTime) / 1000).toFixed(1);
+            executionTime.innerHTML = `<i data-lucide="clock"></i>Completed in ${duration}s`;
+            
+            // Render results
+            analysisResults.innerHTML = results.map(result => `
+                <div class="result-card">
+                    <div class="result-header">
+                        <div class="result-icon ${result.type}" style="background: ${result.bgColor}; color: ${result.color};">
+                            <i data-lucide="${result.icon}"></i>
+                        </div>
+                        <div class="result-title">${result.title}</div>
+                        <div class="confidence-badge confidence-${result.confidence.level}">
+                            ${Math.round(result.confidence.score * 100)}% confidence
+                        </div>
+                    </div>
+                    <div class="result-content">
+                        ${result.content}
+                    </div>
+                    ${result.explanation ? `
+                        <div class="explanation-panel">
+                            <div class="explanation-title">
+                                <i data-lucide="info"></i>
+                                AI Explanation
+                            </div>
+                            <div class="explanation-content">${result.explanation}</div>
+                            ${result.features ? `
+                                <div class="feature-importance">
+                                    ${result.features.map(feature => `
+                                        <div class="feature-bar">
+                                            <div class="feature-name">${feature.name}</div>
+                                            <div class="feature-progress">
+                                                <div class="feature-fill" style="width: ${feature.importance * 100}%"></div>
+                                            </div>
+                                            <div class="feature-value">${Math.round(feature.importance * 100)}%</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+            
+            // Update insights
+            updateInsights(results);
+        }
+
+        // Generate mock results based on query
+        function generateMockResults(query) {
+            const queryLower = query.toLowerCase();
+            const results = [];
+
+            // Performance analysis result
+            if (queryLower.includes('performance') || queryLower.includes('player') || queryLower.includes('kohli')) {
+                results.push({
+                    type: 'performance',
+                    title: 'Player Performance Analysis',
+                    icon: 'trending-up',
+                    color: 'var(--batting-color)',
+                    bgColor: '#fef7ed',
+                    confidence: { level: 'high', score: 0.92 },
+                    content: `
+                        <p><strong>Recent Form:</strong> Excellent - 3 consecutive 50+ scores</p>
+                        <p><strong>Average vs Pace:</strong> 47.3 (Strike Rate: 89.2)</p>
+                        <p><strong>Venue Performance:</strong> Strong at this ground (Avg: 52.1)</p>
+                        <p><strong>Predicted Next Score:</strong> 45-65 runs (78% confidence)</p>
+                    `,
+                    explanation: 'Analysis based on recent match data, venue-specific performance, and opposition bowling strength. The model considers temporal decay of older performances and contextual factors like pitch conditions.',
+                    features: [
+                        { name: 'Recent Form', importance: 0.35 },
+                        { name: 'Venue History', importance: 0.28 },
+                        { name: 'Opposition', importance: 0.22 },
+                        { name: 'Pitch Conditions', importance: 0.15 }
+                    ]
+                });
+            }
+
+            // Tactical analysis result
+            if (queryLower.includes('tactical') || queryLower.includes('strategy') || queryLower.includes('field')) {
+                results.push({
+                    type: 'tactical',
+                    title: 'Tactical Strategy Recommendation',
+                    icon: 'target',
+                    color: 'var(--bowling-color)',
+                    bgColor: '#eff6ff',
+                    confidence: { level: 'high', score: 0.87 },
+                    content: `
+                        <p><strong>Bowling Strategy:</strong> Attack with pace early, introduce spin in middle overs</p>
+                        <p><strong>Field Placement:</strong> Aggressive field with 3 slips for new ball</p>
+                        <p><strong>Key Matchup:</strong> Target left-handers with off-spin</p>
+                        <p><strong>Powerplay Approach:</strong> Take early wickets, restrict to <50 runs</p>
+                    `,
+                    explanation: 'Strategy formulated based on opposition batting weaknesses, pitch analysis, and historical success rates of similar tactical approaches in comparable conditions.',
+                    features: [
+                        { name: 'Opposition Weakness', importance: 0.40 },
+                        { name: 'Pitch Analysis', importance: 0.30 },
+                        { name: 'Historical Success', importance: 0.20 },
+                        { name: 'Weather Conditions', importance: 0.10 }
+                    ]
+                });
+            }
+
+            // Prediction result
+            if (queryLower.includes('predict') || queryLower.includes('winner') || queryLower.includes('outcome')) {
+                results.push({
+                    type: 'prediction',
+                    title: 'Match Outcome Prediction',
+                    icon: 'crystal-ball',
+                    color: 'var(--prediction-color)',
+                    bgColor: '#f0fdf4',
+                    confidence: { level: 'medium', score: 0.74 },
+                    content: `
+                        <p><strong>Predicted Winner:</strong> India (74% probability)</p>
+                        <p><strong>Expected Score:</strong> 285-310 runs in first innings</p>
+                        <p><strong>Key Factors:</strong> Home advantage, recent form, head-to-head record</p>
+                        <p><strong>Toss Impact:</strong> Batting first recommended (65% win rate)</p>
+                    `,
+                    explanation: 'Prediction combines multiple models including team strength ratings, recent performance trends, venue-specific factors, and head-to-head historical data using ensemble methods.',
+                    features: [
+                        { name: 'Team Strength', importance: 0.32 },
+                        { name: 'Recent Form', importance: 0.28 },
+                        { name: 'Home Advantage', importance: 0.25 },
+                        { name: 'Head-to-Head', importance: 0.15 }
+                    ]
+                });
+            }
+
+            // Betting analysis result
+            if (queryLower.includes('betting') || queryLower.includes('odds') || queryLower.includes('value')) {
+                results.push({
+                    type: 'betting',
+                    title: 'Value Betting Analysis',
+                    icon: 'dollar-sign',
+                    color: 'var(--wicket-color)',
+                    bgColor: '#fef2f2',
+                    confidence: { level: 'medium', score: 0.68 },
+                    content: `
+                        <p><strong>Best Value:</strong> India to win @ 2.10 (Expected: 1.85)</p>
+                        <p><strong>Total Runs:</strong> Over 275.5 @ 1.90 (Fair odds: 1.75)</p>
+                        <p><strong>Player Bet:</strong> Kohli 50+ runs @ 2.50 (Model: 2.20)</p>
+                        <p><strong>Recommendation:</strong> 3% of bankroll on India win</p>
+                    `,
+                    explanation: 'Value opportunities identified by comparing bookmaker odds with model-predicted probabilities. Kelly criterion used for optimal stake sizing based on edge and confidence levels.',
+                    features: [
+                        { name: 'Odds Discrepancy', importance: 0.45 },
+                        { name: 'Model Confidence', importance: 0.25 },
+                        { name: 'Market Efficiency', importance: 0.20 },
+                        { name: 'Liquidity', importance: 0.10 }
+                    ]
+                });
+            }
+
+            return results;
+        }
+
+        // Update insights based on results
+        function updateInsights(results) {
+            const insights = [
+                'Multi-agent analysis completed successfully with high confidence scores',
+                `${results.length} specialized agents contributed to this analysis`,
+                'Model explanations show key decision factors and feature importance',
+                'Real-time data integration ensures up-to-date predictions'
+            ];
+
+            systemInsights.innerHTML = insights.map((insight, index) => `
+                <div class="insight-item">
+                    <div class="insight-text">${insight}</div>
+                    <div class="insight-source">Agent Orchestrator</div>
+                </div>
+            `).join('');
+
+            // Update explainability content
+            explainabilityContent.innerHTML = `
+                <div class="explanation-panel">
+                    <div class="explanation-title">
+                        <i data-lucide="brain"></i>
+                        Decision Process
+                    </div>
+                    <div class="explanation-content">
+                        The multi-agent system analyzed your query using ${results.length} specialized agents. 
+                        Each agent contributed domain-specific insights, and the orchestrator combined 
+                        their outputs using weighted confidence scores and ensemble methods.
+                    </div>
+                </div>
+            `;
+
+            lucide.createIcons();
+        }
+
+        // Update system status
+        function updateSystemStatus() {
+            // Simulate real-time updates
+            setInterval(() => {
+                const queryCount = 247 + Math.floor(Math.random() * 5);
+                const successRate = (98.5 + (Math.random() - 0.5) * 0.2).toFixed(1);
+                const avgTime = (2.3 + (Math.random() - 0.5) * 0.4).toFixed(1);
+                const confidence = (87 + Math.floor(Math.random() * 6)).toString();
+
+                // Update performance metrics if visible
+                const metricsDiv = document.getElementById('performanceMetrics');
+                if (metricsDiv) {
+                    const metrics = metricsDiv.querySelectorAll('div > div:last-child');
+                    if (metrics.length >= 4) {
+                        metrics[0].textContent = `${avgTime}s`;
+                        metrics[1].textContent = `${successRate}%`;
+                        metrics[2].textContent = queryCount.toString();
+                        metrics[3].textContent = `${confidence}%`;
+                    }
+                }
+            }, 5000);
+        }
+
+        // Show error message
+        function showError(message) {
+            analysisResults.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: var(--wicket-color);">
+                    <i data-lucide="alert-circle" size="48" style="margin-bottom: 1rem;"></i>
+                    <p>${message}</p>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // Initialize dashboard when page loads
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
+    </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+# WicketWise Cricket Intelligence Platform - Kubernetes Storage
+# Author: WicketWise AI, Last Modified: 2024
+
+# Storage Class for high-performance SSD storage
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: wicketwise-ssd
+  namespace: wicketwise
+provisioner: kubernetes.io/aws-ebs  # Change based on cloud provider
+parameters:
+  type: gp3
+  fsType: ext4
+  encrypted: "true"
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+
+---
+# Persistent Volume Claim for application data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wicketwise-data-pvc
+  namespace: wicketwise
+  labels:
+    app: wicketwise-app
+    component: data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: wicketwise-ssd
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+# Persistent Volume Claim for application logs
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wicketwise-logs-pvc
+  namespace: wicketwise
+  labels:
+    app: wicketwise-app
+    component: logs
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: wicketwise-ssd
+  resources:
+    requests:
+      storage: 20Gi
+
+---
+# Persistent Volume Claim for ML models
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wicketwise-models-pvc
+  namespace: wicketwise
+  labels:
+    app: wicketwise-app
+    component: models
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: wicketwise-ssd
+  resources:
+    requests:
+      storage: 100Gi
+
+---
+# Persistent Volume Claim for PostgreSQL
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: wicketwise
+  labels:
+    app: postgres
+    component: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: wicketwise-ssd
+  resources:
+    requests:
+      storage: 100Gi
+
+---
+# Persistent Volume Claim for Redis
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: wicketwise
+  labels:
+    app: redis
+    component: cache
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: wicketwise-ssd
+  resources:
+    requests:
+      storage: 10Gi
