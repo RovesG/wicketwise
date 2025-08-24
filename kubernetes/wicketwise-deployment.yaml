@@ -1,0 +1,403 @@
+# WicketWise Cricket Intelligence Platform - Kubernetes Deployment
+# Author: WicketWise AI, Last Modified: 2024
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: wicketwise
+  labels:
+    name: wicketwise
+    environment: production
+
+---
+# ConfigMap for application configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wicketwise-config
+  namespace: wicketwise
+data:
+  FLASK_ENV: "production"
+  FLASK_DEBUG: "false"
+  WICKETWISE_ENV: "production"
+  DATABASE_URL: "postgresql://wicketwise:$(DB_PASSWORD)@postgres-service:5432/wicketwise"
+  REDIS_URL: "redis://redis-service:6379/0"
+
+---
+# Secret for sensitive configuration
+apiVersion: v1
+kind: Secret
+metadata:
+  name: wicketwise-secrets
+  namespace: wicketwise
+type: Opaque
+data:
+  # Base64 encoded values - replace with actual encoded secrets
+  DB_PASSWORD: d2lja2V0d2lzZV9kYl9wYXNzd29yZA==  # wicketwise_db_password
+  JWT_SECRET_KEY: and0X3NlY3JldF9rZXlfZm9yX3Byb2R1Y3Rpb24=  # jwt_secret_key_for_production
+  ENCRYPTION_KEY: ZW5jcnlwdGlvbl9rZXlfZm9yX3Byb2R1Y3Rpb24=  # encryption_key_for_production
+  REDIS_PASSWORD: cmVkaXNfcGFzc3dvcmRfZm9yX3Byb2R1Y3Rpb24=  # redis_password_for_production
+
+---
+# WicketWise Application Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wicketwise-app
+  namespace: wicketwise
+  labels:
+    app: wicketwise-app
+    version: v1.0.0
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: wicketwise-app
+  template:
+    metadata:
+      labels:
+        app: wicketwise-app
+        version: v1.0.0
+    spec:
+      containers:
+      - name: wicketwise-app
+        image: wicketwise/cricket-intelligence:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5001
+          name: flask-api
+        - containerPort: 8000
+          name: dashboard
+        env:
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: wicketwise-secrets
+              key: DB_PASSWORD
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: wicketwise-secrets
+              key: JWT_SECRET_KEY
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: wicketwise-secrets
+              key: ENCRYPTION_KEY
+        envFrom:
+        - configMapRef:
+            name: wicketwise-config
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 5001
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 5001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+        - name: logs-volume
+          mountPath: /app/logs
+        - name: models-volume
+          mountPath: /app/models
+        - name: cache-volume
+          mountPath: /app/cache
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: wicketwise-data-pvc
+      - name: logs-volume
+        persistentVolumeClaim:
+          claimName: wicketwise-logs-pvc
+      - name: models-volume
+        persistentVolumeClaim:
+          claimName: wicketwise-models-pvc
+      - name: cache-volume
+        emptyDir: {}
+      restartPolicy: Always
+
+---
+# WicketWise Application Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: wicketwise-app-service
+  namespace: wicketwise
+  labels:
+    app: wicketwise-app
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5001
+    targetPort: 5001
+    protocol: TCP
+    name: flask-api
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: dashboard
+  selector:
+    app: wicketwise-app
+
+---
+# PostgreSQL Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: wicketwise
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: "wicketwise"
+        - name: POSTGRES_USER
+          value: "wicketwise"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: wicketwise-secrets
+              key: DB_PASSWORD
+        - name: POSTGRES_INITDB_ARGS
+          value: "--auth-host=scram-sha-256"
+        ports:
+        - containerPort: 5432
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - wicketwise
+            - -d
+            - wicketwise
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - wicketwise
+            - -d
+            - wicketwise
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+
+---
+# PostgreSQL Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: wicketwise
+  labels:
+    app: postgres
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+  selector:
+    app: postgres
+
+---
+# Redis Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: wicketwise
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command:
+        - redis-server
+        - --appendonly
+        - "yes"
+        - --requirepass
+        - $(REDIS_PASSWORD)
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: wicketwise-secrets
+              key: REDIS_PASSWORD
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "100m"
+        volumeMounts:
+        - name: redis-storage
+          mountPath: /data
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: redis-storage
+        persistentVolumeClaim:
+          claimName: redis-pvc
+
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: wicketwise
+  labels:
+    app: redis
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6379
+    targetPort: 6379
+    protocol: TCP
+  selector:
+    app: redis
+
+---
+# Ingress for external access
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wicketwise-ingress
+  namespace: wicketwise
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+spec:
+  tls:
+  - hosts:
+    - wicketwise.ai
+    - api.wicketwise.ai
+    secretName: wicketwise-tls
+  rules:
+  - host: wicketwise.ai
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wicketwise-app-service
+            port:
+              number: 8000
+  - host: api.wicketwise.ai
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wicketwise-app-service
+            port:
+              number: 5001
+
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: wicketwise-app-hpa
+  namespace: wicketwise
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: wicketwise-app
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

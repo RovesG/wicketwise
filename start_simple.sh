@@ -1,58 +1,49 @@
 #!/bin/bash
 
-# Simple WicketWise Startup Script
-echo "🏏 Starting WicketWise Services..."
+# Simple DGL startup script
+# Author: WicketWise AI
 
-# Kill existing processes
-pkill -f "real_dynamic_cards_api" 2>/dev/null || true
-pkill -f "http.server 8000" 2>/dev/null || true
-lsof -ti:5005 | xargs kill -9 2>/dev/null || true
-lsof -ti:8000 | xargs kill -9 2>/dev/null || true
+set -e
 
-echo "✅ Cleaned up existing processes"
+# Colors
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+NC='\033[0m'
 
-# Activate virtual environment
-source .venv/bin/activate
+echo -e "${BLUE}🛡️  WicketWise DGL - Simple Startup${NC}"
+echo "=================================="
 
-# Start HTTP server
-echo "🌐 Starting HTTP server on port 8000..."
-nohup python -m http.server 8000 > http.log 2>&1 &
-HTTP_PID=$!
-echo "✅ HTTP Server started (PID: $HTTP_PID)"
+# Configuration
+DGL_PORT=${DGL_PORT:-8001}
 
-# Start API server
-echo "🚀 Starting API server on port 5005..."
-nohup python real_dynamic_cards_api_v2.py > api.log 2>&1 &
-API_PID=$!
-echo "✅ API Server started (PID: $API_PID)"
+echo -e "${BLUE}Starting DGL service on port $DGL_PORT...${NC}"
 
-# Wait a moment for startup
-sleep 3
-
-# Test connections
-echo "🧪 Testing services..."
-if curl -s http://127.0.0.1:8000 > /dev/null; then
-    echo "✅ HTTP Server responding"
-else
-    echo "❌ HTTP Server not responding"
+# Check if port is available
+if lsof -Pi :$DGL_PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
+    echo -e "${RED}❌ Port $DGL_PORT is already in use${NC}"
+    echo "To stop existing service: kill \$(lsof -t -i:$DGL_PORT)"
+    exit 1
 fi
 
-if curl -s http://127.0.0.1:5005/api/cards/health > /dev/null; then
-    echo "✅ API Server responding"
-else
-    echo "❌ API Server not responding"
+# Activate virtual environment if it exists
+if [ -f "../../.venv/bin/activate" ]; then
+    echo -e "${BLUE}Activating virtual environment...${NC}"
+    source ../../.venv/bin/activate
 fi
 
+# Install basic dependencies
+echo -e "${BLUE}Installing dependencies...${NC}"
+pip install -q fastapi uvicorn pydantic pydantic-settings
+
+# Start the service
+echo -e "${BLUE}Starting DGL FastAPI service...${NC}"
+echo -e "${GREEN}✅ DGL service starting at: http://localhost:$DGL_PORT${NC}"
+echo -e "${GREEN}✅ API documentation: http://localhost:$DGL_PORT/docs${NC}"
+echo -e "${GREEN}✅ Health check: http://localhost:$DGL_PORT/healthz${NC}"
 echo ""
-echo "🎯 Services Started:"
-echo "  📊 Dashboard: http://127.0.0.1:8000/wicketwise_dashboard.html"
-echo "  🎴 Cards:     http://127.0.0.1:8000/enhanced_player_cards_ui.html"
-echo "  🔧 API:       http://127.0.0.1:5005/api/cards/health"
+echo "Press Ctrl+C to stop the service"
 echo ""
-echo "📝 Logs:"
-echo "  HTTP: http.log"
-echo "  API:  api.log"
-echo ""
-echo "🛑 To stop: pkill -f 'real_dynamic_cards_api' && pkill -f 'http.server'"
-echo ""
-echo "✅ Startup complete!"
+
+# Run the service (foreground)
+uvicorn app:app --host 0.0.0.0 --port $DGL_PORT --reload

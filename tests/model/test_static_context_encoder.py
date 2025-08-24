@@ -13,6 +13,8 @@ def context_encoder_config():
         "categorical_vocab_sizes": {"feat1": 10, "feat2": 5},
         "categorical_embedding_dims": {"feat1": 4, "feat2": 2},
         "video_dim": 20,
+        "weather_dim": 6,
+        "venue_coord_dim": 2,
         "hidden_dims": [64, 32],
         "context_dim": 40,
         "dropout_rate": 0.1,
@@ -32,7 +34,11 @@ def sample_encoder_inputs(context_encoder_config):
     # Video mask: half of the batch has video, half does not
     video_mask = torch.tensor([[1.0]] * 4 + [[0.0]] * 4)
     
-    return numeric_feats, cat_feats, video_feats, video_mask
+    # Add optional weather and venue features
+    weather_feats = torch.randn(batch_size, 6) if context_encoder_config.get("weather_dim") else None
+    venue_coords = torch.randn(batch_size, 2) if context_encoder_config.get("venue_coord_dim") else None
+    
+    return numeric_feats, cat_feats, video_feats, video_mask, weather_feats, venue_coords
 
 def test_context_encoder_output_shape(context_encoder_config, sample_encoder_inputs):
     """
@@ -42,9 +48,17 @@ def test_context_encoder_output_shape(context_encoder_config, sample_encoder_inp
     model.eval()
     
     with torch.no_grad():
-        output = model(*sample_encoder_inputs)
+        numeric_feats, cat_feats, video_feats, video_mask, weather_feats, venue_coords = sample_encoder_inputs
+        output = model(
+            numeric_features=numeric_feats,
+            categorical_features=cat_feats,
+            video_features=video_feats,
+            video_mask=video_mask,
+            weather_features=weather_feats,
+            venue_coordinates=venue_coords
+        )
         
-    expected_shape = (sample_encoder_inputs[0].shape[0], context_encoder_config["context_dim"])
+    expected_shape = (numeric_feats.shape[0], context_encoder_config["context_dim"])
     assert output.shape == expected_shape, \
         f"Expected output shape {expected_shape}, but got {output.shape}"
 
@@ -61,7 +75,7 @@ def test_video_masking_logic(context_encoder_config, sample_encoder_inputs):
     """
     Tests that the video mask correctly zeros out video features when the mask is 0.
     """
-    numeric_feats, cat_feats, video_feats, video_mask = sample_encoder_inputs
+    numeric_feats, cat_feats, video_feats, video_mask, weather_feats, venue_coords = sample_encoder_inputs
     
     # We can check the intermediate combined tensor to see the effect of the mask.
     # To do this without altering the model, we can replicate the forward pass logic.
