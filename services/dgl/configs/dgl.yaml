@@ -1,0 +1,35 @@
+# WicketWise DGL Configuration
+# Author: WicketWise AI, Last Modified: 2024
+
+# Bankroll and exposure limits
+bankroll:
+  total_bankroll: 100000.0        # Total available bankroll (£100,000)
+  max_bankroll_exposure_pct: 5.0  # Max 5% of total bankroll at risk
+  per_match_max_pct: 2.0          # Max 2% per match
+  per_market_max_pct: 1.0         # Max 1% per market
+  per_bet_max_pct: 0.5            # Max 0.5% per bet
+
+# Liquidity and execution constraints
+liquidity:
+  min_odds_threshold: 1.1          # Minimum acceptable odds
+  max_odds_threshold: 100.0        # Maximum acceptable odds
+  max_slippage_bps: 50             # Max 0.5% slippage
+  max_fraction_of_available_liquidity: 1.0  # Max 100% of available liquidity
+  min_market_depth: 1000.0         # Minimum market depth required
+
+# Operational settings
+ops:
+  environment: "development"        # Environment: development, staging, production
+  log_level: "INFO"                # Logging level
+  enable_shadow_mode: true         # Enable shadow mode for testing
+  enable_audit_logging: true       # Enable comprehensive audit logging
+  
+  # Rate limiting
+  rate_limit:
+    count: 100                     # Max requests per window
+    per_seconds: 60                # Time window in seconds
+  
+  # Circuit breaker settings
+  circuit_breaker:
+    failure_threshold: 5           # Failures before opening circuit
+    recovery_timeout: 60           # Seconds before attempting recovery
