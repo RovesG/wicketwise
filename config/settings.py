@@ -26,7 +26,7 @@ class WicketWiseSettings:
     
     # API Configuration
     CORS_ENABLED: bool = os.getenv('WICKETWISE_CORS_ENABLED', 'true').lower() == 'true'
-    DEBUG_MODE: bool = os.getenv('WICKETWISE_DEBUG', 'true').lower() == 'true'
+    DEBUG_MODE: bool = os.getenv('WICKETWISE_DEBUG', 'false').lower() == 'true'
     
     # API Keys (handled by env_manager, but documented here)
     OPENAI_API_KEY: Optional[str] = os.getenv('OPENAI_API_KEY')

@@ -9,6 +9,7 @@ single summary vector.
 
 import math
 import torch
+import torch.nn
 from torch import nn
 
 class PositionalEncoding(nn.Module):
@@ -92,7 +93,22 @@ class BallHistoryEncoder(nn.Module):
         # [seq, batch, feature], so we'll adjust it for batch_first.
         # Permute self.pos_encoder.pe from [seq, 1, feature] to [1, seq, feature]
         # so it can be broadcasted and added to the input.
-        pos_encoded_src = src + self.pos_encoder.pe.permute(1, 0, 2)
+        
+        # FULL DATASET FIX: Handle dimension mismatch between input and positional encoding
+        pe_tensor = self.pos_encoder.pe.permute(1, 0, 2)  # [1, seq, pe_feature_dim]
+        src_feature_dim = src.size(2)
+        pe_feature_dim = pe_tensor.size(2)
+        
+        if src_feature_dim != pe_feature_dim:
+            # Create a projection layer to match dimensions
+            if not hasattr(self, 'pe_adapter'):
+                self.pe_adapter = torch.nn.Linear(pe_feature_dim, src_feature_dim).to(src.device)
+                print(f"[FULL DATASET] Created PE adapter: {pe_feature_dim} -> {src_feature_dim}")
+            
+            # Project positional encoding to match input dimensions
+            pe_tensor = self.pe_adapter(pe_tensor)
+        
+        pos_encoded_src = src + pe_tensor
         
         # Pass through transformer
         output = self.transformer_encoder(pos_encoded_src)

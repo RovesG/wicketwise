@@ -1,0 +1,34 @@
+{
+  "run_id": "dashboard_mock_20250824_162906",
+  "config_hash": "a5f5b201135ccc7e",
+  "kpis": {
+    "pnl_total": 0.0,
+    "pnl_realized": 0.0,
+    "pnl_unrealized": 0.0,
+    "sharpe": 0.0,
+    "sortino": 0.0,
+    "max_drawdown": 0.0,
+    "calmar": 0.0,
+    "hit_rate": 0.0,
+    "avg_edge": 0.0,
+    "slippage_bps": 0.0,
+    "fill_rate": 0.0,
+    "exposure_peak_pct": 0.0,
+    "turnover": 0,
+    "num_trades": 0
+  },
+  "violations": [
+    "BANKROLL_BET_SIZE: 264 violations"
+  ],
+  "artifacts": [
+    "runs/dashboard_mock_20250824_162906/orders.jsonl",
+    "runs/dashboard_mock_20250824_162906/fills.jsonl",
+    "runs/dashboard_mock_20250824_162906/dgl_decisions.jsonl",
+    "runs/dashboard_mock_20250824_162906/metrics.json",
+    "runs/dashboard_mock_20250824_162906/config.json"
+  ],
+  "runtime_seconds": 0.010961,
+  "balls_processed": 480,
+  "matches_processed": 1,
+  "completed_at": "2025-08-24T16:29:09.918263"
+}

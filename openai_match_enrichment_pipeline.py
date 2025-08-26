@@ -207,7 +207,7 @@ IMPORTANT:
             logger.info(f"🤖 Enriching: {match_info['home']} vs {match_info['away']} at {match_info['venue']}")
             
             response = self.client.chat.completions.create(
-                model="gpt-4o",  # Use gpt-4o for better structured output
+                model="gpt-5-mini",  # Use gpt-5-mini for efficient enrichment
                 messages=[
                     {"role": "system", "content": "You are a cricket data expert who provides accurate, structured JSON responses about cricket matches."},
                     {"role": "user", "content": prompt}

@@ -176,7 +176,7 @@ def main():
     admin_urls = []
     
     if check_port(8000):
-        admin_urls.append("📋 Admin Panel: http://localhost:8000/wicketwise_admin_simple.html")
+        admin_urls.append("📋 Admin Panel: http://localhost:8000/wicketwise_admin_redesigned.html")
     
     if admin_urls:
         for url in admin_urls:

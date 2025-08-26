@@ -501,7 +501,17 @@ class EnhancedKGGNNTrainer:
         for edge_type in list(data.edge_index_dict.keys()):
             if isinstance(data.edge_index_dict[edge_type], list):
                 edge_list = data.edge_index_dict[edge_type]
-                if edge_list[0]:  # If edges exist
+                # Check if we have a nested list structure [source_list, target_list]
+                if len(edge_list) == 2 and isinstance(edge_list[0], list) and isinstance(edge_list[1], list):
+                    if edge_list[0] and edge_list[1]:  # Both source and target lists have edges
+                        # Convert [source_list, target_list] to tensor
+                        data.edge_index_dict[edge_type] = torch.tensor(edge_list, dtype=torch.long)
+                    else:
+                        # Remove empty edge types
+                        del data.edge_index_dict[edge_type]
+                        if edge_type in edge_counts:
+                            del edge_counts[edge_type]
+                elif edge_list:  # Direct edge list format
                     data.edge_index_dict[edge_type] = torch.tensor(edge_list, dtype=torch.long)
                 else:
                     # Remove empty edge types
@@ -510,6 +520,20 @@ class EnhancedKGGNNTrainer:
                         del edge_counts[edge_type]
         
         logger.info(f"Edge counts: {edge_counts}")
+        
+        # Ensure we have at least some edges for GNN processing
+        if not data.edge_index_dict:
+            logger.warning("No edges found in HeteroData, adding minimal self-loops for all node types")
+            for node_type in node_types.keys():
+                num_nodes = len(node_types[node_type])
+                if num_nodes > 0:
+                    self_loops = torch.arange(num_nodes)
+                    edge_type = (node_type, 'self_loop', node_type)
+                    data.edge_index_dict[edge_type] = torch.stack([self_loops, self_loops])
+                    edge_counts[edge_type] = num_nodes
+                    logger.info(f"Added {num_nodes} self-loops for {node_type}")
+        
+        logger.info(f"Final edge types: {list(data.edge_index_dict.keys())}")
         
         return data, node_feature_dims
     

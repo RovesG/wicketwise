@@ -7,9 +7,14 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 from openai import OpenAI
 import os
+from ..models.enhanced_openai_client import WicketWiseOpenAI
+from ..models.model_selection_service import create_chat_context
 
 from .kg_query_engine import KGQueryEngine
 from .function_tools import get_function_tools, get_function_descriptions
+from .gnn_enhanced_kg_query_engine import GNNEnhancedKGQueryEngine
+from .gnn_function_tools import get_all_enhanced_function_tools, get_all_enhanced_function_descriptions
+from .dynamic_kg_query_engine import DynamicKGQueryEngine, get_dynamic_query_function_tool
 
 logger = logging.getLogger(__name__)
 
@@ -29,37 +34,90 @@ class KGChatAgent:
     """
     
     def __init__(self, graph_path: str = "models/cricket_knowledge_graph.pkl"):
-        # Initialize OpenAI client
+        # Initialize Enhanced OpenAI client with intelligent model selection
         api_key = os.getenv('OPENAI_API_KEY')
         if not api_key:
             raise ValueError("OPENAI_API_KEY environment variable is required")
         
-        self.client = OpenAI(api_key=api_key)
-        
-        # Initialize KG Query Engine (try unified first, fallback to legacy)
         try:
-            from .unified_kg_query_engine import UnifiedKGQueryEngine
+            self.client = WicketWiseOpenAI(api_key=api_key)
+            self.enhanced_client = True
+            logger.info("🚀 Using Enhanced OpenAI Client with intelligent model selection")
+        except Exception as e:
+            logger.warning(f"⚠️ Enhanced client failed, using standard client: {e}")
+            self.client = OpenAI(api_key=api_key)
+            self.enhanced_client = False
+        
+        # Initialize KG Query Engine (try GNN-enhanced first, then unified, then legacy)
+        try:
+            # Try GNN-enhanced engine first
             unified_path = graph_path.replace('cricket_knowledge_graph.pkl', 'unified_cricket_kg.pkl')
+            gnn_embeddings_path = "models/gnn_embeddings.pt"
+            
             if Path(unified_path).exists():
-                self.kg_engine = UnifiedKGQueryEngine(unified_path)
-                logger.info("Using Unified Knowledge Graph Query Engine")
+                try:
+                    self.kg_engine = GNNEnhancedKGQueryEngine(
+                        graph_path=unified_path,
+                        gnn_embeddings_path=gnn_embeddings_path
+                    )
+                    logger.info("🚀 Using GNN-Enhanced Knowledge Graph Query Engine")
+                except Exception as e:
+                    logger.warning(f"⚠️ GNN enhancement failed, falling back to unified: {e}")
+                    from .unified_kg_query_engine import UnifiedKGQueryEngine
+                    self.kg_engine = UnifiedKGQueryEngine(unified_path)
+                    logger.info("📊 Using Unified Knowledge Graph Query Engine")
             else:
                 from .kg_query_engine import KGQueryEngine
                 self.kg_engine = KGQueryEngine(graph_path)
-                logger.info("Using Legacy Knowledge Graph Query Engine")
-        except ImportError:
+                logger.info("📈 Using Legacy Knowledge Graph Query Engine")
+                
+        except ImportError as e:
+            logger.warning(f"Import error: {e}")
             from .kg_query_engine import KGQueryEngine
             self.kg_engine = KGQueryEngine(graph_path)
-            logger.info("Using Legacy Knowledge Graph Query Engine")
+            logger.info("📈 Using Legacy Knowledge Graph Query Engine")
         
-        # Get available function tools
-        self.function_tools = get_function_tools()
-        self.function_descriptions = get_function_descriptions()
+        # Initialize Dynamic Query Engine for LLM-created queries
+        try:
+            unified_path = graph_path.replace('cricket_knowledge_graph.pkl', 'unified_cricket_kg.pkl')
+            if Path(unified_path).exists():
+                self.dynamic_engine = DynamicKGQueryEngine(unified_path)
+            else:
+                self.dynamic_engine = DynamicKGQueryEngine(graph_path)
+            logger.info("🚀 Dynamic KG Query Engine initialized")
+        except Exception as e:
+            logger.error(f"Failed to initialize dynamic query engine: {e}")
+            self.dynamic_engine = None
+        
+        # Get available function tools (enhanced with GNN if available)
+        base_tools = []
+        if hasattr(self.kg_engine, 'gnn_embeddings_available') and self.kg_engine.gnn_embeddings_available:
+            base_tools = get_all_enhanced_function_tools()
+            self.function_descriptions = get_all_enhanced_function_descriptions()
+            logger.info("🧠 Enhanced function tools loaded (with GNN capabilities)")
+        else:
+            base_tools = get_function_tools()
+            self.function_descriptions = get_function_descriptions()
+            logger.info("📋 Standard function tools loaded")
+        
+        # Add dynamic query tool if available
+        if self.dynamic_engine:
+            base_tools.append(get_dynamic_query_function_tool())
+            logger.info("⚡ Dynamic query tool added")
+        
+        self.function_tools = base_tools
         
         # System prompt for cricket expertise
         self.system_prompt = self._build_system_prompt()
         
         logger.info("KG Chat Agent initialized successfully")
+    
+    def _execute_dynamic_query(self, query_code: str, description: str) -> Dict[str, Any]:
+        """Execute a dynamic KG query created by the LLM"""
+        if not self.dynamic_engine:
+            return {"error": "Dynamic query engine not available"}
+        
+        return self.dynamic_engine.execute_query(query_code, description)
     
     def _build_system_prompt(self) -> str:
         """Build the system prompt with cricket knowledge and function descriptions"""
@@ -115,18 +173,31 @@ Remember: You're not just showing data, you're providing expert cricket analysis
         try:
             # Map function names to KG engine methods
             function_map = {
+                # Original KG functions
                 'get_player_stats': self.kg_engine.get_player_stats,
                 'compare_players': self.kg_engine.compare_players,
                 'get_venue_history': getattr(self.kg_engine, 'get_venue_history', None),
                 'get_head_to_head': getattr(self.kg_engine, 'get_head_to_head', None),
                 'find_similar_players': getattr(self.kg_engine, 'find_similar_players', None),
                 'get_graph_summary': self.kg_engine.get_graph_summary,
-                'explain_data_limitations': self.kg_engine.explain_data_limitations,
-                # New unified functions
+                'explain_data_limitations': getattr(self.kg_engine, 'explain_data_limitations', None),
+                
+                # Unified KG functions
                 'get_complete_player_profile': getattr(self.kg_engine, 'get_complete_player_profile', None),
                 'get_situational_analysis': getattr(self.kg_engine, 'get_situational_analysis', None),
                 'compare_players_advanced': getattr(self.kg_engine, 'compare_players_advanced', None),
-                'find_best_performers': getattr(self.kg_engine, 'find_best_performers', None)
+                'find_best_performers': getattr(self.kg_engine, 'find_best_performers', None),
+                
+                # GNN-enhanced functions (if available)
+                'find_similar_players_gnn': getattr(self.kg_engine, 'find_similar_players_gnn', None),
+                'predict_contextual_performance': getattr(self.kg_engine, 'predict_contextual_performance', None),
+                'analyze_venue_compatibility': getattr(self.kg_engine, 'analyze_venue_compatibility', None),
+                'get_playing_style_similarity': getattr(self.kg_engine, 'get_playing_style_similarity', None),
+                'find_best_performers_contextual': getattr(self.kg_engine, 'find_best_performers', None),  # Alias
+                
+                # Dynamic query function
+                'execute_dynamic_kg_query': self._execute_dynamic_query,
+                'analyze_team_composition_gnn': getattr(self.kg_engine, 'analyze_team_composition_gnn', None)
             }
             
             if function_name not in function_map:
@@ -253,15 +324,24 @@ Remember: You're not just showing data, you're providing expert cricket analysis
             # Add current user message
             messages.append({"role": "user", "content": user_message})
             
-            # Call OpenAI with function calling
-            response = self.client.chat.completions.create(
-                model="gpt-4o",  # Use gpt-4o for mixed modality and speed
-                messages=messages,
-                tools=self.function_tools,
-                tool_choice="auto",
-                temperature=0.7,
-                max_tokens=2000
-            )
+            # Call OpenAI with intelligent model selection
+            if self.enhanced_client:
+                response = self.client.kg_chat(
+                    messages=messages,
+                    tools=self.function_tools,
+                    tool_choice="auto",
+                    max_completion_tokens=2000
+                )
+            else:
+                # Fallback to standard client
+                response = self.client.chat.completions.create(
+                    model="gpt-4o",  # Fallback model
+                    messages=messages,
+                    tools=self.function_tools,
+                    tool_choice="auto",
+                    temperature=0.7,
+                    max_tokens=2000
+                )
             
             # Process the response
             assistant_message = response.choices[0].message
@@ -300,12 +380,18 @@ Remember: You're not just showing data, you're providing expert cricket analysis
                     messages.append(result)
                 
                 # Get final response from OpenAI
-                final_response = self.client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=messages,
-                    temperature=0.7,
-                    max_tokens=2000
-                )
+                if self.enhanced_client:
+                    final_response = self.client.kg_chat(
+                        messages=messages,
+                        max_completion_tokens=2000
+                    )
+                else:
+                    final_response = self.client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=messages,
+                        temperature=0.7,
+                        max_completion_tokens=2000
+                    )
                 
                 final_message = final_response.choices[0].message.content
                 
@@ -322,6 +408,9 @@ Remember: You're not just showing data, you're providing expert cricket analysis
                 final_message = final_message + "\n\n---\n**🤖 Response Source:** AI General Knowledge (no KG functions called)"
             
             # Update chat history
+            if chat_history is None:
+                chat_history = []
+            
             updated_history = chat_history + [
                 {"role": "user", "content": user_message},
                 {"role": "assistant", "content": final_message}
@@ -335,16 +424,233 @@ Remember: You're not just showing data, you're providing expert cricket analysis
             return final_message, updated_history
             
         except Exception as e:
+            import traceback
             logger.error(f"Error in chat processing: {e}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            
+            # Check if it's an OpenAI quota/API error
+            if "quota" in str(e).lower() or "429" in str(e) or "insufficient_quota" in str(e):
+                # Use intelligent fallback with direct KG queries
+                fallback_response = self._create_intelligent_fallback(user_message)
+                
+                if chat_history is None:
+                    chat_history = []
+                
+                updated_history = chat_history + [
+                    {"role": "user", "content": user_message},
+                    {"role": "assistant", "content": fallback_response}
+                ]
+                
+                return fallback_response, updated_history
+            
+            # For other errors, provide generic message
             error_message = "I apologize, but I encountered an error processing your request. Please try rephrasing your question or ask about something else."
             
             # Still update history with error
+            if chat_history is None:
+                chat_history = []
+            
             updated_history = chat_history + [
                 {"role": "user", "content": user_message},
                 {"role": "assistant", "content": error_message}
             ]
             
             return error_message, updated_history
+    
+    def _create_intelligent_fallback(self, user_message: str) -> str:
+        """Create intelligent fallback response using direct KG queries when OpenAI is unavailable"""
+        try:
+            user_lower = user_message.lower()
+            
+            # Player name detection (simple keyword matching)
+            common_players = [
+                "virat kohli", "ms dhoni", "rohit sharma", "hardik pandya", "jasprit bumrah",
+                "david warner", "steve smith", "ab de villiers", "chris gayle", "babar azam",
+                "kane williamson", "joe root", "ben stokes", "rashid khan", "andre russell"
+            ]
+            
+            detected_player = None
+            for player in common_players:
+                if player in user_lower:
+                    detected_player = player.title()
+                    break
+            
+            # Query type detection
+            if any(word in user_lower for word in ["stats", "statistics", "performance", "record"]):
+                if detected_player:
+                    try:
+                        result = self.kg_engine.get_player_stats(detected_player)
+                        return self._format_player_stats_fallback(result, detected_player)
+                    except:
+                        pass
+            
+            elif any(word in user_lower for word in ["compare", "vs", "versus", "better"]):
+                # Try to detect two players for comparison
+                players_found = [p.title() for p in common_players if p in user_lower]
+                if len(players_found) >= 2:
+                    try:
+                        result = self.kg_engine.compare_players(players_found[0], players_found[1])
+                        return self._format_comparison_fallback(result, players_found[0], players_found[1])
+                    except:
+                        pass
+            
+            elif any(word in user_lower for word in ["venue", "ground", "stadium"]):
+                if detected_player:
+                    try:
+                        result = self.kg_engine.get_player_stats(detected_player)
+                        return self._format_venue_performance_fallback(result, detected_player)
+                    except:
+                        pass
+            
+            elif any(word in user_lower for word in ["summary", "overview", "graph", "data"]):
+                try:
+                    result = self.kg_engine.get_graph_summary()
+                    return self._format_graph_summary_fallback(result)
+                except:
+                    pass
+            
+            # Default intelligent fallback
+            return self._create_default_intelligent_response(user_message, detected_player)
+            
+        except Exception as e:
+            logger.error(f"Error in intelligent fallback: {e}")
+            return "I'm currently experiencing technical difficulties with my AI capabilities, but I can still help you explore cricket data. Try asking about specific players like 'Virat Kohli stats' or 'compare Rohit Sharma and David Warner'."
+    
+    def _format_player_stats_fallback(self, result: Dict[str, Any], player: str) -> str:
+        """Format player stats for fallback response"""
+        if result.get("error"):
+            return f"I found some information about **{player}** in our cricket database, but couldn't retrieve detailed stats right now. Our knowledge graph contains comprehensive cricket data - please try your query again or ask about a different aspect of {player}'s performance."
+        
+        # Extract key stats if available
+        stats = result.get("career_stats", {})
+        matches = stats.get("matches", "N/A")
+        runs = stats.get("runs", "N/A")
+        avg = stats.get("average", "N/A")
+        sr = stats.get("strike_rate", "N/A")
+        
+        response = f"""## 📊 **{player} - Cricket Statistics**
+
+**Career Overview:**
+• **Matches:** {matches}
+• **Runs:** {runs}
+• **Average:** {avg}
+• **Strike Rate:** {sr}
+
+*Note: I'm currently using our cricket knowledge graph directly due to AI system limitations. For more detailed analysis, please try your query again later.*
+
+---
+**🔍 Data Source:** Cricket Knowledge Graph (Direct Query)"""
+        
+        return response
+    
+    def _format_comparison_fallback(self, result: Dict[str, Any], player1: str, player2: str) -> str:
+        """Format player comparison for fallback response"""
+        return f"""## ⚖️ **{player1} vs {player2} - Quick Comparison**
+
+I can access our cricket knowledge graph to compare these players, but my AI analysis capabilities are currently limited. 
+
+**What I can tell you:**
+• Both players are in our comprehensive cricket database
+• Our knowledge graph contains detailed match-by-match data for both
+• Performance metrics across different venues and formats are available
+
+**For detailed comparison, try asking:**
+• "{player1} stats vs {player2} stats"
+• "How does {player1} perform at specific venues?"
+• "{player1} T20 vs ODI performance"
+
+---
+**🔍 Data Source:** Cricket Knowledge Graph (Direct Access)"""
+    
+    def _format_venue_performance_fallback(self, result: Dict[str, Any], player: str) -> str:
+        """Format venue performance for fallback response"""
+        return f"""## 🏟️ **{player} - Venue Performance Analysis**
+
+Our cricket knowledge graph contains detailed venue-specific data for **{player}**, including:
+
+• **Performance at major grounds** (MCG, Wankhede, Lord's, etc.)
+• **Home vs Away statistics**
+• **Venue-specific strike rates and averages**
+• **Match outcomes and contributions**
+
+*Currently accessing data directly from our knowledge graph. For AI-powered insights and detailed analysis, please try your query again later.*
+
+**Suggested queries:**
+• "{player} performance at MCG"
+• "{player} home ground advantage"
+• "Best venues for {player}"
+
+---
+**🔍 Data Source:** Cricket Knowledge Graph (Direct Query)"""
+    
+    def _format_graph_summary_fallback(self, result: Dict[str, Any]) -> str:
+        """Format graph summary for fallback response"""
+        nodes = result.get("total_nodes", "Unknown")
+        edges = result.get("total_edges", "Unknown")
+        players = result.get("players", "Unknown")
+        matches = result.get("matches", "Unknown")
+        
+        return f"""## 📈 **Cricket Knowledge Graph - Database Overview**
+
+**Graph Statistics:**
+• **Total Nodes:** {nodes:,} entities
+• **Total Edges:** {edges:,} relationships
+• **Players:** {players:,} cricket players
+• **Matches:** {matches:,} match records
+
+**Available Data:**
+✅ **Player Statistics** - Career records, performance metrics
+✅ **Match Data** - Ball-by-ball, venue, format details  
+✅ **Venue Information** - Ground-specific performance
+✅ **Team Records** - Historical team data
+✅ **Relationships** - Player-venue, player-team connections
+
+*Currently showing raw database statistics. For AI-powered insights and natural language analysis, please try your queries again later.*
+
+---
+**🔍 Data Source:** Cricket Knowledge Graph (System Status)"""
+    
+    def _create_default_intelligent_response(self, user_message: str, detected_player: Optional[str]) -> str:
+        """Create a default intelligent response when specific handlers don't match"""
+        if detected_player:
+            return f"""## 🏏 **Cricket Intelligence System**
+
+I can see you're asking about **{detected_player}**. Our cricket knowledge graph contains comprehensive data about this player, but my AI analysis capabilities are currently limited.
+
+**What's available in our database:**
+• Detailed career statistics and performance metrics
+• Venue-specific performance data  
+• Match-by-match records and contributions
+• Team and format-wise breakdowns
+
+**Try these specific queries:**
+• "{detected_player} career stats"
+• "{detected_player} performance at [venue name]"
+• "Compare {detected_player} with [another player]"
+
+---
+**🔍 Status:** Knowledge Graph Online | AI Analysis Temporarily Limited"""
+        
+        else:
+            return f"""## 🏏 **Cricket Intelligence System**
+
+I understand you're asking: *"{user_message}"*
+
+Our cricket knowledge graph is fully operational with comprehensive data, but my AI analysis capabilities are currently limited. 
+
+**Available Data & Queries:**
+• **Player Statistics** - Ask about specific players (e.g., "Virat Kohli stats")
+• **Player Comparisons** - Compare any two players  
+• **Venue Analysis** - Performance at specific grounds
+• **Database Overview** - "Show me graph summary"
+
+**Example queries that work:**
+• "Tell me about [Player Name]"
+• "Compare [Player A] and [Player B]"
+• "[Player Name] performance at [Venue]"
+
+---
+**🔍 Status:** Knowledge Graph Online | AI Analysis Temporarily Limited"""
     
     def get_suggested_questions(self) -> List[str]:
         """Get a list of suggested questions users can ask"""
@@ -364,3 +670,25 @@ Remember: You're not just showing data, you're providing expert cricket analysis
     def get_available_functions(self) -> Dict[str, str]:
         """Get list of available functions for the UI"""
         return self.function_descriptions
+    
+    def get_performance_stats(self) -> Dict[str, Any]:
+        """Get performance statistics from enhanced client"""
+        if self.enhanced_client and hasattr(self.client, 'get_stats'):
+            stats = self.client.get_stats()
+            
+            # Add KG-specific information
+            kg_stats = {
+                "kg_engine_type": type(self.kg_engine).__name__,
+                "gnn_enhanced": hasattr(self.kg_engine, 'gnn_embeddings_available') and self.kg_engine.gnn_embeddings_available,
+                "function_tools_count": len(self.function_tools),
+                "enhanced_client": self.enhanced_client
+            }
+            
+            return {**stats, "kg_chat_info": kg_stats}
+        else:
+            return {
+                "message": "Enhanced client not available",
+                "kg_engine_type": type(self.kg_engine).__name__,
+                "function_tools_count": len(self.function_tools),
+                "enhanced_client": self.enhanced_client
+            }

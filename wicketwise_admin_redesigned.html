@@ -46,7 +46,7 @@
         
         .pipeline-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 2rem;
             margin-bottom: 3rem;
         }
@@ -90,6 +90,10 @@
         
         .t20-icon {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .sim-icon {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         }
         
         .pipeline-title {
@@ -365,6 +369,12 @@
             display: none;
         }
         
+        @media (max-width: 1024px) {
+            .pipeline-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
         @media (max-width: 768px) {
             .pipeline-grid {
                 grid-template-columns: 1fr;
@@ -405,7 +415,7 @@
                     </h4>
                     <div class="data-stats">
                         <div class="stat-item">
-                            <span class="stat-label">Total Balls:</span>
+                            <span class="stat-label">Graph Nodes:</span>
                             <span class="stat-value" id="kg-total-balls">Loading...</span>
                         </div>
                         <div class="stat-item">
@@ -528,6 +538,77 @@
                     <button class="btn btn-success" onclick="trainT20Model()">
                         <i data-lucide="cpu" class="w-4 h-4"></i>
                         Train T20 Model
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Simulation Pipeline -->
+            <div class="pipeline-card">
+                <div class="pipeline-header">
+                    <div class="pipeline-icon sim-icon">
+                        <i data-lucide="play-circle" class="w-6 h-6"></i>
+                    </div>
+                    <div class="pipeline-title">
+                        Strategy Simulation
+                    </div>
+                </div>
+                
+                <div class="pipeline-content">
+                    <p>Test betting strategies on holdout matches using the WicketWise Simulator & Market Replay system.</p>
+                    
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <span class="status-label">Holdout Matches:</span>
+                            <span class="status-value" id="holdout-matches-count">Loading...</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Last Simulation:</span>
+                            <span class="status-value" id="last-simulation">Never</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">SIM Status:</span>
+                            <span class="status-value" id="sim-status">Ready</span>
+                        </div>
+                    </div>
+                    
+                    <div style="margin: 1rem 0;">
+                        <label for="strategy-select" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Strategy:</label>
+                        <select id="strategy-select" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                            <option value="edge_kelly_v3">Edge Kelly v3</option>
+                            <option value="mean_revert_lob">Mean Revert LOB</option>
+                            <option value="momentum_follow">Momentum Follow</option>
+                        </select>
+                    </div>
+                    
+                    <div style="margin: 1rem 0;">
+                        <label for="match-select" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Matches:</label>
+                        <select id="match-select" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                            <option value="auto">Auto-select from holdout (10 matches)</option>
+                            <option value="all">All available holdout matches</option>
+                            <option value="single">Single match (dashboard demo)</option>
+                        </select>
+                    </div>
+                    
+                    <div style="margin: 1rem 0;">
+                        <label for="simulation-mode" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Simulation Mode:</label>
+                        <select id="simulation-mode" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                            <option value="rapid">🚀 Rapid Testing (Fast execution)</option>
+                            <option value="live_dashboard">📊 Live Dashboard (Slow, for visualization)</option>
+                        </select>
+                        <small style="color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem; display: block;">
+                            Rapid mode: Quick strategy testing | Live mode: Watch bets on main dashboard
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" onclick="loadHoldoutMatches()">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        Refresh Matches
+                    </button>
+                    <button class="btn btn-success" onclick="runSimulation()">
+                        <i data-lucide="play" class="w-4 h-4"></i>
+                        Run Simulation
                     </button>
                 </div>
             </div>
@@ -685,11 +766,11 @@
                 const stats = await response.json();
                 console.log('📊 Stats loaded:', stats);
                 
-                // Update KG stats (JSON Dataset)
-                document.getElementById('kg-total-balls').textContent = formatNumber(stats.json_dataset?.rows || 0);
+                // Update KG stats (JSON Dataset) - CORRECTED to show actual KG statistics
+                document.getElementById('kg-total-balls').textContent = formatNumber(stats.json_dataset?.nodes || 0) + ' nodes';
                 document.getElementById('kg-file-size').textContent = `${stats.json_dataset?.size_mb || 0} MB`;
-                document.getElementById('kg-players').textContent = formatNumber(stats.entity_harmonizer?.players?.total || 0);
-                document.getElementById('kg-venues').textContent = formatNumber(stats.entity_harmonizer?.venues?.total || 0);
+                document.getElementById('kg-players').textContent = formatNumber(stats.json_dataset?.players || 0);
+                document.getElementById('kg-venues').textContent = formatNumber(stats.json_dataset?.venues || 0);
                 
                 console.log('📊 KG Stats - JSON Dataset:', {
                     rows: stats.json_dataset?.rows,
@@ -697,11 +778,11 @@
                     formatted_rows: formatNumber(stats.json_dataset?.rows || 0)
                 });
                 
-                // Update T20 stats (Decimal Dataset)
+                // Update T20 stats (Decimal Dataset) - CORRECTED to show actual match count
                 document.getElementById('t20-total-balls').textContent = formatNumber(stats.decimal_dataset?.rows || 0);
                 document.getElementById('t20-file-size').textContent = `${stats.decimal_dataset?.size_mb || 0} MB`;
-                document.getElementById('t20-matches').textContent = 'N/A'; // TODO: Calculate from dataset
-                document.getElementById('t20-odds').textContent = 'Available'; // TODO: Check decimal columns
+                document.getElementById('t20-matches').textContent = formatNumber(stats.decimal_dataset?.matches || 0);
+                document.getElementById('t20-odds').textContent = 'Available';
                 
                 console.log('📊 T20 Stats - Decimal Dataset:', {
                     rows: stats.decimal_dataset?.rows,
@@ -1206,6 +1287,111 @@
                 progressDiv.style.display = 'none';
             }
         }
+        
+        // Simulation functions
+        async function loadHoldoutMatches() {
+            try {
+                addLog('info', '🔍 Loading holdout matches...');
+                
+                const response = await fetch('http://127.0.0.1:5001/api/simulation/holdout-matches');
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    document.getElementById('holdout-matches-count').textContent = result.match_count || 0;
+                    addLog('success', `✅ Found ${result.match_count} holdout matches`);
+                    
+                    // Update match selection dropdown
+                    const matchSelect = document.getElementById('match-select');
+                    matchSelect.innerHTML = `
+                        <option value="auto">Auto-select from holdout (10 matches)</option>
+                        <option value="all">All available holdout matches (${result.match_count})</option>
+                        <option value="custom">Custom selection...</option>
+                    `;
+                    
+                } else {
+                    document.getElementById('holdout-matches-count').textContent = '0';
+                    addLog('warning', `⚠️ ${result.message || 'No holdout matches found'}`);
+                }
+                
+            } catch (error) {
+                console.error('Failed to load holdout matches:', error);
+                document.getElementById('holdout-matches-count').textContent = 'Error';
+                addLog('error', `❌ Failed to load holdout matches: ${error.message}`);
+            }
+        }
+        
+        async function runSimulation() {
+            if (isOperationRunning) {
+                showNotification('error', 'Another operation is already running');
+                return;
+            }
+            
+            try {
+                const strategy = document.getElementById('strategy-select').value;
+                const matchSelection = document.getElementById('match-select').value;
+                const simulationMode = document.getElementById('simulation-mode').value;
+                
+                setOperationRunning('Running Strategy Simulation...');
+                document.getElementById('sim-status').textContent = 'Running...';
+                
+                const modeText = simulationMode === 'live_dashboard' ? 'Live Dashboard' : 'Rapid Testing';
+                addLog('info', `🎯 Starting ${modeText} simulation with ${strategy} strategy...`);
+                
+                if (simulationMode === 'live_dashboard') {
+                    addLog('info', '📊 Dashboard mode: Check main dashboard for live betting activity');
+                }
+                
+                const response = await fetch('http://127.0.0.1:5001/api/simulation/run', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        strategy: strategy,
+                        match_selection: matchSelection,
+                        simulation_mode: simulationMode,
+                        use_holdout_data: true
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    addLog('success', `✅ Simulation completed successfully!`);
+                    addLog('info', `📊 Total P&L: £${result.kpis?.pnl_total || 0}`);
+                    addLog('info', `📈 Sharpe Ratio: ${result.kpis?.sharpe || 0}`);
+                    addLog('info', `📉 Max Drawdown: ${result.kpis?.max_drawdown || 0}%`);
+                    addLog('info', `🎯 Hit Rate: ${(result.kpis?.hit_rate * 100 || 0).toFixed(1)}%`);
+                    
+                    document.getElementById('last-simulation').textContent = new Date().toLocaleString();
+                    
+                    if (result.violations && result.violations.length > 0) {
+                        addLog('warning', `⚠️ ${result.violations.length} DGL violations detected`);
+                        result.violations.forEach(violation => {
+                            addLog('warning', `  - ${violation}`);
+                        });
+                    }
+                    
+                    showNotification('success', 'Simulation completed successfully!');
+                    
+                } else {
+                    throw new Error(result.error || 'Simulation failed');
+                }
+                
+            } catch (error) {
+                console.error('Simulation failed:', error);
+                addLog('error', `❌ Simulation failed: ${error.message}`);
+                showNotification('error', 'Simulation failed');
+            } finally {
+                setOperationComplete();
+                document.getElementById('sim-status').textContent = 'Ready';
+            }
+        }
+        
+        // Initialize simulation status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadHoldoutMatches();
+        });
     </script>
 </body>
 </html>

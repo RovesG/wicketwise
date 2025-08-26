@@ -65,13 +65,15 @@ class CrickformerModel(nn.Module):
         video_features = inputs.get("video_features")
         video_mask = inputs.get("video_mask")
         gnn_embeddings = inputs.get("gnn_embeddings")
+        weather_features = inputs.get("weather_features")
+        venue_coordinates = inputs.get("venue_coordinates")
         
         # Handle missing inputs with appropriate defaults
         batch_size = recent_ball_history.shape[0] if recent_ball_history is not None else 1
         device = self.device
         
         if recent_ball_history is None:
-            recent_ball_history = torch.zeros(batch_size, 5, 128, device=device)  # Updated to 128 dimensions
+            recent_ball_history = torch.zeros(batch_size, 5, 64, device=device)  # Updated to 64 dimensions for memory efficiency
         if numeric_features is None:
             numeric_features = torch.zeros(batch_size, 15, device=device)
         if categorical_features is None:
@@ -90,7 +92,9 @@ class CrickformerModel(nn.Module):
             numeric_features=numeric_features,
             categorical_features=categorical_features,
             video_features=video_features,
-            video_mask=video_mask
+            video_mask=video_mask,
+            weather_features=weather_features,
+            venue_coordinates=venue_coordinates
         )
         
         # Split GNN embeddings: 128 + 128 + 64 + 64 = 384

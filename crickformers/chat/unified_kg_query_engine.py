@@ -15,18 +15,14 @@ logger = logging.getLogger(__name__)
 
 @contextmanager
 def timeout(seconds: int):
-    """Context manager for query timeouts"""
-    import signal
-    
-    def timeout_handler(signum, frame):
-        raise TimeoutError("Query timed out")
-    
+    """Context manager for query timeouts - disabled for thread safety"""
+    # Temporarily disable timeout to avoid threading issues with signal.alarm()
+    # In Flask threads, signal.alarm() doesn't work properly
     try:
-        signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(seconds)
         yield
-    finally:
-        signal.alarm(0)
+    except Exception:
+        # Re-raise any exceptions
+        raise
 
 
 class QueryTimeoutError(Exception):

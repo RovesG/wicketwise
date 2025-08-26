@@ -19,10 +19,24 @@ from typing import Dict, Any
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ui.governance_dashboard import GovernanceDashboard
-from ui.limits_manager import LimitsManager
-from ui.audit_viewer import AuditViewer
-from ui.monitoring_panel import MonitoringPanel
+from governance_dashboard import GovernanceDashboard
+from limits_manager import LimitsManager
+from audit_viewer import AuditViewer
+from monitoring_panel import MonitoringPanel
+
+# Add SIM module to path
+sim_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'sim')
+if os.path.exists(sim_path):
+    sys.path.append(sim_path)
+    try:
+        import ui_streamlit
+        from ui_streamlit import render_simulator_tab
+        SIM_AVAILABLE = True
+    except ImportError as e:
+        print(f"SIM import failed: {e}")
+        SIM_AVAILABLE = False
+else:
+    SIM_AVAILABLE = False
 
 
 def main():
@@ -154,6 +168,10 @@ def main():
             "📈 Monitoring": "Monitoring"
         }
         
+        # Add Simulator tab if available
+        if SIM_AVAILABLE:
+            pages["🎯 Simulator"] = "Simulator"
+        
         for display_name, page_key in pages.items():
             if st.button(display_name, key=f"nav_{page_key}"):
                 st.session_state.current_page = page_key
@@ -212,6 +230,8 @@ def main():
         render_audit_page(dgl_url)
     elif st.session_state.current_page == 'Monitoring':
         render_monitoring_page(dgl_url)
+    elif st.session_state.current_page == 'Simulator' and SIM_AVAILABLE:
+        render_simulator_page()
     
     # Footer
     st.markdown("""
@@ -261,6 +281,19 @@ def render_monitoring_page(dgl_url: str):
     except Exception as e:
         st.error(f"Failed to load monitoring panel: {str(e)}")
         st.info("Please check the DGL service connection and try again.")
+
+
+def render_simulator_page():
+    """Render the simulator page"""
+    if SIM_AVAILABLE:
+        try:
+            render_simulator_tab()
+        except Exception as e:
+            st.error(f"Failed to load simulator: {str(e)}")
+            st.info("Please check the SIM system installation and try again.")
+    else:
+        st.warning("🎯 Simulator module not available")
+        st.info("The WicketWise Simulator & Market Replay (SIM) system is not installed or accessible.")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# WicketWise DGL System Startup Script
+# WicketWise Complete System Startup Script
 # Author: WicketWise AI
-# Last Modified: December 2024
+# Last Modified: January 2025
 
 set -e  # Exit on any error
 
@@ -15,13 +15,12 @@ NC='\033[0m' # No Color
 
 # Configuration
 DGL_PORT=${DGL_PORT:-8001}
-STREAMLIT_PORT=${STREAMLIT_PORT:-8501}
-FRONTEND_PORT=${FRONTEND_PORT:-3000}
-BACKEND_PORT=${BACKEND_PORT:-5001}
+ENHANCED_API_PORT=${ENHANCED_API_PORT:-5001}
+STATIC_SERVER_PORT=${STATIC_SERVER_PORT:-8000}
 ENVIRONMENT=${ENVIRONMENT:-development}
 
-echo -e "${BLUE}🏏 WicketWise DGL System Startup${NC}"
-echo -e "${BLUE}=================================${NC}"
+echo -e "${BLUE}🏏 WicketWise Complete System Startup${NC}"
+echo -e "${BLUE}====================================${NC}"
 echo ""
 
 # Function to print colored output
@@ -75,13 +74,38 @@ wait_for_service() {
     return 1
 }
 
+# Function to start static file server
+start_static_server() {
+    print_info "Starting Static File Server on port $STATIC_SERVER_PORT..."
+    
+    if ! check_port $STATIC_SERVER_PORT; then
+        print_status "Static server already running on port $STATIC_SERVER_PORT"
+        return 0
+    fi
+    
+    # Start Python HTTP server in background
+    print_info "Launching static file server..."
+    nohup python3 -m http.server $STATIC_SERVER_PORT > logs/static_server.log 2>&1 &
+    STATIC_PID=$!
+    echo $STATIC_PID > pids/static_server.pid
+    
+    # Wait for service to be ready
+    if wait_for_service "http://localhost:$STATIC_SERVER_PORT" "Static File Server"; then
+        print_status "Static File Server started successfully (PID: $STATIC_PID)"
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Function to start DGL service
 start_dgl_service() {
     print_info "Starting DGL Service on port $DGL_PORT..."
     
     if ! check_port $DGL_PORT; then
-        print_warning "Port $DGL_PORT is already in use"
-        return 1
+        print_warning "Port $DGL_PORT is already in use, attempting to free it..."
+        lsof -ti:$DGL_PORT | xargs kill -9 2>/dev/null || true
+        sleep 2
     fi
     
     cd services/dgl
@@ -98,7 +122,6 @@ start_dgl_service() {
     # Install dependencies
     print_info "Installing DGL dependencies..."
     pip install -q fastapi uvicorn pydantic pydantic-settings httpx asyncio psutil
-    pip install -q streamlit plotly pandas numpy
     pip install -q hypothesis freezegun pytest
     
     # Start DGL service in background
@@ -106,6 +129,8 @@ start_dgl_service() {
     nohup uvicorn app:app --host 0.0.0.0 --port $DGL_PORT --reload > ../../logs/dgl.log 2>&1 &
     DGL_PID=$!
     echo $DGL_PID > ../../pids/dgl.pid
+    
+    cd ../..
     
     # Wait for service to be ready
     if wait_for_service "http://localhost:$DGL_PORT/healthz" "DGL Service"; then
@@ -116,149 +141,41 @@ start_dgl_service() {
     fi
 }
 
-# Function to start Streamlit dashboard
-start_streamlit_dashboard() {
-    print_info "Starting Streamlit Dashboard on port $STREAMLIT_PORT..."
+# Function to start Enhanced Dashboard API
+start_enhanced_api() {
+    print_info "Starting Enhanced Dashboard API on port $ENHANCED_API_PORT..."
     
-    if ! check_port $STREAMLIT_PORT; then
-        print_warning "Port $STREAMLIT_PORT is already in use"
-        return 1
+    if ! check_port $ENHANCED_API_PORT; then
+        print_warning "Port $ENHANCED_API_PORT is already in use, attempting to free it..."
+        lsof -ti:$ENHANCED_API_PORT | xargs kill -9 2>/dev/null || true
+        sleep 2
     fi
-    
-    cd services/dgl/ui
-    
-    # Start Streamlit in background
-    print_info "Launching Streamlit dashboard..."
-    nohup streamlit run streamlit_app.py --server.port $STREAMLIT_PORT --server.address 0.0.0.0 > ../../../logs/streamlit.log 2>&1 &
-    STREAMLIT_PID=$!
-    echo $STREAMLIT_PID > ../../../pids/streamlit.pid
-    
-    # Wait for service to be ready
-    if wait_for_service "http://localhost:$STREAMLIT_PORT" "Streamlit Dashboard"; then
-        print_status "Streamlit Dashboard started successfully (PID: $STREAMLIT_PID)"
-        return 0
-    else
-        return 1
-    fi
-}
-
-# Function to start backend service
-start_backend_service() {
-    print_info "Starting Backend Service on port $BACKEND_PORT..."
-    
-    if ! check_port $BACKEND_PORT; then
-        print_warning "Port $BACKEND_PORT is already in use"
-        return 1
-    fi
-    
-    cd backend
     
     # Check if virtual environment exists
-    if [ ! -d "../.venv" ]; then
-        print_info "Creating Python virtual environment for backend..."
-        python3 -m venv ../.venv
+    if [ ! -d ".venv" ]; then
+        print_info "Creating Python virtual environment..."
+        python3 -m venv .venv
     fi
     
     # Activate virtual environment
-    source ../.venv/bin/activate
+    source .venv/bin/activate
     
     # Install dependencies
-    print_info "Installing backend dependencies..."
-    pip install -q -r requirements.txt
+    print_info "Installing Enhanced API dependencies..."
+    pip install -q flask flask-cors requests pandas numpy
+    pip install -q networkx scikit-learn plotly
     
-    # Start backend service
-    print_info "Launching backend service..."
-    nohup python app.py > ../logs/backend.log 2>&1 &
-    BACKEND_PID=$!
-    echo $BACKEND_PID > ../pids/backend.pid
-    
-    # Wait for service to be ready
-    if wait_for_service "http://localhost:$BACKEND_PORT/health" "Backend Service"; then
-        print_status "Backend Service started successfully (PID: $BACKEND_PID)"
-        return 0
-    else
-        return 1
-    fi
-}
-
-# Function to start frontend service
-start_frontend_service() {
-    print_info "Starting Frontend Service on port $FRONTEND_PORT..."
-    
-    if ! check_port $FRONTEND_PORT; then
-        print_warning "Port $FRONTEND_PORT is already in use"
-        return 1
-    fi
-    
-    cd frontend
-    
-    # Check if node_modules exists
-    if [ ! -d "node_modules" ]; then
-        print_info "Installing frontend dependencies..."
-        npm install
-    fi
-    
-    # Start frontend service
-    print_info "Launching frontend service..."
-    nohup npm start > ../logs/frontend.log 2>&1 &
-    FRONTEND_PID=$!
-    echo $FRONTEND_PID > ../pids/frontend.pid
+    # Start Admin Backend service in background
+    print_info "Launching Admin Backend API..."
+    nohup python admin_backend.py > logs/admin_backend.log 2>&1 &
+    ENHANCED_API_PID=$!
+    echo $ENHANCED_API_PID > pids/enhanced_api.pid
     
     # Wait for service to be ready
-    if wait_for_service "http://localhost:$FRONTEND_PORT" "Frontend Service"; then
-        print_status "Frontend Service started successfully (PID: $FRONTEND_PID)"
+    if wait_for_service "http://localhost:$ENHANCED_API_PORT/api/health" "Admin Backend API"; then
+        print_status "Admin Backend API started successfully (PID: $ENHANCED_API_PID)"
         return 0
     else
-        return 1
-    fi
-}
-
-# Function to run system tests
-run_system_tests() {
-    print_info "Running WicketWise DGL System Tests..."
-    
-    cd services/dgl
-    source ../../.venv/bin/activate
-    
-    # Run all sprint tests
-    local test_files=(
-        "tests/test_sprint_g0.py"
-        "tests/test_sprint_g1.py" 
-        "tests/test_sprint_g2.py"
-        "tests/test_sprint_g3.py"
-        "tests/test_sprint_g4.py"
-        "tests/test_sprint_g5.py"
-        "tests/test_sprint_g6.py"
-        "tests/test_sprint_g7.py"
-        "tests/test_sprint_g8.py"
-        "tests/test_sprint_g9.py"
-    )
-    
-    local passed_tests=0
-    local total_tests=${#test_files[@]}
-    
-    for test_file in "${test_files[@]}"; do
-        if [ -f "$test_file" ]; then
-            print_info "Running $(basename $test_file)..."
-            if python "$test_file" > /dev/null 2>&1; then
-                print_status "$(basename $test_file) - PASSED"
-                ((passed_tests++))
-            else
-                print_error "$(basename $test_file) - FAILED"
-            fi
-        else
-            print_warning "Test file not found: $test_file"
-        fi
-    done
-    
-    echo ""
-    print_info "Test Results: $passed_tests/$total_tests tests passed"
-    
-    if [ $passed_tests -eq $total_tests ]; then
-        print_status "All system tests passed! ✨"
-        return 0
-    else
-        print_warning "Some tests failed. Check logs for details."
         return 1
     fi
 }
@@ -266,8 +183,15 @@ run_system_tests() {
 # Function to show system status
 show_system_status() {
     echo ""
-    print_info "WicketWise DGL System Status:"
-    echo "================================"
+    print_info "WicketWise Complete System Status:"
+    echo "=================================="
+    
+    # Check Static File Server
+    if curl -s "http://localhost:$STATIC_SERVER_PORT" >/dev/null 2>&1; then
+        print_status "Static File Server: Running on http://localhost:$STATIC_SERVER_PORT"
+    else
+        print_error "Static File Server: Not running"
+    fi
     
     # Check DGL Service
     if curl -s "http://localhost:$DGL_PORT/healthz" >/dev/null 2>&1; then
@@ -276,33 +200,24 @@ show_system_status() {
         print_error "DGL Service: Not running"
     fi
     
-    # Check Streamlit Dashboard
-    if curl -s "http://localhost:$STREAMLIT_PORT" >/dev/null 2>&1; then
-        print_status "Streamlit Dashboard: Running on http://localhost:$STREAMLIT_PORT"
+    # Check Enhanced Dashboard API
+    if curl -s "http://localhost:$ENHANCED_API_PORT/api/enhanced/health" >/dev/null 2>&1; then
+        print_status "Enhanced Dashboard API: Running on http://localhost:$ENHANCED_API_PORT"
     else
-        print_error "Streamlit Dashboard: Not running"
-    fi
-    
-    # Check Backend Service
-    if curl -s "http://localhost:$BACKEND_PORT/health" >/dev/null 2>&1; then
-        print_status "Backend Service: Running on http://localhost:$BACKEND_PORT"
-    else
-        print_error "Backend Service: Not running"
-    fi
-    
-    # Check Frontend Service
-    if curl -s "http://localhost:$FRONTEND_PORT" >/dev/null 2>&1; then
-        print_status "Frontend Service: Running on http://localhost:$FRONTEND_PORT"
-    else
-        print_error "Frontend Service: Not running"
+        print_error "Enhanced Dashboard API: Not running"
     fi
     
     echo ""
-    print_info "Key URLs:"
+    print_info "🎯 Main URLs:"
+    echo "  🏏 Unified Dashboard: http://localhost:$STATIC_SERVER_PORT/wicketwise_unified_dashboard.html"
+    echo "  ⚙️  Legacy Admin Panel: http://localhost:$STATIC_SERVER_PORT/wicketwise_admin_redesigned.html"
     echo "  🛡️  DGL API: http://localhost:$DGL_PORT"
-    echo "  📊 DGL Dashboard: http://localhost:$STREAMLIT_PORT"
-    echo "  🏏 WicketWise Dashboard: http://localhost:$FRONTEND_PORT"
-    echo "  ⚙️  Backend API: http://localhost:$BACKEND_PORT"
+    echo "  📊 Enhanced API: http://localhost:$ENHANCED_API_PORT"
+    echo ""
+    print_info "🔗 Key API Endpoints:"
+    echo "  📊 Holdout Matches: GET http://localhost:$ENHANCED_API_PORT/api/simulation/holdout-matches"
+    echo "  🎯 Run Simulation: POST http://localhost:$ENHANCED_API_PORT/api/simulation/run"
+    echo "  🏏 Player Search: GET http://localhost:$ENHANCED_API_PORT/api/enhanced/search-players"
     echo ""
 }
 
@@ -311,7 +226,7 @@ stop_services() {
     print_info "Stopping WicketWise services..."
     
     # Stop services using PID files
-    local pid_files=("pids/dgl.pid" "pids/streamlit.pid" "pids/backend.pid" "pids/frontend.pid")
+    local pid_files=("pids/dgl.pid" "pids/enhanced_api.pid" "pids/static_server.pid")
     
     for pid_file in "${pid_files[@]}"; do
         if [ -f "$pid_file" ]; then
@@ -322,6 +237,11 @@ stop_services() {
                 rm "$pid_file"
             fi
         fi
+    done
+    
+    # Also kill by port
+    for port in $DGL_PORT $ENHANCED_API_PORT $STATIC_SERVER_PORT; do
+        lsof -ti:$port | xargs kill -9 2>/dev/null || true
     done
     
     print_status "All services stopped"
@@ -335,9 +255,61 @@ setup_directories() {
     mkdir -p logs pids
     
     # Create log files
-    touch logs/dgl.log logs/streamlit.log logs/backend.log logs/frontend.log
+    touch logs/dgl.log logs/enhanced_api.log logs/static_server.log
     
     print_status "Directories setup complete"
+}
+
+# Function to run quick system test
+run_quick_test() {
+    print_info "Running quick system test..."
+    
+    # Test Static Server
+    if curl -s "http://localhost:$STATIC_SERVER_PORT" >/dev/null 2>&1; then
+        print_status "Static File Server: ✓"
+    else
+        print_error "Static File Server: ✗"
+    fi
+    
+    # Test DGL health
+    if curl -s "http://localhost:$DGL_PORT/healthz" >/dev/null 2>&1; then
+        print_status "DGL Service: ✓"
+    else
+        print_error "DGL Service: ✗"
+    fi
+    
+    # Test Enhanced API health
+    if curl -s "http://localhost:$ENHANCED_API_PORT/api/enhanced/health" >/dev/null 2>&1; then
+        print_status "Enhanced API: ✓"
+    else
+        print_error "Enhanced API: ✗"
+    fi
+    
+    # Test simulation endpoints
+    print_info "Testing simulation endpoints..."
+    if curl -s "http://localhost:$ENHANCED_API_PORT/api/simulation/holdout-matches" >/dev/null 2>&1; then
+        print_status "Simulation API: ✓"
+    else
+        print_error "Simulation API: ✗"
+    fi
+}
+
+# Function to open browser
+open_browser() {
+    local url="http://localhost:$STATIC_SERVER_PORT/wicketwise_unified_dashboard.html"
+    
+    if command -v open >/dev/null 2>&1; then
+        # macOS
+        open "$url"
+    elif command -v xdg-open >/dev/null 2>&1; then
+        # Linux
+        xdg-open "$url"
+    elif command -v start >/dev/null 2>&1; then
+        # Windows
+        start "$url"
+    else
+        print_info "Please open $url in your browser"
+    fi
 }
 
 # Main execution
@@ -348,10 +320,17 @@ main() {
         "start")
             setup_directories
             
-            print_info "Starting WicketWise DGL System..."
+            print_info "Starting WicketWise Complete System..."
             echo ""
             
-            # Start core DGL service
+            # Start static file server
+            if start_static_server; then
+                print_status "Static File Server started successfully"
+            else
+                print_warning "Static File Server failed to start (continuing...)"
+            fi
+            
+            # Start DGL service
             if start_dgl_service; then
                 print_status "DGL Service started successfully"
             else
@@ -359,34 +338,18 @@ main() {
                 exit 1
             fi
             
-            # Start Streamlit dashboard
-            if start_streamlit_dashboard; then
-                print_status "Streamlit Dashboard started successfully"
+            # Start Enhanced Dashboard API
+            if start_enhanced_api; then
+                print_status "Enhanced Dashboard API started successfully"
             else
-                print_warning "Streamlit Dashboard failed to start (continuing...)"
-            fi
-            
-            # Start backend service (if exists)
-            if [ -d "backend" ]; then
-                if start_backend_service; then
-                    print_status "Backend Service started successfully"
-                else
-                    print_warning "Backend Service failed to start (continuing...)"
-                fi
-            fi
-            
-            # Start frontend service (if exists)
-            if [ -d "frontend" ]; then
-                if start_frontend_service; then
-                    print_status "Frontend Service started successfully"
-                else
-                    print_warning "Frontend Service failed to start (continuing...)"
-                fi
+                print_warning "Enhanced Dashboard API failed to start (continuing...)"
             fi
             
             show_system_status
             
-            print_status "WicketWise DGL System startup complete! 🚀"
+            print_status "WicketWise Complete System startup complete! 🚀"
+            print_info "Opening main dashboard in browser..."
+            open_browser
             ;;
             
         "stop")
@@ -395,7 +358,7 @@ main() {
             
         "restart")
             stop_services
-            sleep 2
+            sleep 3
             main "start"
             ;;
             
@@ -404,7 +367,7 @@ main() {
             ;;
             
         "test")
-            run_system_tests
+            run_quick_test
             ;;
             
         "logs")
@@ -418,7 +381,7 @@ main() {
             ;;
             
         "help"|"-h"|"--help")
-            echo "WicketWise DGL System Control Script"
+            echo "WicketWise Complete System Control Script"
             echo ""
             echo "Usage: $0 [command]"
             echo ""
@@ -427,15 +390,14 @@ main() {
             echo "  stop      Stop all WicketWise services"
             echo "  restart   Restart all WicketWise services"
             echo "  status    Show system status"
-            echo "  test      Run system tests"
-            echo "  logs      Show logs (specify service: dgl, streamlit, backend, frontend)"
+            echo "  test      Run quick system test"
+            echo "  logs      Show logs (specify service: dgl, enhanced_api, static_server)"
             echo "  help      Show this help message"
             echo ""
             echo "Environment Variables:"
             echo "  DGL_PORT=$DGL_PORT"
-            echo "  STREAMLIT_PORT=$STREAMLIT_PORT"
-            echo "  FRONTEND_PORT=$FRONTEND_PORT"
-            echo "  BACKEND_PORT=$BACKEND_PORT"
+            echo "  ENHANCED_API_PORT=$ENHANCED_API_PORT"
+            echo "  STATIC_SERVER_PORT=$STATIC_SERVER_PORT"
             echo "  ENVIRONMENT=$ENVIRONMENT"
             ;;
             

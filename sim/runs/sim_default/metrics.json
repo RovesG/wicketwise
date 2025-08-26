@@ -1,0 +1,38 @@
+{
+  "dgl_stats": {
+    "total_decisions": 469,
+    "approvals": 0,
+    "rejections": 469,
+    "amendments": 0,
+    "approval_rate": 0.0,
+    "rejection_rate": 1.0,
+    "amendment_rate": 0.0,
+    "violations_by_rule": {
+      "BANKROLL_MARKET_EXPOSURE": 29,
+      "BANKROLL_TOTAL_EXPOSURE": 440
+    },
+    "current_exposures": {
+      "total_exposure": 0.0,
+      "market_exposures": {},
+      "daily_pnl": 0.0,
+      "session_pnl": 0.0,
+      "consecutive_losses": 0,
+      "violation_count": 469
+    }
+  },
+  "matching_stats": {
+    "orders_in_flight": 0,
+    "suspended_markets": 0,
+    "queued_orders": 0,
+    "participation_factor": 0.1,
+    "latency_mean_ms": 250.0,
+    "commission_bps": 200.0
+  },
+  "strategy_params": {
+    "edge_threshold": 0.02,
+    "kelly_fraction": 0.25,
+    "max_stake_pct": 0.05,
+    "min_odds": 1.1,
+    "max_odds": 10.0
+  }
+}

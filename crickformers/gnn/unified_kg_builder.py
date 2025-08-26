@@ -230,7 +230,12 @@ class UnifiedKGBuilder:
             except Exception:
                 pass
         
-        # Step 6: Add graph metadata
+        # Step 6: Integrate enrichment data (weather, venue enhancements, match context)
+        if should_cancel and should_cancel():
+            raise RuntimeError("Canceled")
+        self._integrate_enrichment_data(progress_callback)
+        
+        # Step 7: Add graph metadata
         if should_cancel and should_cancel():
             raise RuntimeError("Canceled")
         self._add_graph_metadata()
@@ -1281,17 +1286,227 @@ class UnifiedKGBuilder:
             'strike_rate': total_balls / max(wickets, 1)
         }
     
+    def _integrate_enrichment_data(self, progress_callback: Optional[Callable] = None):
+        """Integrate enrichment data into the knowledge graph"""
+        if not self.enrichments:
+            logger.info("📊 No enrichment data available for integration")
+            return
+        
+        logger.info(f"🌟 Integrating enrichment data for {len(self.enrichments)} matches...")
+        
+        enrichment_stats = {
+            'weather_nodes_added': 0,
+            'venues_enhanced': 0,
+            'matches_enriched': 0,
+            'coordinates_added': 0
+        }
+        
+        total_enrichments = len(self.enrichments)
+        for idx, (match_key, enrichment) in enumerate(self.enrichments.items()):
+            try:
+                if progress_callback:
+                    progress = 70 + int((idx / total_enrichments) * 20)  # 70-90% range
+                    progress_callback("enriching_kg", f"Integrating enrichment {idx+1}/{total_enrichments}", progress, {})
+                
+                # Add weather nodes and relationships
+                self._add_weather_nodes(match_key, enrichment, enrichment_stats)
+                
+                # Enhance venue nodes with enriched data
+                self._enhance_venue_nodes(enrichment, enrichment_stats)
+                
+                # Add match context information
+                self._add_match_context(match_key, enrichment, enrichment_stats)
+                
+                enrichment_stats['matches_enriched'] += 1
+                
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to integrate enrichment for {match_key}: {e}")
+        
+        # Update statistics
+        self.stats['enriched_matches'] = enrichment_stats['matches_enriched']
+        self.stats['weather_nodes'] = enrichment_stats['weather_nodes_added']
+        self.stats['enhanced_venues'] = enrichment_stats['venues_enhanced']
+        
+        logger.info(f"✅ Enrichment integration complete: {enrichment_stats}")
+    
+    def _add_weather_nodes(self, match_key: str, enrichment: Dict[str, Any], stats: Dict[str, int]):
+        """Add weather nodes and connect them to matches and venues"""
+        # Check for weather data in different possible formats
+        weather_data = enrichment.get('weather', {})
+        weather_hourly = enrichment.get('weather_hourly', [])
+        
+        # Use hourly weather if available, otherwise try weather dict
+        if weather_hourly and len(weather_hourly) > 0:
+            # Use first hourly weather entry
+            weather_data = weather_hourly[0]
+        elif not weather_data:
+            return
+        
+        # Create weather node
+        weather_node = f"weather_{match_key}"
+        
+        # Add weather node with attributes
+        self.graph.add_node(weather_node,
+            type='weather',
+            temperature=weather_data.get('temperature'),
+            humidity=weather_data.get('humidity'),
+            wind_speed=weather_data.get('wind_speed'),
+            conditions=weather_data.get('conditions'),
+            pressure=weather_data.get('pressure'),
+            visibility=weather_data.get('visibility')
+        )
+        
+        # Connect weather to match
+        match_node = f"match_{match_key}"
+        if match_node in self.graph:
+            self.graph.add_edge(match_node, weather_node, 
+                relation='played_in_weather',
+                edge_type='match_weather'
+            )
+        
+        # Connect weather to venue
+        venue_name = enrichment.get('venue', {}).get('name', '')
+        if venue_name and venue_name in self.graph:
+            self.graph.add_edge(venue_name, weather_node,
+                relation='weather_at_venue',
+                edge_type='venue_weather'
+            )
+        
+        stats['weather_nodes_added'] += 1
+    
+    def _enhance_venue_nodes(self, enrichment: Dict[str, Any], stats: Dict[str, int]):
+        """Enhance venue nodes with enriched data"""
+        venue_data = enrichment.get('venue', {})
+        if not venue_data:
+            return
+        
+        venue_name = venue_data.get('name', '')
+        if not venue_name or venue_name not in self.graph:
+            return
+        
+        # Get existing venue node
+        venue_node = venue_name
+        
+        # Add enriched venue attributes
+        enhanced_attrs = {}
+        
+        # Coordinates (handle both nested and direct format)
+        coordinates = venue_data.get('coordinates', {})
+        lat = coordinates.get('lat') if coordinates else venue_data.get('latitude')
+        lng = coordinates.get('lng') if coordinates else venue_data.get('longitude')
+        
+        # Only add coordinates if they're not default/empty values
+        if lat and lng and lat != 0.0 and lng != 0.0:
+            enhanced_attrs.update({
+                'latitude': lat,
+                'longitude': lng,
+                'has_coordinates': True
+            })
+            stats['coordinates_added'] += 1
+        
+        # Venue characteristics
+        if venue_data.get('pitch_type'):
+            enhanced_attrs['pitch_type'] = venue_data['pitch_type']
+        
+        if venue_data.get('capacity'):
+            enhanced_attrs['capacity'] = venue_data['capacity']
+        
+        if venue_data.get('city'):
+            enhanced_attrs['city'] = venue_data['city']
+        
+        if venue_data.get('country'):
+            enhanced_attrs['country'] = venue_data['country']
+        
+        if venue_data.get('timezone'):
+            enhanced_attrs['timezone'] = venue_data['timezone']
+        
+        # Update venue node with enhanced attributes
+        if enhanced_attrs:
+            self.graph.nodes[venue_node].update(enhanced_attrs)
+            stats['venues_enhanced'] += 1
+    
+    def _add_match_context(self, match_key: str, enrichment: Dict[str, Any], stats: Dict[str, int]):
+        """Add match context information to match nodes"""
+        match_node = f"match_{match_key}"
+        if match_node not in self.graph:
+            return
+        
+        # Add match context attributes
+        context_attrs = {}
+        
+        # Competition information
+        if enrichment.get('competition'):
+            context_attrs['competition'] = enrichment['competition']
+        
+        # Match type and format
+        if enrichment.get('match_type'):
+            context_attrs['match_type'] = enrichment['match_type']
+        
+        # Day/night information
+        if enrichment.get('day_night'):
+            context_attrs['day_night'] = enrichment['day_night']
+        
+        # Season information
+        if enrichment.get('season'):
+            context_attrs['season'] = enrichment['season']
+        
+        # Toss information
+        toss_data = enrichment.get('toss', {})
+        if toss_data:
+            context_attrs.update({
+                'toss_winner': toss_data.get('winner'),
+                'toss_decision': toss_data.get('decision')
+            })
+        
+        # Team information (handle teams array format)
+        teams = enrichment.get('teams', [])
+        if teams and len(teams) >= 2:
+            home_team = next((t for t in teams if t.get('is_home')), teams[0])
+            away_team = next((t for t in teams if not t.get('is_home')), teams[1])
+            
+            context_attrs['home_team'] = home_team.get('name')
+            context_attrs['away_team'] = away_team.get('name')
+        elif enrichment.get('home'):
+            context_attrs['home_team'] = enrichment['home']
+        elif enrichment.get('away'):
+            context_attrs['away_team'] = enrichment['away']
+        
+        # Format information
+        if enrichment.get('format'):
+            context_attrs['format'] = enrichment['format']
+        
+        # Timing information
+        if enrichment.get('start_time_local'):
+            context_attrs['start_time'] = enrichment['start_time_local']
+        if enrichment.get('timezone'):
+            context_attrs['timezone'] = enrichment['timezone']
+        
+        # Update match node with context
+        if context_attrs:
+            self.graph.nodes[match_node].update(context_attrs)
+    
     def _add_graph_metadata(self):
         """Add metadata to the graph"""
+        # Count node types including weather nodes
+        node_type_counts = {
+            'player': sum(1 for n, d in self.graph.nodes(data=True) if d.get('type') == 'player'),
+            'venue': sum(1 for n, d in self.graph.nodes(data=True) if d.get('type') == 'venue'),
+            'match': sum(1 for n, d in self.graph.nodes(data=True) if d.get('type') == 'match'),
+            'weather': sum(1 for n, d in self.graph.nodes(data=True) if d.get('type') == 'weather')
+        }
+        
         self.graph.graph.update({
             'type': 'unified_cricket_kg',
-            'version': '2.0',
+            'version': '2.1',  # Updated version for enriched KG
             'created': datetime.now().isoformat(),
             'statistics': self.stats,
-            'node_types': {
-                'player': sum(1 for n, d in self.graph.nodes(data=True) if d.get('type') == 'player'),
-                'venue': sum(1 for n, d in self.graph.nodes(data=True) if d.get('type') == 'venue'),
-                'match': sum(1 for n, d in self.graph.nodes(data=True) if d.get('type') == 'match')
+            'node_types': node_type_counts,
+            'enrichment_enabled': len(self.enrichments) > 0,
+            'enrichment_stats': {
+                'total_enrichments': len(self.enrichments),
+                'enriched_matches': self.stats.get('enriched_matches', 0),
+                'weather_nodes': self.stats.get('weather_nodes', 0),
+                'enhanced_venues': self.stats.get('enhanced_venues', 0)
             }
         })
     

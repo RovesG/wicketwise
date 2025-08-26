@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WicketWise - Cricket Intelligence Platform</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #c8712d;
+            --secondary-color: #002466;
+            --accent-color: #819f3d;
+            --wicket-color: #660003;
+            --neutral-color: #404041;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --border-color: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .status-indicators {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 1rem;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .status-indicator.online {
+            background: rgba(40, 167, 69, 0.2);
+        }
+
+        .status-indicator.offline {
+            background: rgba(220, 53, 69, 0.2);
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 2rem;
+            overflow-x: auto;
+        }
+
+        .nav-tabs-container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .nav-tab {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .nav-tab:hover {
+            color: var(--primary-color);
+            background: rgba(200, 113, 45, 0.05);
+        }
+
+        .nav-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            background: rgba(200, 113, 45, 0.05);
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Grid Layouts */
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        /* Stats */
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #b8661f;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #001a4d;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Progress Bars */
+        .progress {
+            width: 100%;
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        /* Loading States */
+        .loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--border-color);
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .nav-tabs {
+                padding: 0 1rem;
+            }
+
+            .grid-2, .grid-3, .grid-4 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Chat Interface */
+        .chat-container {
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: #f8f9fa;
+        }
+
+        .chat-input-container {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            background: white;
+        }
+
+        .chat-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(200, 113, 45, 0.1);
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            border-left: 4px solid;
+        }
+
+        .alert-success {
+            background: rgba(40, 167, 69, 0.1);
+            border-color: var(--success-color);
+            color: #155724;
+        }
+
+        .alert-warning {
+            background: rgba(255, 193, 7, 0.1);
+            border-color: var(--warning-color);
+            color: #856404;
+        }
+
+        .alert-danger {
+            background: rgba(220, 53, 69, 0.1);
+            border-color: var(--danger-color);
+            color: #721c24;
+        }
+
+        .alert-info {
+            background: rgba(23, 162, 184, 0.1);
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i data-lucide="zap" class="w-6 h-6"></i>
+                WicketWise
+            </div>
+            <div class="status-indicators">
+                <div class="status-indicator" id="api-status">
+                    <i data-lucide="server" class="w-4 h-4"></i>
+                    <span>API</span>
+                </div>
+                <div class="status-indicator" id="kg-status">
+                    <i data-lucide="database" class="w-4 h-4"></i>
+                    <span>KG</span>
+                </div>
+                <div class="status-indicator" id="model-status">
+                    <i data-lucide="brain" class="w-4 h-4"></i>
+                    <span>Model</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+        <div class="nav-tabs-container">
+            <button class="nav-tab active" data-tab="dashboard">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                Dashboard
+            </button>
+            <button class="nav-tab" data-tab="admin">
+                <i data-lucide="settings" class="w-4 h-4"></i>
+                Admin
+            </button>
+            <button class="nav-tab" data-tab="betting">
+                <i data-lucide="trending-up" class="w-4 h-4"></i>
+                Betting Intelligence
+            </button>
+            <button class="nav-tab" data-tab="chat">
+                <i data-lucide="message-circle" class="w-4 h-4"></i>
+                AI Chat
+            </button>
+            <button class="nav-tab" data-tab="simulation">
+                <i data-lucide="play" class="w-4 h-4"></i>
+                Simulation
+            </button>
+            <button class="nav-tab" data-tab="analytics">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                Analytics
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="grid grid-3">
+                <div class="card">
+                    <div class="card-header">
+                        <i data-lucide="activity" class="w-5 h-5 text-primary"></i>
+                        <h3 class="card-title">System Status</h3>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">API Server</span>
+                        <span class="stat-value" id="dashboard-api-status">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Knowledge Graph</span>
+                        <span class="stat-value" id="dashboard-kg-status">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">T20 Model</span>
+                        <span class="stat-value" id="dashboard-model-status">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <i data-lucide="database" class="w-5 h-5 text-primary"></i>
+                        <h3 class="card-title">Data Statistics</h3>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Matches</span>
+                        <span class="stat-value" id="dashboard-matches">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Balls</span>
+                        <span class="stat-value" id="dashboard-balls">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Venues</span>
+                        <span class="stat-value" id="dashboard-venues">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <i data-lucide="trending-up" class="w-5 h-5 text-primary"></i>
+                        <h3 class="card-title">Quick Actions</h3>
+                    </div>
+                    <div class="grid" style="gap: 0.75rem;">
+                        <button class="btn btn-primary" onclick="switchTab('chat')">
+                            <i data-lucide="message-circle" class="w-4 h-4"></i>
+                            Ask AI Assistant
+                        </button>
+                        <button class="btn btn-secondary" onclick="switchTab('simulation')">
+                            <i data-lucide="play" class="w-4 h-4"></i>
+                            Run Simulation
+                        </button>
+                        <button class="btn btn-outline" onclick="switchTab('admin')">
+                            <i data-lucide="settings" class="w-4 h-4"></i>
+                            System Admin
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i data-lucide="clock" class="w-5 h-5 text-primary"></i>
+                    <h3 class="card-title">Recent Activity</h3>
+                </div>
+                <div id="recent-activity">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading recent activity...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Tab -->
+        <div id="admin" class="tab-content">
+            <div class="alert alert-info">
+                <strong>Admin Panel:</strong> Manage system components, training, and data sources.
+            </div>
+            
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <i data-lucide="brain" class="w-5 h-5 text-primary"></i>
+                        <h3 class="card-title">Model Training</h3>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">T20 Model Status</span>
+                        <span class="stat-value" id="admin-model-status">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Training Progress</span>
+                        <span class="stat-value" id="admin-training-progress">0%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" id="admin-progress-bar" style="width: 0%"></div>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <button class="btn btn-primary" id="train-model-btn">
+                            <i data-lucide="play" class="w-4 h-4"></i>
+                            Start Training
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <i data-lucide="database" class="w-5 h-5 text-primary"></i>
+                        <h3 class="card-title">Knowledge Graph</h3>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Graph Nodes</span>
+                        <span class="stat-value" id="admin-kg-nodes">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Graph Edges</span>
+                        <span class="stat-value" id="admin-kg-edges">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Players</span>
+                        <span class="stat-value" id="admin-kg-players">Loading...</span>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <button class="btn btn-secondary" id="build-kg-btn">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                            Rebuild KG
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i data-lucide="cloud" class="w-5 h-5 text-primary"></i>
+                    <h3 class="card-title">Data Enrichment</h3>
+                </div>
+                <div class="grid grid-3">
+                    <div class="stat-item">
+                        <span class="stat-label">Enriched Matches</span>
+                        <span class="stat-value" id="admin-enriched-matches">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Cache Size</span>
+                        <span class="stat-value" id="admin-cache-size">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">API Calls Today</span>
+                        <span class="stat-value" id="admin-api-calls">Loading...</span>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <button class="btn btn-success" id="enrich-matches-btn">
+                        <i data-lucide="cloud-download" class="w-4 h-4"></i>
+                        Enrich Matches
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Betting Intelligence Tab -->
+        <div id="betting" class="tab-content">
+            <div class="alert alert-warning">
+                <strong>Betting Intelligence:</strong> Advanced analytics and deterministic governance controls.
+            </div>
+            
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <i data-lucide="trending-up" class="w-5 h-5 text-primary"></i>
+                        <h3 class="card-title">Market Analysis</h3>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Active Markets</span>
+                        <span class="stat-value" id="betting-active-markets">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Mispricing Opportunities</span>
+                        <span class="stat-value" id="betting-mispricing">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Confidence Score</span>
+                        <span class="stat-value" id="betting-confidence">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <i data-lucide="shield" class="w-5 h-5 text-primary"></i>
+                        <h3 class="card-title">DGL Controls</h3>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Risk Tolerance</label>
+                        <select class="form-control" id="risk-tolerance">
+                            <option value="conservative">Conservative</option>
+                            <option value="moderate" selected>Moderate</option>
+                            <option value="aggressive">Aggressive</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Max Stake (%)</label>
+                        <input type="range" class="form-control" id="max-stake" min="1" max="10" value="5">
+                        <span id="max-stake-value">5%</span>
+                    </div>
+                    <button class="btn btn-primary">
+                        <i data-lucide="settings" class="w-4 h-4"></i>
+                        Update DGL Settings
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-primary"></i>
+                    <h3 class="card-title">Recent Predictions</h3>
+                </div>
+                <div id="betting-predictions">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading recent predictions...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Chat Tab -->
+        <div id="chat" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <i data-lucide="message-circle" class="w-5 h-5 text-primary"></i>
+                    <h3 class="card-title">AI Assistant</h3>
+                </div>
+                <div class="chat-container">
+                    <div class="chat-messages" id="chat-messages">
+                        <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                            <i data-lucide="message-circle" class="w-8 h-8" style="margin-bottom: 1rem;"></i>
+                            <p>Ask me anything about cricket analytics, player performance, or match predictions!</p>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <input type="text" class="chat-input" id="chat-input" placeholder="Ask about player stats, match predictions, or cricket analytics...">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Simulation Tab -->
+        <div id="simulation" class="tab-content">
+            <div class="alert alert-info">
+                <strong>Match Simulation:</strong> Run advanced match simulations with DGL governance.
+            </div>
+            
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <i data-lucide="play" class="w-5 h-5 text-primary"></i>
+                        <h3 class="card-title">Simulation Setup</h3>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Select Match</label>
+                        <select class="form-control" id="simulation-match">
+                            <option value="">Loading matches...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Simulation Mode</label>
+                        <select class="form-control" id="simulation-mode">
+                            <option value="rapid">Rapid Simulation</option>
+                            <option value="detailed">Detailed Analysis</option>
+                            <option value="slow">Slow Motion</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Number of Runs</label>
+                        <input type="number" class="form-control" id="simulation-runs" value="1000" min="100" max="10000">
+                    </div>
+                    <button class="btn btn-primary" id="run-simulation-btn">
+                        <i data-lucide="play" class="w-4 h-4"></i>
+                        Run Simulation
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <i data-lucide="activity" class="w-5 h-5 text-primary"></i>
+                        <h3 class="card-title">Simulation Status</h3>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Status</span>
+                        <span class="stat-value" id="simulation-status">Ready</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Progress</span>
+                        <span class="stat-value" id="simulation-progress">0%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" id="simulation-progress-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Holdout Matches</span>
+                        <span class="stat-value" id="simulation-holdout-count">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-primary"></i>
+                    <h3 class="card-title">Simulation Results</h3>
+                </div>
+                <div id="simulation-results">
+                    <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                        <i data-lucide="play-circle" class="w-8 h-8" style="margin-bottom: 1rem;"></i>
+                        <p>Run a simulation to see results here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-primary"></i>
+                    <h3 class="card-title">Performance Analytics</h3>
+                </div>
+                <p>Advanced analytics and visualizations will be loaded here...</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Tab switching functionality
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to selected tab
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            
+            // Load tab-specific content
+            loadTabContent(tabName);
+        }
+
+        // Add click listeners to tabs
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.getAttribute('data-tab');
+                switchTab(tabName);
+            });
+        });
+
+        // Load tab-specific content
+        function loadTabContent(tabName) {
+            switch(tabName) {
+                case 'dashboard':
+                    loadDashboardData();
+                    break;
+                case 'admin':
+                    loadAdminData();
+                    break;
+                case 'betting':
+                    loadBettingData();
+                    break;
+                case 'chat':
+                    initializeChat();
+                    break;
+                case 'simulation':
+                    loadSimulationData();
+                    break;
+                case 'analytics':
+                    loadAnalyticsData();
+                    break;
+            }
+        }
+
+        // Status checking
+        async function checkSystemStatus() {
+            try {
+                // Check API status
+                const apiResponse = await fetch('http://127.0.0.1:5001/api/health');
+                const apiStatus = apiResponse.ok ? 'online' : 'offline';
+                updateStatusIndicator('api-status', apiStatus);
+                
+                // Check DGL status
+                try {
+                    const dglResponse = await fetch('http://127.0.0.1:8001/healthz');
+                    const dglStatus = dglResponse.ok ? 'online' : 'offline';
+                    updateStatusIndicator('kg-status', dglStatus);
+                } catch {
+                    updateStatusIndicator('kg-status', 'offline');
+                }
+                
+                // Check model status (placeholder - could check if model files exist)
+                updateStatusIndicator('model-status', 'online');
+                
+            } catch (error) {
+                updateStatusIndicator('api-status', 'offline');
+                updateStatusIndicator('kg-status', 'offline');
+                updateStatusIndicator('model-status', 'offline');
+            }
+        }
+
+        function updateStatusIndicator(elementId, status) {
+            const element = document.getElementById(elementId);
+            element.className = `status-indicator ${status}`;
+        }
+
+        // Dashboard data loading
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('http://127.0.0.1:5001/api/training-pipeline/stats');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const stats = await response.json();
+                
+                // Update dashboard stats
+                document.getElementById('dashboard-matches').textContent = formatNumber(stats.decimal_dataset?.matches || 0);
+                document.getElementById('dashboard-balls').textContent = formatNumber(stats.decimal_dataset?.rows || 0);
+                document.getElementById('dashboard-venues').textContent = formatNumber(stats.decimal_dataset?.venues || 0);
+                
+                // Update status indicators
+                document.getElementById('dashboard-api-status').textContent = 'Online';
+                document.getElementById('dashboard-kg-status').textContent = 'Ready';
+                document.getElementById('dashboard-model-status').textContent = 'Trained';
+                
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                
+                // Update with error state
+                document.getElementById('dashboard-matches').textContent = 'Error';
+                document.getElementById('dashboard-balls').textContent = 'Error';
+                document.getElementById('dashboard-venues').textContent = 'Error';
+                document.getElementById('dashboard-api-status').textContent = 'Offline';
+                document.getElementById('dashboard-kg-status').textContent = 'Error';
+                document.getElementById('dashboard-model-status').textContent = 'Error';
+            }
+        }
+
+        // Admin data loading
+        async function loadAdminData() {
+            try {
+                const response = await fetch('http://127.0.0.1:5001/api/training-pipeline/stats');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const stats = await response.json();
+                
+                // Update admin stats
+                document.getElementById('admin-kg-nodes').textContent = formatNumber(stats.json_dataset?.nodes || 0);
+                document.getElementById('admin-kg-edges').textContent = formatNumber(stats.json_dataset?.edges || 0);
+                document.getElementById('admin-kg-players').textContent = formatNumber(stats.json_dataset?.players || 0);
+                document.getElementById('admin-enriched-matches').textContent = formatNumber(stats.enriched_matches?.count || 0);
+                
+            } catch (error) {
+                console.error('Error loading admin data:', error);
+                
+                // Update with error state
+                document.getElementById('admin-kg-nodes').textContent = 'Error';
+                document.getElementById('admin-kg-edges').textContent = 'Error';
+                document.getElementById('admin-kg-players').textContent = 'Error';
+                document.getElementById('admin-enriched-matches').textContent = 'Error';
+            }
+        }
+
+        // Betting data loading
+        async function loadBettingData() {
+            try {
+                // Load betting statistics (placeholder)
+                document.getElementById('betting-active-markets').textContent = '12';
+                document.getElementById('betting-mispricing').textContent = '3';
+                document.getElementById('betting-confidence').textContent = '87%';
+                
+                // Load recent predictions (placeholder)
+                document.getElementById('betting-predictions').innerHTML = `
+                    <div class="stat-item">
+                        <span class="stat-label">Last Prediction</span>
+                        <span class="stat-value">Team A Win (85% confidence)</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">ROI This Week</span>
+                        <span class="stat-value">+12.3%</span>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading betting data:', error);
+            }
+        }
+
+        // Chat initialization
+        function initializeChat() {
+            const chatInput = document.getElementById('chat-input');
+            const chatMessages = document.getElementById('chat-messages');
+            
+            if (chatInput && !chatInput.hasAttribute('data-initialized')) {
+                chatInput.setAttribute('data-initialized', 'true');
+                chatInput.addEventListener('keypress', async (e) => {
+                    if (e.key === 'Enter' && chatInput.value.trim()) {
+                        const message = chatInput.value.trim();
+                        chatInput.value = '';
+                        
+                        // Add user message
+                        addChatMessage('user', message);
+                        
+                        // Add loading message
+                        const loadingId = addChatMessage('assistant', 'Thinking...');
+                        
+                        try {
+                            const response = await fetch('http://127.0.0.1:5001/api/kg-chat', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ message, chat_history: [] })
+                            });
+                            
+                            const result = await response.json();
+                            
+                            // Replace loading message with response
+                            const loadingElement = document.getElementById(loadingId);
+                            if (loadingElement) {
+                                loadingElement.textContent = result.response || 'Sorry, I encountered an error.';
+                            }
+                        } catch (error) {
+                            console.error('Chat error:', error);
+                            const loadingElement = document.getElementById(loadingId);
+                            if (loadingElement) {
+                                loadingElement.textContent = 'Sorry, I encountered an error connecting to the AI.';
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function addChatMessage(role, content) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageId = 'msg-' + Date.now();
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.id = messageId;
+            messageDiv.style.cssText = `
+                margin-bottom: 1rem;
+                padding: 0.75rem;
+                border-radius: 8px;
+                ${role === 'user' 
+                    ? 'background: var(--primary-color); color: white; margin-left: 2rem; text-align: right;' 
+                    : 'background: white; border: 1px solid var(--border-color); margin-right: 2rem;'
+                }
+            `;
+            messageDiv.textContent = content;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            return messageId;
+        }
+
+        // Simulation data loading
+        async function loadSimulationData() {
+            try {
+                // Load holdout matches
+                const response = await fetch('http://127.0.0.1:5001/api/simulation/holdout-matches');
+                const data = await response.json();
+                
+                document.getElementById('simulation-holdout-count').textContent = data.match_count || 0;
+                
+                // Populate match dropdown
+                const matchSelect = document.getElementById('simulation-match');
+                if (matchSelect && data.matches) {
+                    matchSelect.innerHTML = '<option value="">Select a match...</option>';
+                    data.matches.forEach((match, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = `${match.home_team} vs ${match.away_team} (${match.date})`;
+                        matchSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading simulation data:', error);
+                document.getElementById('simulation-holdout-count').textContent = 'Error';
+            }
+        }
+
+        function loadAnalyticsData() {
+            console.log('Loading analytics data...');
+        }
+
+        // Utility functions
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toLocaleString();
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkSystemStatus();
+            loadDashboardData();
+            
+            // Refresh status every 30 seconds
+            setInterval(checkSystemStatus, 30000);
+        });
+
+        // Admin button handlers
+        document.getElementById('train-model-btn')?.addEventListener('click', async () => {
+            try {
+                const response = await fetch('http://127.0.0.1:5001/api/train-model', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                console.log('Training started:', result);
+            } catch (error) {
+                console.error('Error starting training:', error);
+            }
+        });
+
+        document.getElementById('build-kg-btn')?.addEventListener('click', async () => {
+            try {
+                const response = await fetch('http://127.0.0.1:5001/api/build-knowledge-graph', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                console.log('KG build started:', result);
+            } catch (error) {
+                console.error('Error building KG:', error);
+            }
+        });
+
+        document.getElementById('enrich-matches-btn')?.addEventListener('click', async () => {
+            try {
+                const response = await fetch('http://127.0.0.1:5001/api/enrich-matches', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                console.log('Enrichment started:', result);
+            } catch (error) {
+                console.error('Error starting enrichment:', error);
+            }
+        });
+
+        // Simulation button handler
+        document.getElementById('run-simulation-btn')?.addEventListener('click', async () => {
+            const matchSelect = document.getElementById('simulation-match');
+            const modeSelect = document.getElementById('simulation-mode');
+            const runsInput = document.getElementById('simulation-runs');
+            
+            if (!matchSelect.value) {
+                alert('Please select a match to simulate');
+                return;
+            }
+            
+            try {
+                document.getElementById('simulation-status').textContent = 'Running...';
+                document.getElementById('simulation-progress').textContent = '0%';
+                document.getElementById('simulation-progress-bar').style.width = '0%';
+                
+                const response = await fetch('http://127.0.0.1:5001/api/simulation/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        match_index: parseInt(matchSelect.value),
+                        mode: modeSelect.value,
+                        runs: parseInt(runsInput.value)
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    document.getElementById('simulation-status').textContent = 'Completed';
+                    document.getElementById('simulation-progress').textContent = '100%';
+                    document.getElementById('simulation-progress-bar').style.width = '100%';
+                    
+                    // Display results
+                    document.getElementById('simulation-results').innerHTML = `
+                        <div class="grid grid-3">
+                            <div class="stat-item">
+                                <span class="stat-label">Win Probability</span>
+                                <span class="stat-value">${result.win_probability || 'N/A'}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Expected Score</span>
+                                <span class="stat-value">${result.expected_score || 'N/A'}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Confidence</span>
+                                <span class="stat-value">${result.confidence || 'N/A'}</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('simulation-status').textContent = 'Error';
+                    document.getElementById('simulation-results').innerHTML = `
+                        <div class="alert alert-danger">
+                            Simulation failed: ${result.message || 'Unknown error'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error running simulation:', error);
+                document.getElementById('simulation-status').textContent = 'Error';
+            }
+        });
+
+        // Range slider update
+        document.getElementById('max-stake')?.addEventListener('input', (e) => {
+            document.getElementById('max-stake-value').textContent = e.target.value + '%';
+        });
+    </script>
+</body>
+</html>

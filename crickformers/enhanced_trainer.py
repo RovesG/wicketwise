@@ -692,6 +692,17 @@ class EnhancedTrainer:
         total_batches = len(self.train_loader)
         epoch_losses = []
         
+        # Update progress for background operations
+        try:
+            from admin_backend import background_operations
+            if "model_training" in background_operations:
+                progress = int((epoch / self.num_epochs) * 100)
+                background_operations["model_training"]["progress"] = progress
+                background_operations["model_training"]["message"] = f"Epoch {epoch + 1}/{self.num_epochs} starting..."
+                background_operations["model_training"]["logs"].append(f"Starting epoch {epoch + 1}")
+        except:
+            pass  # Ignore if background_operations not available
+        
         for batch_idx, batch in enumerate(self.train_loader):
             # Training step
             loss_dict = self.train_step(batch)
@@ -708,11 +719,16 @@ class EnhancedTrainer:
                     f"Drift Alerts: {len(self.drift_alerts)}"
                 )
             
-            # Regular logging
+            # Regular logging with progress updates
             if (batch_idx + 1) % self.log_interval == 0:
                 avg_loss = self.running_loss / self.log_interval
                 
-                logger.info(
+                # Update detailed progress
+                batch_progress = (batch_idx + 1) / total_batches
+                epoch_progress = (epoch + batch_progress) / self.num_epochs
+                overall_progress = int(epoch_progress * 100)
+                
+                progress_message = (
                     f"Epoch {epoch + 1}/{self.num_epochs} | "
                     f"Batch {batch_idx + 1}/{total_batches} | "
                     f"Avg Loss: {avg_loss:.4f} | "
@@ -720,6 +736,18 @@ class EnhancedTrainer:
                     f"Outcome: {loss_dict['outcome']:.4f} | "
                     f"Mispricing: {loss_dict['mispricing']:.4f}"
                 )
+                
+                logger.info(progress_message)
+                
+                # Update background operation progress
+                try:
+                    from admin_backend import background_operations
+                    if "model_training" in background_operations:
+                        background_operations["model_training"]["progress"] = overall_progress
+                        background_operations["model_training"]["message"] = progress_message
+                        background_operations["model_training"]["logs"].append(f"Batch {batch_idx + 1}: Loss {avg_loss:.4f}")
+                except:
+                    pass  # Ignore if background_operations not available
                 
                 self.running_loss = 0.0
         

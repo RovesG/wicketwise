@@ -364,17 +364,22 @@ class EnrichedTrainingPipeline:
             'entity_harmonization': {'valid': False, 'issues': []}
         }
         
-        # Validate JSON dataset
+        # Validate JSON dataset (Parquet format)
         try:
             if self.json_data_path.exists():
-                df = pd.read_csv(self.json_data_path, nrows=1000)  # Sample validation
-                required_cols = ['batsman', 'bowler', 'venue']
+                # Read parquet file
+                df = pd.read_parquet(self.json_data_path)
+                df_sample = df.head(1000)  # Sample validation
+                
+                # Check for expected columns (use actual column names from parquet)
+                required_cols = ['venue', 'team_batting', 'competition']  # Updated to match actual columns
                 missing_cols = [col for col in required_cols if col not in df.columns]
                 
                 if missing_cols:
                     validation_results['json_dataset']['issues'].append(f"Missing columns: {missing_cols}")
                 else:
                     validation_results['json_dataset']['valid'] = True
+                    
             else:
                 validation_results['json_dataset']['issues'].append("File not found")
         except Exception as e:
@@ -399,16 +404,19 @@ class EnrichedTrainingPipeline:
         # Validate enriched data
         try:
             if self.enriched_matches_path.exists():
-                with open(self.enriched_matches_path, 'r') as f:
+                with open(self.enriched_matches_path, 'r', encoding='utf-8') as f:
                     enriched_matches = json.load(f)
                 
                 if len(enriched_matches) > 0:
-                    # Check structure of first match
+                    # Check structure of first match - look for key fields
                     first_match = enriched_matches[0]
-                    if 'match' in first_match and 'weather' in first_match:
+                    required_fields = ['venue', 'competition', 'format']
+                    missing_fields = [field for field in required_fields if field not in first_match]
+                    
+                    if not missing_fields:
                         validation_results['enriched_data']['valid'] = True
                     else:
-                        validation_results['enriched_data']['issues'].append("Invalid structure")
+                        validation_results['enriched_data']['issues'].append(f"Missing fields: {missing_fields}")
                 else:
                     validation_results['enriched_data']['issues'].append("Empty file")
             else:

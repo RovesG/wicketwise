@@ -1158,12 +1158,108 @@ def download_and_process_only():
 # New API endpoints for redesigned UI
 @app.route('/api/training-pipeline/stats', methods=['GET'])
 def get_training_pipeline_stats():
-    """Get comprehensive training pipeline statistics"""
+    """Get comprehensive training pipeline statistics with CORRECTED data sources"""
     try:
-        from enriched_training_pipeline import get_enriched_training_pipeline
-        pipeline = get_enriched_training_pipeline()
-        stats = pipeline.get_training_statistics()
+        import pandas as pd
+        import pickle
+        import networkx as nx
+        from pathlib import Path
+        
+        stats = {}
+        
+        # 1. CORRECTED T20 Dataset Statistics (actual training data)
+        t20_path = Path("/Users/shamusrae/Library/Mobile Documents/com~apple~CloudDocs/Cricket /Data/joined_ball_by_ball_data.csv")
+        if t20_path.exists():
+            try:
+                df = pd.read_csv(t20_path)
+                # Calculate unique matches
+                if 'match_id' in df.columns:
+                    unique_matches = df['match_id'].nunique()
+                else:
+                    # Estimate from date+teams+competition
+                    match_cols = ['date', 'home', 'away', 'competition']
+                    available_cols = [col for col in match_cols if col in df.columns]
+                    if available_cols:
+                        unique_matches = df[available_cols].drop_duplicates().shape[0]
+                    else:
+                        unique_matches = 0
+                
+                # Count unique venues
+                venue_cols = [col for col in df.columns if 'venue' in col.lower()]
+                unique_venues = df[venue_cols[0]].nunique() if venue_cols else 0
+                
+                stats["decimal_dataset"] = {
+                    "exists": True,
+                    "rows": len(df),
+                    "size_mb": round(t20_path.stat().st_size / (1024*1024), 1),
+                    "matches": unique_matches,
+                    "venues": unique_venues
+                }
+            except Exception as e:
+                logger.error(f"Error reading T20 dataset: {e}")
+                stats["decimal_dataset"] = {"exists": False, "error": str(e)}
+        else:
+            stats["decimal_dataset"] = {"exists": False}
+        
+        # 2. CORRECTED Knowledge Graph Statistics (actual NetworkX graph)
+        kg_path = Path("models/unified_cricket_kg.pkl")
+        if kg_path.exists():
+            try:
+                with open(kg_path, 'rb') as f:
+                    kg = pickle.load(f)
+                
+                if isinstance(kg, (nx.Graph, nx.DiGraph)):
+                    # Count different node types
+                    player_nodes = [n for n in kg.nodes() if kg.nodes[n].get('type') == 'player']
+                    venue_nodes = [n for n in kg.nodes() if kg.nodes[n].get('type') == 'venue']
+                    match_nodes = [n for n in kg.nodes() if kg.nodes[n].get('type') == 'match']
+                    
+                    stats["json_dataset"] = {
+                        "exists": True,
+                        "nodes": kg.number_of_nodes(),
+                        "edges": kg.number_of_edges(),
+                        "size_mb": round(kg_path.stat().st_size / (1024*1024), 1),
+                        "players": len(player_nodes),
+                        "venues": len(venue_nodes),
+                        "matches": len(match_nodes)
+                    }
+                else:
+                    stats["json_dataset"] = {
+                        "exists": True,
+                        "type": str(type(kg)),
+                        "size_mb": round(kg_path.stat().st_size / (1024*1024), 1)
+                    }
+            except Exception as e:
+                logger.error(f"Error reading KG: {e}")
+                stats["json_dataset"] = {"exists": False, "error": str(e)}
+        else:
+            stats["json_dataset"] = {"exists": False}
+        
+        # 3. Enrichment Statistics
+        try:
+            from openai_match_enrichment_pipeline import MatchEnrichmentPipeline
+            api_key = os.getenv('OPENAI_API_KEY', 'dummy')
+            pipeline = MatchEnrichmentPipeline(api_key=api_key)
+            enriched_count = len(pipeline.enrichment_cache)
+            stats["enriched_matches"] = {
+                "exists": True,
+                "count": enriched_count
+            }
+        except Exception as e:
+            stats["enriched_matches"] = {"exists": False, "error": str(e)}
+        
+        # 4. Entity Harmonizer (keep existing for compatibility)
+        try:
+            from enriched_training_pipeline import get_enriched_training_pipeline
+            pipeline = get_enriched_training_pipeline()
+            old_stats = pipeline.get_training_statistics()
+            stats["entity_harmonizer"] = old_stats.get("entity_harmonizer", {})
+        except Exception as e:
+            logger.error(f"Failed to get entity harmonizer stats: {e}")
+            stats["entity_harmonizer"] = {"error": str(e)}
+        
         return jsonify(stats)
+        
     except Exception as e:
         logger.error(f"Failed to get training pipeline stats: {e}")
         return jsonify({"error": str(e)}), 500
@@ -1179,6 +1275,107 @@ def validate_training_pipeline():
     except Exception as e:
         logger.error(f"Failed to validate training pipeline: {e}")
         return jsonify({"error": str(e)}), 500
+
+# Simulation API Endpoints
+@app.route('/api/simulation/holdout-matches', methods=['GET'])
+def get_holdout_matches():
+    """Get available holdout matches for simulation"""
+    try:
+        # Import SIM modules
+        sys.path.insert(0, str(Path(__file__).parent / 'sim'))
+        from sim.data_integration import HoldoutDataManager, integrate_holdout_data_with_sim
+        
+        integration_result = integrate_holdout_data_with_sim()
+        
+        return jsonify({
+            "status": integration_result["status"],
+            "message": integration_result["message"],
+            "match_count": integration_result.get("match_count", 0),
+            "matches": integration_result.get("matches", [])[:10],  # Return first 10 as sample
+            "integrity_report": integration_result.get("integrity_report", {})
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting holdout matches: {e}")
+        return jsonify({
+            "status": "error",
+            "message": f"Failed to get holdout matches: {str(e)}",
+            "match_count": 0
+        })
+
+@app.route('/api/simulation/run', methods=['POST'])
+def run_simulation():
+    """Run a strategy simulation"""
+    try:
+        # Import SIM modules
+        sys.path.insert(0, str(Path(__file__).parent / 'sim'))
+        from sim.data_integration import HoldoutDataManager
+        from sim.config import create_holdout_replay_config, create_replay_config, create_dashboard_replay_config
+        from sim.orchestrator import SimOrchestrator
+        
+        data = request.get_json()
+        strategy = data.get('strategy', 'edge_kelly_v3')
+        match_selection = data.get('match_selection', 'auto')
+        use_holdout_data = data.get('use_holdout_data', True)
+        simulation_mode = data.get('simulation_mode', 'rapid')  # 'rapid' or 'live_dashboard'
+        
+        logger.info(f"🎯 Running simulation: strategy={strategy}, matches={match_selection}, mode={simulation_mode}")
+        
+        # Create configuration based on mode
+        if simulation_mode == 'live_dashboard':
+            # Slow mode for dashboard visualization
+            config = create_dashboard_replay_config(strategy, match_selection)
+        else:
+            # Rapid mode for testing
+            if use_holdout_data:
+                config = create_holdout_replay_config(strategy)
+            else:
+                config = create_replay_config(["mock_match_1"], strategy)
+        
+        # Adjust match selection
+        if match_selection == "auto":
+            # Already limited to 10 matches in create_holdout_replay_config
+            pass
+        elif match_selection == "all":
+            # Use all available matches (but limit to 20 for performance)
+            manager = HoldoutDataManager()
+            all_matches = manager.get_holdout_matches()
+            config.match_ids = all_matches[:20]
+        
+        # Run simulation
+        orchestrator = SimOrchestrator()
+        
+        if not orchestrator.initialize(config):
+            return jsonify({
+                "status": "error",
+                "message": "Failed to initialize simulation"
+            })
+        
+        result = orchestrator.run()
+        
+        if result:
+            return jsonify({
+                "status": "success",
+                "message": "Simulation completed successfully",
+                "run_id": result.run_id,
+                "kpis": result.kpis.to_dict(),
+                "violations": result.violations,
+                "runtime_seconds": result.runtime_seconds,
+                "balls_processed": result.balls_processed,
+                "matches_processed": result.matches_processed
+            })
+        else:
+            return jsonify({
+                "status": "error",
+                "message": "Simulation failed to complete"
+            })
+        
+    except Exception as e:
+        logger.error(f"Error running simulation: {e}")
+        return jsonify({
+            "status": "error",
+            "message": f"Simulation failed: {str(e)}"
+        })
 
 @app.route('/api/clear-caches', methods=['POST'])
 def clear_all_caches():
@@ -1230,6 +1427,8 @@ if __name__ == '__main__':
     print("  GET  /api/kg-chat/suggestions - Get chat suggestions")
     print("  GET  /api/kg-chat/functions - Get available functions")
     print("  POST /api/kg-chat/clear-session - Clear chat session")
+    print("  GET  /api/simulation/holdout-matches - Get holdout matches for simulation")
+    print("  POST /api/simulation/run - Run strategy simulation")
     print()
     
     # Run using configured host and port

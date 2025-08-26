@@ -1,0 +1,35 @@
+{
+  "run_id": "basic_replay_example",
+  "config_hash": "6ba5ce3d8941b537",
+  "kpis": {
+    "pnl_total": 0.0,
+    "pnl_realized": 0.0,
+    "pnl_unrealized": 0.0,
+    "sharpe": 0.0,
+    "sortino": 0.0,
+    "max_drawdown": 0.0,
+    "calmar": 0.0,
+    "hit_rate": 0.0,
+    "avg_edge": 0.0,
+    "slippage_bps": 0.0,
+    "fill_rate": 0.0,
+    "exposure_peak_pct": 0.0,
+    "turnover": 0,
+    "num_trades": 0
+  },
+  "violations": [
+    "BANKROLL_MARKET_EXPOSURE: 29 violations",
+    "BANKROLL_TOTAL_EXPOSURE: 440 violations"
+  ],
+  "artifacts": [
+    "runs/sim_default/orders.jsonl",
+    "runs/sim_default/fills.jsonl",
+    "runs/sim_default/dgl_decisions.jsonl",
+    "runs/sim_default/metrics.json",
+    "runs/sim_default/config.json"
+  ],
+  "runtime_seconds": 0.005667,
+  "balls_processed": 480,
+  "matches_processed": 1,
+  "completed_at": "2025-08-24T13:41:50.195516"
+}

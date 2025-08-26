@@ -124,7 +124,7 @@ def main():
     print("\n🌐 Quick Access URLs:")
     if check_port(8000):
         print("  📊 Main Dashboard: http://localhost:8000/wicketwise_dashboard.html")
-        print("  ⚙️ Admin Panel: http://localhost:8000/wicketwise_admin_simple.html")
+        print("  ⚙️ Admin Panel: http://localhost:8000/wicketwise_admin_redesigned.html")
     
     if dgl_running:
         print("  🛡️ DGL API: http://localhost:8001/docs")

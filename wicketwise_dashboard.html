@@ -438,7 +438,7 @@
             <div class="text-sm text-muted-foreground">
                 Portfolio: <span class="font-medium text-red-600">-$61</span>
             </div>
-            <a href="wicketwise_admin_simple.html" class="inline-flex items-center px-3 py-1 border border-input rounded-md text-sm bg-background hover:bg-accent text-inherit no-underline">
+            <a href="wicketwise_admin_redesigned.html" class="inline-flex items-center px-3 py-1 border border-input rounded-md text-sm bg-background hover:bg-accent text-inherit no-underline">
                 <i data-lucide="settings" class="w-4 h-4 mr-1"></i>
                 Admin
             </a>
@@ -1362,14 +1362,11 @@
             const adminTabs = document.querySelectorAll('.admin-tab');
             const tabContents = document.querySelectorAll('.tab-content');
             
-            // Open admin modal (with null check to prevent errors)
-            if (adminButton && adminModal) {
+            // Open admin panel (redirect to new admin page)
+            if (adminButton) {
             adminButton.addEventListener('click', function() {
-                console.log('Admin button clicked');
-                adminModal.classList.remove('hidden');
-                document.body.style.overflow = 'hidden'; // Prevent background scroll
-                console.log('Modal should now be visible');
-                lucide.createIcons(); // Re-initialize icons in modal
+                console.log('Admin button clicked - redirecting to new admin panel');
+                window.open('wicketwise_admin_redesigned.html', '_blank');
             });
             }
             

@@ -1,0 +1,36 @@
+{
+  "run_id": "holdout_replay_20250824_163954",
+  "config_hash": "f806fd3c357112e0",
+  "kpis": {
+    "pnl_total": -1015.1928586606664,
+    "pnl_realized": -15.604370039616974,
+    "pnl_unrealized": 0.0,
+    "sharpe": -0.02882860500251721,
+    "sortino": -0.0008407569554102697,
+    "max_drawdown": 1.0151928586606664,
+    "calmar": -100.00000000000001,
+    "hit_rate": 0.0,
+    "avg_edge": 0.0,
+    "slippage_bps": -2169.9951603396125,
+    "fill_rate": 0.0,
+    "exposure_peak_pct": 0.9995884886210468,
+    "turnover": 999.5884886210467,
+    "num_trades": 0
+  },
+  "violations": [
+    "BANKROLL_BET_SIZE: 1417 violations",
+    "BANKROLL_MARKET_EXPOSURE: 1543 violations",
+    "BANKROLL_TOTAL_EXPOSURE: 2939 violations"
+  ],
+  "artifacts": [
+    "runs/holdout_simulation_20250824_163954/orders.jsonl",
+    "runs/holdout_simulation_20250824_163954/fills.jsonl",
+    "runs/holdout_simulation_20250824_163954/dgl_decisions.jsonl",
+    "runs/holdout_simulation_20250824_163954/metrics.json",
+    "runs/holdout_simulation_20250824_163954/config.json"
+  ],
+  "runtime_seconds": 0.218132,
+  "balls_processed": 4701,
+  "matches_processed": 10,
+  "completed_at": "2025-08-24T16:39:57.641523"
+}

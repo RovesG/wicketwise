@@ -37,7 +37,7 @@ class EnrichmentConfig:
     timeout: int = 30
     batch_size: int = 50
     cache_ttl: int = 86400  # 24 hours
-    openai_model: str = "gpt-4o"
+    openai_model: str = "gpt-5-mini"
     openai_temperature: float = 0.1
     openai_max_tokens: int = 4000
 

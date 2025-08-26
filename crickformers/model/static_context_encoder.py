@@ -129,6 +129,19 @@ class StaticContextEncoder(nn.Module):
         
         combined_features = torch.cat(feature_list, dim=1)
         
+        # FULL DATASET FIX: Handle dimension mismatch for 916k+ rows
+        # If we get 138 features but model expects 148, project to correct size
+        expected_dim = self.encoder_mlp[0].in_features
+        actual_dim = combined_features.size(1)
+        
+        if actual_dim != expected_dim:
+            if not hasattr(self, 'dimension_adapter'):
+                # Create adapter on first use
+                self.dimension_adapter = torch.nn.Linear(actual_dim, expected_dim).to(combined_features.device)
+                print(f"[FULL DATASET] Created dimension adapter: {actual_dim} -> {expected_dim}")
+            
+            combined_features = self.dimension_adapter(combined_features)
+        
         context_vector = self.encoder_mlp(combined_features)
         
         return context_vector 

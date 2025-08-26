@@ -285,14 +285,24 @@ class AdminTools:
             if not self.cricket_data_path.exists():
                 return "❌ GNN training failed: Data not loaded (Step 1 required)"
             
-            if not (self.models_dir / "cricket_knowledge_graph.pkl").exists():
-                return "❌ GNN training failed: Knowledge graph not built (Step 2 required)"
+            # Check for unified KG first (preferred), then fallback to old KG
+            unified_kg_path = self.models_dir / "unified_cricket_kg.pkl"
+            old_kg_path = self.models_dir / "cricket_knowledge_graph.pkl"
+            
+            if unified_kg_path.exists():
+                kg_path = unified_kg_path
+                print("[LOG] Using unified enriched knowledge graph...")
+            elif old_kg_path.exists():
+                kg_path = old_kg_path
+                print("[LOG] Using legacy knowledge graph...")
+            else:
+                return "❌ GNN training failed: No knowledge graph found (Step 2 required)"
             
             print("[LOG] GNN training started...")
             
-            # Load the knowledge graph first
+            # Load the knowledge graph
             import pickle
-            with open(self.models_dir / "cricket_knowledge_graph.pkl", 'rb') as f:
+            with open(kg_path, 'rb') as f:
                 graph = pickle.load(f)
             
             print(f"[LOG] Loaded knowledge graph: {len(graph.nodes())} nodes, {len(graph.edges())} edges")
@@ -495,8 +505,9 @@ class AdminTools:
             # Import the unified KG builder
             from crickformers.gnn.unified_kg_builder import UnifiedKGBuilder
             
-            # Initialize builder
-            builder = UnifiedKGBuilder(str(self.data_dir))
+            # Initialize builder with enrichment data path
+            enriched_data_path = "enriched_data/enriched_betting_matches.json"
+            builder = UnifiedKGBuilder(str(self.data_dir), enriched_data_path=enriched_data_path)
             
             # Check if data files exist (optional - will auto-detect available data)
             nvplay_exists = self.nvplay_data_path.exists()
@@ -673,10 +684,10 @@ class AdminTools:
             
             # Update config for our setup
             config.update({
-                "batch_size": 16,  # Smaller batch for stability
-                "num_epochs": 5,   # Fewer epochs for testing
+                "batch_size": 32,  # Larger batch size now that we're memory efficient
+                "num_epochs": 10,  # Full training epochs for the complete dataset
                 "learning_rate": 1e-4,
-                "log_interval": 50
+                "log_interval": 100  # Standard logging interval
             })
             
             logger.info(f"📊 Config loaded: {config['batch_size']} batch size, {config['num_epochs']} epochs")
@@ -691,12 +702,13 @@ class AdminTools:
             df = pd.read_csv(str(self.decimal_data_path))
             logger.info(f"📊 Loaded {len(df):,} balls from T20 dataset")
             
-            # Use the full dataset for sophisticated Crickformer training
-            df_sample = df  # Use full dataset
-            logger.info(f"🎯 Using {len(df_sample):,} balls for sophisticated Crickformer training")
+            # Use the full dataset with proper memory management
+            df_sample = df  # Use full dataset - no sampling!
+            logger.info(f"🎯 Using FULL dataset: {len(df_sample):,} balls for sophisticated Crickformer training")
             
-            # Create mock dataset entries for the Crickformer format
-            dataset_entries = self._create_crickformer_dataset_entries(df_sample)
+            # Create dataset entries with memory-efficient batch processing
+            logger.info("🔄 Creating Crickformer dataset entries with memory-efficient processing...")
+            dataset_entries = self._create_crickformer_dataset_entries_batched(df_sample)
             
             # Split into train/val
             split_idx = int(0.8 * len(dataset_entries))
@@ -714,8 +726,29 @@ class AdminTools:
             enhanced_trainer = EnhancedTrainer(config)  # Pass config dictionary
             logger.info("✅ EnhancedTrainer created successfully")
             
-            # Train using the enhanced trainer
+            # Train using the enhanced trainer with progress tracking
             logger.info("🚀 Starting training with monitoring...")
+            
+            # Create progress callback for the background operation
+            def training_progress_callback(epoch, total_epochs, loss, val_loss=None):
+                """Update training progress for the API"""
+                progress = int((epoch / total_epochs) * 100)
+                message = f"Epoch {epoch}/{total_epochs} - Loss: {loss:.4f}"
+                if val_loss:
+                    message += f", Val Loss: {val_loss:.4f}"
+                
+                # Update background operation if it exists
+                try:
+                    from admin_backend import background_operations
+                    if "model_training" in background_operations:
+                        background_operations["model_training"]["progress"] = progress
+                        background_operations["model_training"]["message"] = message
+                        background_operations["model_training"]["logs"].append(f"Epoch {epoch}: Loss {loss:.4f}")
+                except:
+                    pass  # Ignore if background_operations not available
+                
+                logger.info(f"Training Progress: {message}")
+            
             training_results = enhanced_trainer.train_with_monitoring(
                 train_dataset=train_dataset,
                 val_dataset=val_dataset,
@@ -857,7 +890,7 @@ class AdminTools:
                         'recent_ball_history': torch.tensor(ball_history, dtype=torch.float32),  # Shape: [5, 128]
                         'categorical_features': categorical_features,  # Integer categorical features (4 dims, original architecture)
                         'numeric_features': numeric_features,  # 15-dimensional numeric features 
-                        'gnn_embeddings': torch.randn(1, 384),  # Mock GNN embeddings: batter(128) + bowler(128) + venue(64) + team(64) = 384
+                        'gnn_embeddings': torch.randn(1, 320),  # Mock GNN embeddings: batter(128) + bowler(128) + venue(64) = 320 (matches model expectation)
                         'video_features': torch.randn(99),  # Video features (99 dims to match model config)
                         'video_mask': torch.ones(1),  # Video features are always present (mock)
                         'weather_features': torch.randn(6),  # Weather features (temp, humidity, wind, etc.)
@@ -874,6 +907,142 @@ class AdminTools:
                 continue
         
         logger.info(f"✅ Created {len(entries)} Crickformer dataset entries from CSV data")
+        return entries
+    
+    def _create_crickformer_dataset_entries_batched(self, df):
+        """
+        Memory-efficient batched dataset creation for large datasets.
+        Processes data in chunks to avoid memory issues with 900k+ rows.
+        """
+        import torch
+        import numpy as np
+        import gc  # Garbage collection for memory management
+        
+        entries = []
+        batch_size = 10000  # Process 10k rows at a time
+        total_rows = len(df)
+        
+        logger.info(f"📊 Processing {total_rows:,} rows in batches of {batch_size:,}")
+        
+        for batch_start in range(5, total_rows, batch_size):  # Start from 5 to have history
+            batch_end = min(batch_start + batch_size, total_rows)
+            batch_df = df.iloc[batch_start:batch_end].copy()
+            
+            logger.info(f"🔄 Processing batch {batch_start:,} to {batch_end:,} ({len(batch_df):,} rows)")
+            
+            # Process each ball in the batch
+            for idx in range(len(batch_df)):
+                global_idx = batch_start + idx
+                row = batch_df.iloc[idx]
+                
+                try:
+                    # Create mock current ball features
+                    current_ball = {
+                        'over': float(row.get('over', 0)),
+                        'ball': float(row.get('ball', 0)) if 'ball' in row else float(row.get('delivery', 0)),
+                        'innings': float(row.get('innings', 1)),
+                        'wickets_lost': float(row.get('wickets', 0)),
+                        'runs_scored': float(row.get('runs', 0)) if 'runs' in row else float(row.get('runs_scored', 0)),
+                        'balls_remaining': float(row.get('ballsremaining', 120)) if 'ballsremaining' in row else 120.0,
+                        'runs_required': float(row.get('target', 150)) if 'target' in row else 150.0,
+                        'current_rr': float(row.get('rr', 6.0)) if 'rr' in row else 6.0,
+                        'required_rr': float(row.get('rrr', 7.0)) if 'rrr' in row else 7.0,
+                    }
+                    
+                    # Create efficient ball history (using original df for history)
+                    ball_history = []
+                    for i in range(5):  # Last 5 balls
+                        hist_idx = global_idx - i - 1
+                        if hist_idx >= 0:
+                            hist_row = df.iloc[hist_idx]
+                            
+                            # Simplified feature vector (64 dims instead of 128 for memory)
+                            runs = float(hist_row.get('runs', 0)) if 'runs' in hist_row else float(hist_row.get('runs_scored', 0))
+                            is_wicket = float(hist_row.get('wicket', 0)) if 'wicket' in hist_row else float(hist_row.get('is_wicket', 0))
+                            is_boundary = 1.0 if runs >= 4 else 0.0
+                            over_progress = float(hist_row.get('ball', 1)) / 6.0 if 'ball' in hist_row else float(hist_row.get('delivery', 1)) / 6.0
+                            
+                            # Compact 64-dimensional feature vector
+                            feature_vector = [
+                                runs, is_wicket, is_boundary, over_progress,
+                                float(hist_row.get('over', 1)) / 20.0,  # Normalized over
+                                float(hist_row.get('wickets', 0)) / 10.0,  # Normalized wickets
+                            ]
+                            
+                            # Pad to 64 dimensions
+                            feature_vector.extend([0.0] * (64 - len(feature_vector)))
+                            feature_vector = feature_vector[:64]  # Ensure exactly 64 dims
+                        else:
+                            feature_vector = [0.0] * 64  # Padding for early balls
+                        
+                        ball_history.append(feature_vector)
+                    
+                    # Create targets
+                    targets = {
+                        'win_prob': torch.tensor([float(row.get('win_prob', 0.5)) if 'win_prob' in row else 0.5], dtype=torch.float32),
+                        'next_ball_outcome': torch.tensor(min(int(float(row.get('runs', 0))), 6), dtype=torch.long),
+                        'mispricing': torch.tensor([0.0], dtype=torch.float32),
+                    }
+                    
+                    # Simplified categorical features (4 features)
+                    categorical_features = torch.tensor([
+                        hash(str(row.get('competition', 'unknown'))) % 100,
+                        1 if str(row.get('battingstyle', '')).lower().startswith('left') else 0,
+                        1 if 'spin' in str(row.get('bowlerstyle', '')).lower() else 0,
+                        int(row.get('innings', 1)) % 10,
+                    ], dtype=torch.long)
+                    
+                    # Simplified numeric features (15 features)
+                    numeric_features = torch.tensor([
+                        float(row.get('runs', 0)),
+                        float(row.get('over', 0)),
+                        float(row.get('delivery', 1)),
+                        float(row.get('score', 0)),
+                        float(row.get('wickets', 0)),
+                        float(row.get('ballsremaining', 120)),
+                        float(row.get('target', 150)),
+                        float(row.get('av_runs_bat', 25)),
+                        float(row.get('av_runs_bowl', 25)),
+                        float(row.get('avr', 6.5)),
+                        float(row.get('pressure', 0)),
+                        float(row.get('win_prob', 0.5)),
+                        float(row.get('dot', 0)),
+                        float(row.get('four', 0)),
+                        float(row.get('six', 0)),
+                    ], dtype=torch.float32)
+                    
+                    # Create the entry with reduced memory footprint
+                    entry = {
+                        'inputs': {
+                            'current_ball_features': torch.tensor(list(current_ball.values()), dtype=torch.float32),
+                            'recent_ball_history': torch.tensor(ball_history, dtype=torch.float32),  # [5, 64] instead of [5, 128]
+                            'categorical_features': categorical_features,
+                            'numeric_features': numeric_features,
+                            'gnn_embeddings': torch.randn(1, 320),  # Keep GNN embeddings
+                            'video_features': torch.randn(99),
+                            'video_mask': torch.ones(1),
+                            'weather_features': torch.randn(6),  # Add back weather features (temp, humidity, wind, etc.)
+                            'venue_coordinates': torch.randn(2),  # Add back venue coordinates (lat, lon)
+                            'market_odds': torch.tensor([1.5, 2.0, 1.8], dtype=torch.float32),
+                        },
+                        'targets': targets
+                    }
+                    
+                    entries.append(entry)
+                    
+                except Exception as e:
+                    # Skip problematic rows but continue processing
+                    continue
+            
+            # Force garbage collection after each batch
+            del batch_df
+            gc.collect()
+            
+            # Log progress
+            if len(entries) % 50000 == 0:
+                logger.info(f"📈 Processed {len(entries):,} entries so far...")
+        
+        logger.info(f"✅ Created {len(entries):,} Crickformer dataset entries with memory-efficient processing")
         return entries
     
     def train_simple_cricket_model(self, csv_file_path: str) -> str:

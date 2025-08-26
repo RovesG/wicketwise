@@ -1,0 +1,71 @@
+{
+  "id": "holdout_replay_20250824_162652",
+  "mode": "replay",
+  "markets": [
+    "match_odds"
+  ],
+  "match_ids": [
+    "2019_03_30_Mumbai_Indians_Punjab_Kings_Indian_Premier_League",
+    "2023_10_07_Pakistan_Bangladesh_T20I",
+    "2022_02_18_Comilla_Victorians_Fortune_Barishal_Bangladesh_Premier_League",
+    "2020_10_25_Mumbai_Indians_Rajasthan_Royals_Indian_Premier_League",
+    "2018_07_02_Pakistan_Australia_T20I",
+    "2023_12_19_Sydney_Thunder_Adelaide_Strikers_Big_Bash_League",
+    "2018_03_14_Lahore_Qalandars_Quetta_Gladiators_Pakistan_Super_League",
+    "2022_01_11_Sydney_Sixers_Melbourne_Renegades_Big_Bash_League",
+    "2022_01_28_Chattogram_Challengers_Khulna_Tigers_Bangladesh_Premier_League",
+    "2018_08_23_Kent_Lancashire_Vitality_Blast"
+  ],
+  "strategy": {
+    "name": "edge_kelly_v3",
+    "params": {}
+  },
+  "risk_profile": {
+    "bankroll": 100000.0,
+    "max_exposure_pct": 15.0,
+    "per_market_cap_pct": 8.0,
+    "per_bet_cap_pct": 1.5,
+    "correlation_cap": 0.8
+  },
+  "execution": {
+    "latency_ms": {
+      "mean": 250.0,
+      "std": 50.0
+    },
+    "commission_bps": 200.0,
+    "slippage_model": "lob_queue",
+    "participation_factor": 0.1,
+    "post_only": false
+  },
+  "liquidity": {
+    "scale": 1.0,
+    "min_fill_ratio": 0.1,
+    "overround_target": 1.05,
+    "depth_schedule": {
+      "powerplay": 1.2,
+      "middle": 1.0,
+      "death": 0.8
+    }
+  },
+  "timeline": {
+    "start": "as_data",
+    "speed": "realtime",
+    "suspend_grace_ms": 100.0
+  },
+  "outputs": {
+    "dir": "runs/holdout_simulation_20250824_162652",
+    "artifacts": [
+      "orders",
+      "fills",
+      "dgl",
+      "metrics",
+      "plots"
+    ],
+    "save_prompts": true,
+    "export_html": true
+  },
+  "seed": 42,
+  "record_prompts": true,
+  "created_at": "2025-08-24T16:26:52.230029",
+  "git_commit": null
+}
