@@ -141,6 +141,40 @@ start_dgl_service() {
     fi
 }
 
+# Function to start Player Cards API
+start_player_cards_api() {
+    print_info "Starting Player Cards API on port 5004..."
+    
+    if ! check_port 5004; then
+        print_warning "Port 5004 is already in use, attempting to free it..."
+        lsof -ti:5004 | xargs kill -9 2>/dev/null || true
+        sleep 2
+    fi
+    
+    # Check if virtual environment exists
+    if [ ! -d ".venv" ]; then
+        print_info "Creating Python virtual environment..."
+        python3 -m venv .venv
+    fi
+    
+    # Activate virtual environment
+    source .venv/bin/activate
+    
+    # Start Player Cards API in background
+    print_info "Launching Player Cards API..."
+    nohup python real_dynamic_cards_api.py > logs/player_cards_api.log 2>&1 &
+    PLAYER_CARDS_PID=$!
+    echo $PLAYER_CARDS_PID > pids/player_cards_api.pid
+    
+    # Wait for service to be ready
+    if wait_for_service "http://localhost:5004/api/match-context" "Player Cards API"; then
+        print_status "Player Cards API started successfully (PID: $PLAYER_CARDS_PID)"
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Function to start Enhanced Dashboard API
 start_enhanced_api() {
     print_info "Starting Enhanced Dashboard API on port $ENHANCED_API_PORT..."
@@ -213,11 +247,20 @@ show_system_status() {
     echo "  ⚙️  Legacy Admin Panel: http://localhost:$STATIC_SERVER_PORT/wicketwise_admin_redesigned.html"
     echo "  🛡️  DGL API: http://localhost:$DGL_PORT"
     echo "  📊 Enhanced API: http://localhost:$ENHANCED_API_PORT"
+    
+    # Check Player Cards API
+    if curl -s "http://localhost:5004/api/match-context" >/dev/null 2>&1; then
+        print_status "Player Cards API: Running on http://localhost:5004"
+    else
+        print_error "Player Cards API: Not running"
+    fi
+    
     echo ""
     print_info "🔗 Key API Endpoints:"
     echo "  📊 Holdout Matches: GET http://localhost:$ENHANCED_API_PORT/api/simulation/holdout-matches"
     echo "  🎯 Run Simulation: POST http://localhost:$ENHANCED_API_PORT/api/simulation/run"
     echo "  🏏 Player Search: GET http://localhost:$ENHANCED_API_PORT/api/enhanced/search-players"
+    echo "  🎴 Enhanced Player Cards: POST http://localhost:5004/api/cards/enhanced"
     echo ""
 }
 
@@ -226,7 +269,7 @@ stop_services() {
     print_info "Stopping WicketWise services..."
     
     # Stop services using PID files
-    local pid_files=("pids/dgl.pid" "pids/enhanced_api.pid" "pids/static_server.pid")
+    local pid_files=("pids/dgl.pid" "pids/enhanced_api.pid" "pids/static_server.pid" "pids/player_cards_api.pid")
     
     for pid_file in "${pid_files[@]}"; do
         if [ -f "$pid_file" ]; then
@@ -240,7 +283,7 @@ stop_services() {
     done
     
     # Also kill by port
-    for port in $DGL_PORT $ENHANCED_API_PORT $STATIC_SERVER_PORT; do
+    for port in $DGL_PORT $ENHANCED_API_PORT $STATIC_SERVER_PORT 5004; do
         lsof -ti:$port | xargs kill -9 2>/dev/null || true
     done
     
@@ -343,6 +386,13 @@ main() {
                 print_status "Enhanced Dashboard API started successfully"
             else
                 print_warning "Enhanced Dashboard API failed to start (continuing...)"
+            fi
+            
+            # Start Player Cards API
+            if start_player_cards_api; then
+                print_status "Player Cards API started successfully"
+            else
+                print_warning "Player Cards API failed to start (continuing...)"
             fi
             
             show_system_status
