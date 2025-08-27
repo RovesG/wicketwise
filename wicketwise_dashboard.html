@@ -2246,8 +2246,7 @@
                 
             } catch (error) {
                 console.error('Error loading enhanced player cards:', error);
-                // Fallback to existing cards
-                updatePlayerCardStyling();
+                // Fallback to existing cards - no styling needed
             }
         }
 
@@ -2270,8 +2269,7 @@
                         playerName,
                         cardData: data.card_data,
                         realDataUsed: data.real_data_used,
-                        gnnInsightsUsed: data.gnn_insights_used,
-                        persona
+                        gnnInsightsUsed: data.gnn_insights_used
                     };
                 } else {
                     throw new Error(data.error || 'Failed to generate card');
@@ -2295,8 +2293,8 @@
         }
 
         function createEnhancedPlayerCardHTML(cardInfo) {
-            const { cardData, realDataUsed, persona } = cardInfo;
-            const borderColor = getPersonaBorderColor(persona);
+            const { cardData, realDataUsed } = cardInfo;
+            const borderColor = 'border-orange'; // Default cricket theme
             const dataSourceBadge = realDataUsed ? 
                 '<span class="real-data-badge">✅ REAL KG DATA</span>' :
                 '<span class="mock-data-badge">⚠️ MOCK DATA</span>';
@@ -2383,7 +2381,7 @@
                     </div>
                     
                     <div class="card-actions">
-                        <button class="action-btn" onclick="showPlayerDetails('${cardData.player_name}', '${persona}')">
+                        <button class="action-btn" onclick="showPlayerDetails('${cardData.player_name}')">
                             View Details
                         </button>
                         <button class="action-btn secondary" onclick="queryPlayer('${cardData.player_name}')">
@@ -2394,29 +2392,16 @@
             `;
         }
 
-        function getPersonaBorderColor(persona) {
-            const colors = {
-                'betting': 'border-orange',
-                'commentary': 'border-blue', 
-                'coaching': 'border-green',
-                'fantasy': 'border-red'
-            };
-            return colors[persona] || 'border-gray';
-        }
+        // Removed persona-related functions - using default cricket theme
 
-        function showPlayerDetails(playerName, persona) {
+        function showPlayerDetails(playerName) {
             // Open detailed player analysis
-            console.log(`Opening detailed analysis for ${playerName} (${persona} perspective)`);
+            console.log(`Opening detailed analysis for ${playerName}`);
             
-            if (persona === 'betting') {
-                // Redirect to betting intelligence page with player
-                const bettingUrl = `betting_player_ui.html?player=${encodeURIComponent(playerName)}`;
-                console.log(`🎯 Redirecting to betting analysis: ${bettingUrl}`);
-                window.open(bettingUrl, '_blank');
-            } else {
-                // For other personas, show a coming soon message for now
-                alert(`Detailed ${persona} analysis for ${playerName} is coming soon! For now, try the betting analysis.`);
-            }
+            // Redirect to betting intelligence page with player
+            const bettingUrl = `betting_player_ui.html?player=${encodeURIComponent(playerName)}`;
+            console.log(`🎯 Redirecting to betting analysis: ${bettingUrl}`);
+            window.open(bettingUrl, '_blank');
         }
 
         function queryPlayer(playerName) {
@@ -2432,38 +2417,7 @@
             }
         }
 
-        function updatePlayerCardStyling(persona) {
-            const playerCards = document.querySelectorAll('.card');
-            
-            playerCards.forEach((card, index) => {
-                if (index === 0) { // First card (Virat Kohli)
-                    const header = card.querySelector('.card-title');
-                    const border = card.classList;
-                    
-                    // Remove existing border colors
-                    border.remove('border-orange-500', 'border-blue-500', 'border-green-500', 'border-red-500');
-                    
-                    switch(persona) {
-                        case 'betting':
-                            header.innerHTML = '🎰 Virat Kohli - Betting Intelligence';
-                            border.add('border-orange-500');
-                            break;
-                        case 'commentary':
-                            header.innerHTML = '📺 Virat Kohli - Commentary Insights';
-                            border.add('border-blue-500');
-                            break;
-                        case 'coaching':
-                            header.innerHTML = '🎯 Virat Kohli - Tactical Analysis';
-                            border.add('border-green-500');
-                            break;
-                        case 'fantasy':
-                            header.innerHTML = '⚡ Virat Kohli - Fantasy Intelligence';
-                            border.add('border-red-500');
-                            break;
-                    }
-                }
-            });
-        }
+        // Removed updatePlayerCardStyling function - no longer needed without personas
 
         // Enhanced Intelligence Search
         function enhancedIntelligenceSearch(query) {
