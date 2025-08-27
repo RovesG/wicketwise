@@ -1,0 +1,35 @@
+{
+  "dgl_stats": {
+    "total_decisions": 490,
+    "approvals": 490,
+    "rejections": 0,
+    "amendments": 0,
+    "approval_rate": 1.0,
+    "rejection_rate": 0.0,
+    "amendment_rate": 0.0,
+    "violations_by_rule": {},
+    "current_exposures": {
+      "total_exposure": 0.0,
+      "market_exposures": {},
+      "daily_pnl": 0.0,
+      "session_pnl": 0.0,
+      "consecutive_losses": 0,
+      "violation_count": 0
+    }
+  },
+  "matching_stats": {
+    "orders_in_flight": 490,
+    "suspended_markets": 0,
+    "queued_orders": 0,
+    "participation_factor": 0.1,
+    "latency_mean_ms": 250.0,
+    "commission_bps": 200.0
+  },
+  "strategy_params": {
+    "edge_threshold": 0.001,
+    "kelly_fraction": 0.02,
+    "max_stake_pct": 0.01,
+    "min_odds": 1.01,
+    "max_odds": 100.0
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "run_id": "dashboard_mock_20250827_124241",
+  "config_hash": "658711cb28ab3947",
+  "kpis": {
+    "pnl_total": 0.0,
+    "pnl_realized": 0.0,
+    "pnl_unrealized": 0.0,
+    "sharpe": 0.0,
+    "sortino": 0.0,
+    "max_drawdown": 0.0,
+    "calmar": 0.0,
+    "hit_rate": 0.0,
+    "avg_edge": 0.0,
+    "slippage_bps": 0.0,
+    "fill_rate": 0.0,
+    "exposure_peak_pct": 0.0,
+    "turnover": 0,
+    "num_trades": 0
+  },
+  "violations": [],
+  "artifacts": [
+    "runs/dashboard_mock_20250827_124241/orders.jsonl",
+    "runs/dashboard_mock_20250827_124241/fills.jsonl",
+    "runs/dashboard_mock_20250827_124241/dgl_decisions.jsonl",
+    "runs/dashboard_mock_20250827_124241/metrics.json",
+    "runs/dashboard_mock_20250827_124241/config.json"
+  ],
+  "runtime_seconds": 0.012434,
+  "balls_processed": 480,
+  "matches_processed": 1,
+  "completed_at": "2025-08-27T12:42:47.366067"
+}

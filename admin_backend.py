@@ -1347,6 +1347,190 @@ def get_holdout_matches():
             "match_count": 0
         })
 
+@app.route('/api/simulation/current-match', methods=['GET'])
+def get_current_simulation_match():
+    """Get the currently active simulation match with full context for dashboard"""
+    try:
+        # Import SIM modules
+        sys.path.insert(0, str(Path(__file__).parent / 'sim'))
+        from sim.data_integration import HoldoutDataManager
+        
+        manager = HoldoutDataManager()
+        holdout_matches = manager.get_holdout_matches()
+        
+        if not holdout_matches:
+            # Return mock data if no holdout matches available
+            return jsonify({
+                "status": "success",
+                "match_id": "mock_ipl_2024_rcb_vs_csk",
+                "teams": {
+                    "home": {
+                        "name": "Royal Challengers Bangalore",
+                        "short_name": "RCB",
+                        "players": [
+                            {"name": "Virat Kohli", "role": "batter", "batting_style": "right-hand bat"},
+                            {"name": "Faf du Plessis", "role": "batter", "batting_style": "right-hand bat"},
+                            {"name": "Glenn Maxwell", "role": "allrounder", "batting_style": "right-hand bat"},
+                            {"name": "Dinesh Karthik", "role": "wicket_keeper", "batting_style": "right-hand bat"},
+                            {"name": "Wanindu Hasaranga", "role": "bowler", "bowling_style": "Right-arm leg-spin"},
+                            {"name": "Harshal Patel", "role": "bowler", "bowling_style": "Right-arm medium-fast"},
+                            {"name": "Shahbaz Ahmed", "role": "allrounder", "batting_style": "left-hand bat"}
+                        ]
+                    },
+                    "away": {
+                        "name": "Chennai Super Kings",
+                        "short_name": "CSK", 
+                        "players": [
+                            {"name": "MS Dhoni", "role": "wicket_keeper", "batting_style": "right-hand bat"},
+                            {"name": "Ravindra Jadeja", "role": "allrounder", "batting_style": "left-hand bat"},
+                            {"name": "Devon Conway", "role": "batter", "batting_style": "left-hand bat"},
+                            {"name": "Ruturaj Gaikwad", "role": "batter", "batting_style": "right-hand bat"},
+                            {"name": "Deepak Chahar", "role": "bowler", "bowling_style": "Right-arm medium-fast"},
+                            {"name": "Maheesh Theekshana", "role": "bowler", "bowling_style": "Right-arm off-spin"},
+                            {"name": "Moeen Ali", "role": "allrounder", "batting_style": "left-hand bat"}
+                        ]
+                    }
+                },
+                "current_state": {
+                    "innings": 1,
+                    "over": 0,
+                    "ball": 0,
+                    "striker": "Ruturaj Gaikwad",
+                    "non_striker": "Devon Conway",
+                    "bowler": "Harshal Patel",
+                    "score": 0,
+                    "wickets": 0,
+                    "phase": "powerplay"
+                },
+                "venue": "M. Chinnaswamy Stadium",
+                "format": "T20",
+                "competition": "Indian Premier League",
+                "date": "2024-04-15"
+            })
+        
+        # Get a real holdout match
+        selected_match = holdout_matches[0]  # Use first available match
+        match_data = manager.get_match_data([selected_match])
+        
+        if match_data.empty:
+            raise ValueError(f"No data found for match {selected_match}")
+        
+        # Extract match information from first few balls
+        first_ball = match_data.iloc[0]
+        
+        # Extract teams
+        home_team = str(first_ball.get('home', 'Team A'))
+        away_team = str(first_ball.get('away', 'Team B'))
+        batting_team = str(first_ball.get('battingteam', home_team))
+        
+        # Get unique players for each team
+        home_players = []
+        away_players = []
+        
+        # Extract players from the match data
+        for _, row in match_data.head(50).iterrows():  # Look at first 50 balls to get player variety
+            batsman = str(row.get('batsman', ''))
+            non_striker = str(row.get('nonstriker', ''))
+            bowler = str(row.get('bowler', ''))
+            current_batting_team = str(row.get('battingteam', ''))
+            
+            # Add batsmen to appropriate team
+            if current_batting_team == home_team:
+                if batsman and batsman not in [p['name'] for p in home_players]:
+                    home_players.append({
+                        "name": batsman,
+                        "role": "batter",
+                        "batting_style": str(row.get('battingstyle', 'right-hand bat'))
+                    })
+                if non_striker and non_striker not in [p['name'] for p in home_players]:
+                    home_players.append({
+                        "name": non_striker, 
+                        "role": "batter",
+                        "batting_style": "right-hand bat"
+                    })
+            else:
+                if batsman and batsman not in [p['name'] for p in away_players]:
+                    away_players.append({
+                        "name": batsman,
+                        "role": "batter", 
+                        "batting_style": str(row.get('battingstyle', 'right-hand bat'))
+                    })
+                if non_striker and non_striker not in [p['name'] for p in away_players]:
+                    away_players.append({
+                        "name": non_striker,
+                        "role": "batter",
+                        "batting_style": "right-hand bat"
+                    })
+            
+            # Add bowler to bowling team
+            bowling_team = away_team if current_batting_team == home_team else home_team
+            if bowler:
+                target_players = away_players if bowling_team == away_team else home_players
+                if bowler not in [p['name'] for p in target_players]:
+                    target_players.append({
+                        "name": bowler,
+                        "role": "bowler",
+                        "bowling_style": str(row.get('bowlerstyle', 'Right-arm medium'))
+                    })
+        
+        # Ensure we have at least some players
+        if len(home_players) < 3:
+            home_players.extend([
+                {"name": f"{home_team} Player {i}", "role": "batter", "batting_style": "right-hand bat"}
+                for i in range(len(home_players), 7)
+            ])
+        
+        if len(away_players) < 3:
+            away_players.extend([
+                {"name": f"{away_team} Player {i}", "role": "batter", "batting_style": "right-hand bat"}
+                for i in range(len(away_players), 7)
+            ])
+        
+        # Get opening players
+        opening_batsmen = [p['name'] for p in (home_players if batting_team == home_team else away_players)[:2]]
+        opening_bowler = next((p['name'] for p in (away_players if batting_team == home_team else home_players) if p['role'] == 'bowler'), 
+                             (away_players if batting_team == home_team else home_players)[0]['name'])
+        
+        return jsonify({
+            "status": "success",
+            "match_id": selected_match,
+            "teams": {
+                "home": {
+                    "name": home_team,
+                    "short_name": home_team[:3].upper(),
+                    "players": home_players[:11]  # Limit to 11 players
+                },
+                "away": {
+                    "name": away_team,
+                    "short_name": away_team[:3].upper(),
+                    "players": away_players[:11]  # Limit to 11 players
+                }
+            },
+            "current_state": {
+                "innings": 1,
+                "over": 0,
+                "ball": 0,
+                "striker": opening_batsmen[0] if len(opening_batsmen) > 0 else "Player 1",
+                "non_striker": opening_batsmen[1] if len(opening_batsmen) > 1 else "Player 2", 
+                "bowler": opening_bowler,
+                "score": 0,
+                "wickets": 0,
+                "phase": "powerplay"
+            },
+            "venue": str(first_ball.get('venue', 'Cricket Stadium')),
+            "format": "T20",
+            "competition": str(first_ball.get('competition', 'T20 League')),
+            "date": str(first_ball.get('date', '2024-01-01'))
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting current simulation match: {e}")
+        return jsonify({
+            "status": "error",
+            "error": str(e),
+            "message": "Failed to get simulation match context"
+        }), 500
+
 @app.route('/api/simulation/run', methods=['POST'])
 def run_simulation():
     """Run a strategy simulation"""

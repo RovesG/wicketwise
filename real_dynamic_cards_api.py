@@ -39,7 +39,7 @@ player_data = None
 kg_query_engine = None
 gnn_model = None
 
-# Current match context (can be updated via API)
+# Current match context (loaded from simulation API)
 current_match_context = {
     "homeTeam": {
         "id": "RCB",
@@ -53,8 +53,46 @@ current_match_context = {
     },
     "venue": "M. Chinnaswamy Stadium",
     "tournament": "IPL 2025",
-    "matchDate": "2025-01-15"
+    "matchDate": "2025-01-15",
+    "current_state": {
+        "striker": "R Gaikwad",
+        "non_striker": "D Conway", 
+        "bowler": "H Patel"
+    }
 }
+
+def load_simulation_match_context():
+    """Load current match context from simulation API"""
+    try:
+        import requests
+        response = requests.get('http://127.0.0.1:5001/api/simulation/current-match', timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('status') == 'success':
+                # Update global context
+                global current_match_context
+                current_match_context = {
+                    "homeTeam": {
+                        "id": data['teams']['home']['short_name'],
+                        "name": data['teams']['home']['name'],
+                        "players": [p['name'] for p in data['teams']['home']['players']]
+                    },
+                    "awayTeam": {
+                        "id": data['teams']['away']['short_name'], 
+                        "name": data['teams']['away']['name'],
+                        "players": [p['name'] for p in data['teams']['away']['players']]
+                    },
+                    "venue": data.get('venue', 'Cricket Stadium'),
+                    "tournament": data.get('competition', 'T20 League'),
+                    "matchDate": data.get('date', '2024-01-01'),
+                    "current_state": data.get('current_state', {}),
+                    "match_id": data.get('match_id', 'simulation_match')
+                }
+                logger.info(f"✅ Loaded simulation match context: {current_match_context['homeTeam']['name']} vs {current_match_context['awayTeam']['name']}")
+                return True
+    except Exception as e:
+        logger.warning(f"⚠️ Could not load simulation match context: {e}")
+    return False
 
 def load_real_components():
     """Load real KG and GNN components"""
@@ -615,7 +653,14 @@ def generate_enhanced_card():
     """Generate enhanced team-aware player card with full tactical analysis"""
     try:
         data = request.get_json()
-        player_name = data.get('player_name', '').strip()
+        player_name_raw = data.get('player_name', '')
+        
+        # Handle both string and dict inputs
+        if isinstance(player_name_raw, dict):
+            # If it's a dict, try to extract the name
+            player_name = str(player_name_raw.get('name', player_name_raw.get('playerName', '')))
+        else:
+            player_name = str(player_name_raw).strip()
         
         if not player_name:
             return jsonify({
@@ -722,21 +767,144 @@ def generate_core_stats(player_name, stats):
         "last5Scores": [random.randint(15, 90) for _ in range(5)]  # Would get from recent matches
     }
 
-def get_player_stats_from_kg(player_name):
-    """Get player statistics from Knowledge Graph"""
+def find_best_player_match(input_name):
+    """Find the best matching player name from our master player database using fuzzy matching"""
+    if player_data is None or player_data.empty:
+        return input_name
+    
     try:
+        from difflib import SequenceMatcher
+        
+        # Get all unique player names from our database
+        all_names = player_data['name'].dropna().unique().tolist()
+        
+        best_match = input_name
+        best_score = 0.6  # Minimum similarity threshold
+        
+        # First try exact match (case insensitive)
+        for db_name in all_names:
+            if input_name.lower() == db_name.lower():
+                logger.info(f"🎯 EXACT MATCH: '{input_name}' -> '{db_name}'")
+                return db_name
+        
+        # Then try fuzzy matching with cricket-specific enhancements
+        for db_name in all_names:
+            # Calculate basic similarity score
+            similarity = SequenceMatcher(None, input_name.lower(), db_name.lower()).ratio()
+            
+            # Boost score for matching last names (important in cricket)
+            input_parts = input_name.split()
+            db_parts = db_name.split()
+            if len(input_parts) > 1 and len(db_parts) > 1:
+                if input_parts[-1].lower() == db_parts[-1].lower():
+                    similarity += 0.2  # Boost for matching surname
+            
+            # Boost score for matching first initials + last name pattern
+            if len(input_parts) > 1 and len(db_parts) > 1:
+                if (input_parts[0][0].lower() == db_parts[0][0].lower() and 
+                    input_parts[-1].lower() == db_parts[-1].lower()):
+                    similarity += 0.15  # Boost for initial + surname match
+            
+            if similarity > best_score:
+                best_score = similarity
+                best_match = db_name
+        
+        if best_match != input_name:
+            logger.info(f"🔍 FUZZY MATCH: '{input_name}' -> '{best_match}' (score: {best_score:.3f})")
+        
+        return best_match
+        
+    except Exception as e:
+        logger.warning(f"⚠️ Fuzzy matching failed for {input_name}: {e}")
+        return input_name
+
+def get_player_stats_from_kg(player_name):
+    """Get player statistics from Knowledge Graph with fuzzy name matching against master player database"""
+    try:
+        logger.info(f"🔍 DEBUG: Getting stats for {player_name}, kg_query_engine available: {kg_query_engine is not None}")
+        
         if kg_query_engine:
-            # Try to get real stats from KG
-            profile = kg_query_engine.get_complete_player_profile(player_name)
+            # First, find the best matching name from our master player database
+            matched_name = find_best_player_match(player_name)
+            
+            # Try the matched name and some common variations
+            name_variations = [matched_name]
+            
+            # Add common KG name patterns (first initial + last name)
+            parts = matched_name.split()
+            if len(parts) > 1:
+                first_initial_last = parts[0][0] + ' ' + parts[-1]
+                name_variations.append(first_initial_last)
+            
+            # Remove duplicates while preserving order
+            seen = set()
+            name_variations = [x for x in name_variations if not (x in seen or seen.add(x))]
+            
+            logger.info(f"🔍 DEBUG: Trying name variations for '{player_name}': {name_variations}")
+            
+            profile = None
+            for name_variant in name_variations:
+                try:
+                    logger.info(f"🔍 DEBUG: Trying variant: {name_variant}")
+                    profile = kg_query_engine.get_complete_player_profile(name_variant)
+                    logger.info(f"🔍 DEBUG: Profile result: {profile is not None}, error: {profile.get('error') if profile else 'N/A'}")
+                    
+                    if profile and not profile.get('error') and 'batting_stats' in profile:
+                        # Check if this profile has meaningful data (not all zeros)
+                        batting = profile['batting_stats']
+                        vs_pace = profile.get('vs_pace', {})
+                        vs_spin = profile.get('vs_spin', {})
+                        
+                        # Get strike rate from the best available source
+                        strike_rate = (
+                            vs_pace.get('strike_rate') or 
+                            vs_spin.get('strike_rate') or 
+                            batting.get('strike_rate', 0)
+                        )
+                        
+                        runs = batting.get('runs', 0)
+                        
+                        # Only accept if we have meaningful data (runs > 0 or strike_rate > 0)
+                        if runs > 0 or strike_rate > 0:
+                            logger.info(f"✅ Found meaningful KG data for {player_name} using variant: {name_variant} (runs={runs}, SR={strike_rate})")
+                            break
+                        else:
+                            logger.info(f"⚠️ Found profile for {name_variant} but data is all zeros, trying next variant")
+                            continue
+                except Exception as e:
+                    logger.info(f"🔍 DEBUG: Variant {name_variant} failed: {e}")
+                    continue
+            
             if profile and 'batting_stats' in profile:
                 batting = profile['batting_stats']
+                vs_pace = profile.get('vs_pace', {})
+                vs_spin = profile.get('vs_spin', {})
+                
+                # Get strike rate from the best available source
+                strike_rate = (
+                    vs_pace.get('strike_rate') or 
+                    vs_spin.get('strike_rate') or 
+                    batting.get('strike_rate', 0)
+                )
+                
+                # Calculate batting average properly (runs/dismissals, not runs/balls)
+                batting_avg = batting.get('average', 0)
+                if batting_avg == 0 and batting.get('runs', 0) > 0:
+                    # If average is 0 but runs exist, it might be stored as runs/balls
+                    # Try to calculate a reasonable average
+                    runs = batting.get('runs', 0)
+                    balls = batting.get('balls', 1)
+                    if balls > 0:
+                        batting_avg = runs / balls  # This gives runs per ball, not true average
+                
                 return {
-                    'matches': batting.get('matches', 0),
-                    'batting_average': batting.get('average', 0),
-                    'strike_rate': batting.get('strike_rate', 0),
+                    'matches': profile.get('matches_played', 0),
+                    'batting_average': batting_avg,
+                    'strike_rate': strike_rate,
                     'runs': batting.get('runs', 0),
                     'fours': batting.get('fours', 0),
-                    'sixes': batting.get('sixes', 0)
+                    'sixes': batting.get('sixes', 0),
+                    'balls_faced': batting.get('balls', 0)
                 }
         
         # Fallback to player_data if available
@@ -825,12 +993,22 @@ if __name__ == '__main__':
     else:
         print("⚠️ Using mock data (real components not available)")
     
+    # Load simulation match context
+    print("\n🎮 Loading simulation match context...")
+    if load_simulation_match_context():
+        print("✅ Simulation match context loaded successfully")
+    else:
+        print("⚠️ Using default match context")
+    
     print("\n📡 Available API Endpoints:")
     print("  GET  /api/cards/health - Health check")
     print("  GET  /api/cards/autocomplete?partial=<text> - Real autocomplete")
     print("  POST /api/cards/generate - Generate cards with real KG + GNN data")
+    print("  POST /api/cards/enhanced - Generate enhanced cards with team context")
     print("  GET  /api/cards/popular - Get popular players")
     print("  GET  /api/cards/stats - System statistics")
+    print("  GET  /api/match-context - Get current match context")
+    print("  POST /api/match-context - Update match context")
     
     print("\n🌐 Server starting on http://127.0.0.1:5004")
     print("🎯 Ready to serve real dynamic player cards!")
