@@ -442,6 +442,10 @@
                 <i data-lucide="settings" class="w-4 h-4 mr-1"></i>
                 Admin
             </a>
+            <a href="http://localhost:8501" target="_blank" class="inline-flex items-center px-3 py-1 border border-input rounded-md text-sm bg-background hover:bg-accent text-inherit no-underline">
+                <i data-lucide="shield-check" class="w-4 h-4 mr-1"></i>
+                Governance
+            </a>
         </div>
     </div>
 
@@ -515,57 +519,77 @@
             </div>
         </div>
 
-        <!-- Betting Portfolio -->
+        <!-- Betting Intelligence Hub -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Betting Portfolio</h3>
+                <h3 class="card-title">Betting Intelligence Hub</h3>
                 <span class="text-red-600 font-medium">-$61 Total</span>
             </div>
-            <div class="card-content space-y-3">
-                <div class="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <div class="flex justify-between items-center">
-                        <span class="font-medium">RCB to Win</span>
+            <div class="card-content space-y-4">
+                <!-- Portfolio Summary -->
+                <div class="space-y-2">
+                    <div class="text-sm font-medium">Active Positions</div>
+                    <div class="grid grid-cols-1 gap-2">
+                        <div class="bg-red-50 border border-red-200 rounded p-2 flex justify-between text-sm">
+                            <span>RCB Win</span>
                         <span class="text-red-600">-$25</span>
                     </div>
-                    <div class="text-sm text-muted-foreground">Stake: $50 @ 1.80 odds</div>
-                </div>
-                <div class="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <div class="flex justify-between items-center">
-                        <span class="font-medium">Over 180.5 runs</span>
+                        <div class="bg-green-50 border border-green-200 rounded p-2 flex justify-between text-sm">
+                            <span>Over 180.5</span>
                         <span class="text-green-600">+$18</span>
                     </div>
-                    <div class="text-sm text-muted-foreground">Stake: $30 @ 1.90 odds</div>
-                </div>
-                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                    <div class="flex justify-between items-center">
-                        <span class="font-medium">Kohli 50+ runs</span>
+                        <div class="bg-gray-50 border border-gray-200 rounded p-2 flex justify-between text-sm">
+                            <span>Kohli 50+</span>
                         <span class="text-gray-600">Pending</span>
-                    </div>
-                    <div class="text-sm text-muted-foreground">Stake: $20 @ 2.40 odds</div>
-                </div>
             </div>
         </div>
     </div>
 
-    <!-- Persona Selector -->
-    <div class="mb-6">
-        <div class="flex justify-center">
-            <div class="inline-flex bg-gray-100 rounded-lg p-1" role="group">
-                <button class="persona-btn px-4 py-2 text-sm font-medium rounded-md bg-white shadow-sm text-orange-600 border border-orange-200" data-persona="betting">
-                    🎰 Betting SME
-                </button>
-                <button class="persona-btn px-4 py-2 text-sm font-medium rounded-md text-gray-600 hover:text-blue-600" data-persona="commentary">
-                    📺 TV Pundit
-                </button>
-                <button class="persona-btn px-4 py-2 text-sm font-medium rounded-md text-gray-600 hover:text-green-600" data-persona="coaching">
-                    🎯 Coaching Staff
-                </button>
-                <button class="persona-btn px-4 py-2 text-sm font-medium rounded-md text-gray-600 hover:text-red-600" data-persona="fantasy">
-                    ⚡ Fantasy Team
-                </button>
+                <!-- Market Odds & Win Probability -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="space-y-2">
+                        <div class="text-sm font-medium">Market Odds</div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-sm">
+                                <span>RCB</span>
+                                <span class="font-bold">1.45 (69%)</span>
+                </div>
+                            <div class="flex justify-between text-sm">
+                                <span>MI</span>
+                                <span class="font-bold">2.75 (36%)</span>
+                        </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="text-sm font-medium">Win Probability</div>
+                        <div class="h-16 bg-gray-50 rounded flex items-center justify-center">
+                            <div class="text-center text-xs">
+                                <div class="text-blue-600 font-bold">RCB 67%</div>
+                                <div class="text-red-600 font-bold">MI 33%</div>
+                        </div>
+                        </div>
+                        </div>
+                    </div>
+
+                <!-- Betting Signals -->
+                    <div class="space-y-2">
+                    <div class="text-sm font-medium flex items-center justify-between">
+                        <span>Betting Signals</span>
+                        <div class="flex space-x-1">
+                            <span class="badge-outline text-xs">High Liquidity</span>
+                            <span class="badge-secondary text-xs">Sharp Movement</span>
+                        </div>
+                    </div>
+                    <div class="bg-green-50 border border-green-200 rounded p-2">
+                        <div class="text-sm font-medium text-green-800">Strong Buy Signal</div>
+                        <div class="text-xs text-green-600">RCB Win @ 1.45 - Model suggests 72% win probability</div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
+                        </div>
+                    </div>
+
+
 
     <!-- Main Content Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -646,83 +670,7 @@
 
         <!-- Middle Column - Betting & AI -->
         <div class="lg:col-span-1 space-y-6">
-            <!-- Betting Signal Panel -->
-            <div class="card border-l-4 border-l-green-500">
-                <div class="card-header">
-                    <h3 class="card-title flex items-center justify-between">
-                        Betting Signals
-                        <div class="flex space-x-1">
-                            <span class="badge-outline text-xs">High Liquidity</span>
-                            <span class="badge-secondary text-xs">Sharp Movement</span>
-                        </div>
-                    </h3>
-                </div>
-                <div class="card-content space-y-4">
-                    <!-- Market Odds -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <div class="text-sm font-medium">RCB Win</div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-lg font-bold">1.45</span>
-                                <span class="text-sm text-muted-foreground">(69%)</span>
-                            </div>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="text-sm font-medium">MI Win</div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-lg font-bold">2.75</span>
-                                <span class="text-sm text-muted-foreground">(36%)</span>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Model Probability -->
-                    <div class="space-y-2">
-                        <div class="text-sm font-medium">Model Probability</div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="text-center">
-                                <div class="text-xl font-bold text-green-600">67%</div>
-                                <div class="text-xs text-muted-foreground">RCB</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-xl font-bold">33%</div>
-                                <div class="text-xs text-muted-foreground">MI</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Mispricing -->
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium">Mispricing</span>
-                        <div class="flex items-center space-x-1 px-2 py-1 rounded-full text-white bg-green-500">
-                            <i data-lucide="trending-up" class="w-4 h-4"></i>
-                            <span class="text-xs font-medium">Value</span>
-                        </div>
-                    </div>
-
-                    <!-- Suggested Action -->
-                    <div class="space-y-2">
-                        <div class="text-sm font-medium">Suggested Action</div>
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-3">
-                            <div class="flex items-center justify-between">
-                                <span class="font-medium text-green-800">Back RCB</span>
-                                <span class="badge-outline bg-green-100 text-green-800 border-green-300">Value Bet</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Confidence -->
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium">Confidence</span>
-                            <span class="text-sm font-bold">72%</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-blue-600 h-2 rounded-full" style="width: 72%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- AI Insight Console -->
             <div class="card border-l-4 border-l-purple-500">
@@ -785,98 +733,176 @@
                     </div>
                 </div>
             </div>
+
+            <!-- DGL Controls & Risk Management -->
+            <div class="card border-l-4 border-l-orange-500">
+                <div class="card-header">
+                    <h3 class="card-title flex items-center space-x-2">
+                        <i data-lucide="shield-check" class="w-5 h-5 text-orange-500"></i>
+                        <span>DGL Controls</span>
+                    </h3>
+                </div>
+                <div class="card-content space-y-4">
+                    <!-- Risk Management -->
+                    <div class="space-y-3">
+                        <div class="text-sm font-medium">Risk Management</div>
+                        <div class="space-y-2">
+                            <label class="text-sm text-gray-600">Max Stake (%)</label>
+                            <div class="flex items-center space-x-3">
+                                <input type="range" class="flex-1" id="max-stake" min="1" max="10" value="5">
+                                <span id="max-stake-value" class="text-sm font-medium w-8">5%</span>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm text-gray-600">Risk Tolerance</label>
+                            <select class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+                                <option value="conservative">Conservative</option>
+                                <option value="moderate" selected>Moderate</option>
+                                <option value="aggressive">Aggressive</option>
+                            </select>
+            </div>
         </div>
 
-        <!-- Right Column - Query & Chart -->
+                    <!-- DGL Status -->
+                    <div class="space-y-2">
+                        <div class="text-sm font-medium">DGL Status</div>
+                        <div class="flex items-center justify-between p-2 bg-green-50 border border-green-200 rounded-lg">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span class="text-sm text-green-800">Active & Compliant</span>
+                            </div>
+                            <span class="text-xs text-green-600">No violations</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="flex space-x-2">
+                        <button class="btn-secondary text-xs px-3 py-1">Reset Limits</button>
+                        <button class="btn-outline text-xs px-3 py-1">View History</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Expanded Knowledge Graph Query -->
         <div class="lg:col-span-2 space-y-6">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Knowledge Graph Query -->
+            <!-- Knowledge Graph Query - Now Full Width -->
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Knowledge Graph Query</h3>
+                    <h3 class="card-title flex items-center space-x-2">
+                        <i data-lucide="brain" class="w-5 h-5 text-purple-500"></i>
+                        <span>Knowledge Graph Intelligence</span>
+                    </h3>
                     </div>
-                    <div class="card-content space-y-4">
+                <div class="card-content space-y-6">
+                    <!-- Query Input Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        <div class="lg:col-span-2 space-y-2">
+                            <label class="text-sm font-medium">Ask about cricket patterns, player performance, or strategic insights</label>
+                            <input id="kg-query-input" type="text" placeholder="e.g. How does Kohli perform vs left-arm spin in death overs?" class="w-full p-3 border border-input rounded-md bg-input-background text-base">
+                        </div>
                         <div class="space-y-2">
-                            <label class="text-sm font-medium">Ask about cricket patterns</label>
-                            <input id="kg-query-input" type="text" placeholder="e.g. How does Kohli perform vs left-arm spin?" class="w-full p-2 border border-input rounded-md bg-input-background">
+                            <label class="text-sm font-medium">Query Type</label>
+                            <select class="w-full p-3 border border-input rounded-md bg-input-background">
+                                <option>Player Analysis</option>
+                                <option>Match Prediction</option>
+                                <option>Historical Patterns</option>
+                                <option>Venue Analysis</option>
+                                <option>Team Comparison</option>
+                            </select>
                             </div>
-                        <button id="kg-query-button" class="w-full bg-primary text-primary-foreground p-2 rounded-md hover:bg-primary/90 transition-colors">
+                    </div>
+                    
+                    <button id="kg-query-button" class="w-full bg-primary text-primary-foreground p-3 rounded-md hover:bg-primary/90 transition-colors text-base font-medium">
                             <span id="kg-query-text">Query Knowledge Graph</span>
                             <i id="kg-query-spinner" data-lucide="loader" class="w-4 h-4 ml-2 animate-spin hidden"></i>
                                 </button>
-                        <div id="kg-query-result" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
-                            <div class="text-sm font-medium mb-2 text-blue-800">Query Result:</div>
-                            <div id="kg-query-response" class="text-sm text-blue-700"></div>
+                    
+                    <!-- Query Result - Larger Display Area -->
+                    <div id="kg-query-result" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                        <div class="text-base font-medium mb-3 text-blue-800">Query Result:</div>
+                        <div id="kg-query-response" class="text-sm text-blue-700 max-h-96 overflow-y-auto"></div>
                             </div>
-                        <div class="bg-muted rounded-lg p-3">
-                            <div class="text-sm font-medium mb-2">Recent Insights</div>
+                    
+                    <!-- Enhanced Insights Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-muted rounded-lg p-4">
+                            <div class="text-sm font-medium mb-3">Recent Insights</div>
                             <div class="space-y-2 text-sm">
                                 <div>• Kohli averages 28.4 vs left-arm spin in death overs</div>
                                 <div>• RCB has won 67% of matches when scoring 180+</div>
                                 <div>• Bumrah's economy rate drops to 4.8 in final 3 overs</div>
+                                <div>• Powerplay wickets reduce win probability by 15%</div>
+                                <div>• Home advantage worth 8% win probability boost</div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-muted rounded-lg p-4">
+                            <div class="text-sm font-medium mb-3">Suggested Queries</div>
+                            <div class="space-y-2">
+                                <button class="suggested-query w-full text-left text-sm bg-white rounded p-2 hover:bg-gray-50 transition-colors" data-query="Who are players similar to V Kohli?">
+                                    Who are players similar to V Kohli?
+                                </button>
+                                <button class="suggested-query w-full text-left text-sm bg-white rounded p-2 hover:bg-gray-50 transition-colors" data-query="Best bowling matchups vs RCB batting lineup?">
+                                    Best bowling matchups vs RCB batting lineup?
+                                </button>
+                                <button class="suggested-query w-full text-left text-sm bg-white rounded p-2 hover:bg-gray-50 transition-colors" data-query="Historical performance at this venue?">
+                                    Historical performance at this venue?
+                                </button>
+                                <button class="suggested-query w-full text-left text-sm bg-white rounded p-2 hover:bg-gray-50 transition-colors" data-query="Key players for death overs strategy?">
+                                    Key players for death overs strategy?
+                                </button>
+                            </div>
                         </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Win Probability Chart -->
-                <div class="card">
+                <!-- Simulation Controls -->
+                <div class="card border-l-4 border-l-blue-500">
                     <div class="card-header">
                         <h3 class="card-title flex items-center space-x-2">
-                            <i data-lucide="trending-up" class="w-5 h-5 text-blue-500"></i>
-                            <span>Win Probability</span>
+                            <i data-lucide="play-circle" class="w-5 h-5 text-blue-500"></i>
+                            <span>Simulation Engine</span>
                         </h3>
                     </div>
                     <div class="card-content space-y-4">
-                        <!-- Chart placeholder -->
-                        <div class="h-48 bg-gray-50 rounded-lg flex items-center justify-center">
-                            <div class="text-center text-muted-foreground">
-                                <i data-lucide="line-chart" class="w-12 h-12 mx-auto mb-2"></i>
-                                <p>Win Probability Chart</p>
-                                <p class="text-sm">RCB 67% - MI 33%</p>
-                            </div>
-                        </div>
-
-                        <!-- Legend -->
-                        <div class="flex items-center justify-center space-x-6">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-                                <span class="text-sm">RCB Win %</span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-                                <span class="text-sm">MI Win %</span>
-                            </div>
-                        </div>
-
-                        <!-- Key Events -->
+                        <!-- Simulation Mode -->
                         <div class="space-y-2">
-                            <div class="text-sm font-medium">Key Events</div>
-                            <div class="space-y-1 text-xs">
-                                <div class="flex items-center justify-between">
-                                    <span>Over 2: Early wicket</span>
-                                    <span class="text-muted-foreground">MI favored</span>
+                            <label class="text-sm text-gray-600">Simulation Mode</label>
+                            <select class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+                                <option value="rapid">Rapid Simulation</option>
+                                <option value="slow" selected>Slow Simulation</option>
+                                <option value="detailed">Detailed Analysis</option>
+                            </select>
+                        </div>
+
+                        <!-- Match Selection -->
+                        <div class="space-y-2">
+                            <label class="text-sm text-gray-600">Match Selection</label>
+                            <select class="w-full p-2 border border-gray-300 rounded-lg text-sm">
+                                <option value="holdout">20% Holdout Matches</option>
+                                <option value="recent">Recent Matches</option>
+                                <option value="custom">Custom Selection</option>
+                            </select>
+                        </div>
+
+                        <!-- Simulation Status -->
+                        <div class="space-y-2">
+                            <div class="text-sm font-medium">Status</div>
+                            <div class="flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    <span class="text-sm text-blue-800">Ready to Simulate</span>
                                 </div>
-                                <div class="flex items-center justify-between">
-                                    <span>Over 15: Big over</span>
-                                    <span class="text-muted-foreground">RCB favored</span>
-                                </div>
+                                <span class="text-xs text-blue-600">0 violations</span>
                             </div>
                         </div>
 
-                        <!-- Market vs Model -->
-                        <div class="bg-gray-50 rounded-lg p-3 space-y-2">
-                            <div class="text-sm font-medium">Market vs Model</div>
-                            <div class="grid grid-cols-2 gap-4 text-xs">
-                                <div>
-                                    <div class="text-muted-foreground">Market Odds</div>
-                                    <div>RCB: 1.45 | MI: 2.75</div>
-                                </div>
-                                <div>
-                                    <div class="text-muted-foreground">Model Win %</div>
-                                    <div>RCB: 67% | MI: 33%</div>
-                                </div>
-                            </div>
+                        <!-- Actions -->
+                        <div class="flex space-x-2">
+                            <button class="btn-primary text-xs px-3 py-1 flex-1">Run Simulation</button>
+                            <button class="btn-outline text-xs px-3 py-1">View Results</button>
                         </div>
                     </div>
                 </div>
@@ -1329,7 +1355,7 @@
         
         // Simple fallback markdown processor
         function simpleMarkdownProcessor(text) {
-            return text
+            let html = text
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                 .replace(/\*(.*?)\*/g, '<em>$1</em>')
                 .replace(/`(.*?)`/g, '<code>$1</code>')
@@ -1337,6 +1363,64 @@
                 .replace(/^## (.*$)/gim, '<h2>$1</h2>')
                 .replace(/^### (.*$)/gim, '<h3>$1</h3>')
                 .replace(/\n/g, '<br>');
+            
+            // Handle tables
+            if (html.includes('|')) {
+                html = renderMarkdownTable(html);
+            }
+            
+            return html;
+        }
+        
+        function renderMarkdownTable(text) {
+            const lines = text.split('<br>');
+            let inTable = false;
+            let tableHtml = '';
+            let result = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                if (line.includes('|') && !line.startsWith('---')) {
+                    if (!inTable) {
+                        inTable = true;
+                        tableHtml = '<table style="border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.9rem; border: 1px solid #ddd;"><tbody>';
+                    }
+                    
+                    const cells = line.split('|').map(cell => cell.trim()).filter(cell => cell);
+                    const isHeader = i === 0 || (result.length > 0 && !result[result.length - 1].includes('<table>'));
+                    
+                    tableHtml += '<tr>';
+                    cells.forEach(cell => {
+                        const tag = isHeader ? 'th' : 'td';
+                        const style = isHeader 
+                            ? 'padding: 0.5rem; border: 1px solid #ddd; background: #f8f9fa; color: #333; font-weight: bold;'
+                            : 'padding: 0.5rem; border: 1px solid #ddd;';
+                        tableHtml += `<${tag} style="${style}">${cell}</${tag}>`;
+                    });
+                    tableHtml += '</tr>';
+                } else if (line.startsWith('---') && inTable) {
+                    // Skip separator line
+                    continue;
+                } else {
+                    if (inTable) {
+                        tableHtml += '</tbody></table>';
+                        result.push(tableHtml);
+                        tableHtml = '';
+                        inTable = false;
+                    }
+                    if (line) {
+                        result.push(line);
+                    }
+                }
+            }
+            
+            if (inTable) {
+                tableHtml += '</tbody></table>';
+                result.push(tableHtml);
+            }
+            
+            return result.join('<br>');
         }
         
         // Check if libraries loaded successfully
@@ -1367,6 +1451,16 @@
             adminButton.addEventListener('click', function() {
                 console.log('Admin button clicked - redirecting to new admin panel');
                 window.open('wicketwise_admin_redesigned.html', '_blank');
+            });
+            }
+            
+            // Max Stake Slider functionality
+            const maxStakeSlider = document.getElementById('max-stake');
+            const maxStakeValue = document.getElementById('max-stake-value');
+            
+            if (maxStakeSlider && maxStakeValue) {
+                maxStakeSlider.addEventListener('input', function(e) {
+                    maxStakeValue.textContent = e.target.value + '%';
             });
             }
             
@@ -2045,15 +2139,26 @@
                 if (kgQueryButton) kgQueryButton.disabled = true;
                 if (kgQueryResult) kgQueryResult.classList.add('hidden');
                 
-                // Use Enhanced Cricket Intelligence Engine
-                console.log('🧠 Processing query with Enhanced Cricket Intelligence:', query);
+                // Use Real KG Chat API
+                console.log('🧠 Processing query with Real KG API:', query);
                 
-                // Simulate enhanced processing with real intelligence
-                setTimeout(() => {
-                    const enhancedResponse = generateEnhancedIntelligenceResponse(query);
-                    
-                    if (kgQueryResponse && kgQueryResult) {
-                        kgQueryResponse.innerHTML = enhancedResponse;
+                // Call the real KG chat API
+                fetch('http://127.0.0.1:5001/api/kg-chat', {
+                method: 'POST',
+                headers: {
+                        'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                        message: query,
+                        chat_history: []
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.response && kgQueryResponse && kgQueryResult) {
+                        // Process the markdown response
+                        const processedResponse = processMarkdownWithCharts(data.response);
+                        kgQueryResponse.innerHTML = processedResponse;
                         kgQueryResult.classList.remove('hidden');
                     }
                     
@@ -2064,56 +2169,19 @@
                     
                     // Clear input
                     kgQueryInput.value = '';
-                }, 2000);
-                
-                return; // Skip the old API call
-                
-                fetch('http://127.0.0.1:5001/api/kg-chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                        message: query,
-                        session_id: 'dashboard_query_' + Date.now()
-                    })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.response && kgQueryResponse && kgQueryResult) {
-                        // Process markdown for the response
-                        const processedResponse = processMarkdownWithCharts(data.response);
-                        kgQueryResponse.innerHTML = processedResponse;
-                        kgQueryResult.classList.remove('hidden');
-                        
-                        // Apply syntax highlighting if available
-                        setTimeout(() => {
-                            if (window.Prism) {
-                                Prism.highlightAllUnder(kgQueryResponse);
-                            }
-                        }, 50);
-                    } else if (data.error) {
-                        if (kgQueryResponse && kgQueryResult) {
-                            kgQueryResponse.innerHTML = `<span style="color: #ef4444;">Error: ${data.error}</span>`;
-                            kgQueryResult.classList.remove('hidden');
-                        }
-                    }
-                })
-                .catch(err => {
-                    console.error('Dashboard query error:', err);
+                .catch(error => {
+                    console.error('❌ KG Chat API Error:', error);
+                    
                     if (kgQueryResponse && kgQueryResult) {
-                        kgQueryResponse.innerHTML = '<span style="color: #ef4444;">Unable to connect to the knowledge graph. Please ensure the backend is running.</span>';
+                        kgQueryResponse.innerHTML = `<div class="text-red-600">Error: Unable to process query. Please try again.</div>`;
                         kgQueryResult.classList.remove('hidden');
                     }
-                })
-                .finally(() => {
-                    // Reset button state
-                    if (kgQueryText) kgQueryText.textContent = 'Query Knowledge Graph';
+                    
+                    // Hide loading state
                     if (kgQuerySpinner) kgQuerySpinner.classList.add('hidden');
                     if (kgQueryButton) kgQueryButton.disabled = false;
-                    
-                    // Re-initialize icons
-                    lucide.createIcons();
+                    if (kgQueryText) kgQueryText.textContent = '🧠 Cricket Intelligence Analysis';
                 });
             }
             
@@ -2130,78 +2198,31 @@
                     }
                 });
             }
-        });
-
-        // Enhanced Dashboard - Persona Switching
-        let currentPersona = 'betting';
-        const ENHANCED_API_BASE = 'http://127.0.0.1:5002/api/enhanced';
-
-        // Initialize persona switching
-        document.addEventListener('DOMContentLoaded', function() {
-            initializePersonaSwitching();
-            loadEnhancedPlayerCards(currentPersona);
-        });
-
-        function initializePersonaSwitching() {
-            const personaBtns = document.querySelectorAll('.persona-btn');
             
-            personaBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const persona = this.dataset.persona;
-                    switchPersona(persona);
+            // Add event listeners for suggested query buttons
+            const suggestedQueryButtons = document.querySelectorAll('.suggested-query');
+            suggestedQueryButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const query = this.getAttribute('data-query');
+                    if (kgQueryInput && query) {
+                        kgQueryInput.value = query;
+                        executeMainDashboardQuery();
+                    }
                 });
             });
-        }
+        });
 
-        function switchPersona(persona) {
-            currentPersona = persona;
-            
-            // Update button styles
-            document.querySelectorAll('.persona-btn').forEach(btn => {
-                btn.classList.remove('bg-white', 'shadow-sm', 'text-orange-600', 'border', 'border-orange-200');
-                btn.classList.add('text-gray-600');
-                
-                if (btn.dataset.persona === persona) {
-                    btn.classList.remove('text-gray-600');
-                    btn.classList.add('bg-white', 'shadow-sm', 'border');
-                    
-                    // Persona-specific colors
-                    switch(persona) {
-                        case 'betting':
-                            btn.classList.add('text-orange-600', 'border-orange-200');
-                            break;
-                        case 'commentary':
-                            btn.classList.add('text-blue-600', 'border-blue-200');
-                            break;
-                        case 'coaching':
-                            btn.classList.add('text-green-600', 'border-green-200');
-                            break;
-                        case 'fantasy':
-                            btn.classList.add('text-red-600', 'border-red-200');
-                            break;
-                    }
-                }
-            });
-            
-            // Update player cards title
-            const playerCardsTitleElement = document.getElementById('playerCardsTitle');
-            if (playerCardsTitleElement) {
-                const titles = {
-                    'betting': '🎰 Betting Player Intelligence',
-                    'commentary': '📺 Commentary Player Intelligence',
-                    'coaching': '🎯 Tactical Player Intelligence',
-                    'fantasy': '⚡ Fantasy Player Intelligence'
-                };
-                playerCardsTitleElement.textContent = titles[persona] || titles.betting;
-            }
-            
-            // Load persona-specific player cards
-            loadEnhancedPlayerCards(persona);
-        }
+        // Enhanced Dashboard - Player Cards
+        const ENHANCED_API_BASE = 'http://127.0.0.1:5002/api/enhanced';
 
-        async function loadEnhancedPlayerCards(persona) {
+        // Initialize player cards
+        document.addEventListener('DOMContentLoaded', function() {
+            loadEnhancedPlayerCards();
+        });
+
+        async function loadEnhancedPlayerCards() {
             try {
-                console.log(`Loading ${persona} player cards...`);
+                console.log('Loading player cards...');
                 
                 // Load real player cards from our enhanced API
                 const popularPlayers = ['Virat Kohli', 'MS Dhoni', 'Rohit Sharma', 'KL Rahul', 'Hardik Pandya', 'Jasprit Bumrah'];
@@ -2217,7 +2238,7 @@
                 
                 // Generate cards for popular players
                 const cardPromises = popularPlayers.slice(0, 6).map(playerName => 
-                    generateEnhancedPlayerCard(playerName, persona)
+                    generateEnhancedPlayerCard(playerName)
                 );
                 
                 const cards = await Promise.all(cardPromises);
@@ -2226,13 +2247,13 @@
             } catch (error) {
                 console.error('Error loading enhanced player cards:', error);
                 // Fallback to existing cards
-                updatePlayerCardStyling(persona);
+                updatePlayerCardStyling();
             }
         }
 
-        async function generateEnhancedPlayerCard(playerName, persona) {
+        async function generateEnhancedPlayerCard(playerName) {
             try {
-                const response = await fetch('http://127.0.0.1:5005/api/cards/generate', {
+                const response = await fetch('http://127.0.0.1:5004/api/cards/generate', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

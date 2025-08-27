@@ -390,6 +390,16 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
+            <div style="position: absolute; top: 2rem; left: 2rem;">
+                <button onclick="window.location.href='wicketwise_dashboard.html'" 
+                        style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); 
+                               padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; 
+                               backdrop-filter: blur(10px); transition: all 0.3s ease;
+                               display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+                    Back to Dashboard
+                </button>
+            </div>
             <h1>🏏 WicketWise Admin</h1>
             <p>Redesigned Data Pipeline Management</p>
         </div>
@@ -850,7 +860,7 @@
             addLog('info', '🚀 Starting Knowledge Graph build...');
             
             try {
-                const response = await fetch('http://127.0.0.1:5001/api/build-kg', {
+                const response = await fetch('http://127.0.0.1:5001/api/build-unified-knowledge-graph', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ use_enriched_data: true })

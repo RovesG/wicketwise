@@ -404,6 +404,12 @@ class UnifiedKGBuilder:
                 
             if 'runs_scored' in df.columns:
                 df['runs_scored'] = pd.to_numeric(df['runs_scored'], errors='coerce').fillna(0).astype(int)
+            elif 'runs_batter' in df.columns:
+                # Map 'runs_batter' column to 'runs_scored' for boundary calculation
+                df['runs_scored'] = pd.to_numeric(df['runs_batter'], errors='coerce').fillna(0).astype(int)
+            elif 'runs' in df.columns:
+                # Map 'runs' column to 'runs_scored' for boundary calculation
+                df['runs_scored'] = pd.to_numeric(df['runs'], errors='coerce').fillna(0).astype(int)
             else:
                 df['runs_scored'] = 0  # Default runs
                 
@@ -892,18 +898,26 @@ class UnifiedKGBuilder:
         
         # Compute comprehensive batting statistics using efficient aggregation
         if 'batter_name' in df.columns:
-            # Find boundary columns flexibly
-            four_col = None
-            for col_name in ['is_four', 'four', 'fours', 'boundary_four', 'is_boundary_four']:
-                if col_name in df.columns:
-                    four_col = col_name
-                    break
-            
-            six_col = None
-            for col_name in ['is_six', 'six', 'sixes', 'boundary_six', 'is_boundary_six']:
-                if col_name in df.columns:
-                    six_col = col_name
-                    break
+            # Create boundary columns from runs_scored
+            if 'runs_scored' in df.columns:
+                df['is_four'] = (df['runs_scored'] == 4).astype(int)
+                df['is_six'] = (df['runs_scored'] == 6).astype(int)
+                four_col = 'is_four'
+                six_col = 'is_six'
+                logger.info(f"   🎯 Created boundary columns: {df['is_four'].sum():,} fours, {df['is_six'].sum():,} sixes")
+            else:
+                # Find boundary columns flexibly (fallback)
+                four_col = None
+                for col_name in ['is_four', 'four', 'fours', 'boundary_four', 'is_boundary_four']:
+                    if col_name in df.columns:
+                        four_col = col_name
+                        break
+                
+                six_col = None
+                for col_name in ['is_six', 'six', 'sixes', 'boundary_six', 'is_boundary_six']:
+                    if col_name in df.columns:
+                        six_col = col_name
+                        break
             
             # Build aggregation dictionary dynamically
             agg_dict = {}

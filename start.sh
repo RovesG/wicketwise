@@ -209,7 +209,7 @@ show_system_status() {
     
     echo ""
     print_info "🎯 Main URLs:"
-    echo "  🏏 Unified Dashboard: http://localhost:$STATIC_SERVER_PORT/wicketwise_unified_dashboard.html"
+    echo "  🏏 Main Dashboard: http://localhost:$STATIC_SERVER_PORT/wicketwise_dashboard.html"
     echo "  ⚙️  Legacy Admin Panel: http://localhost:$STATIC_SERVER_PORT/wicketwise_admin_redesigned.html"
     echo "  🛡️  DGL API: http://localhost:$DGL_PORT"
     echo "  📊 Enhanced API: http://localhost:$ENHANCED_API_PORT"
@@ -296,7 +296,7 @@ run_quick_test() {
 
 # Function to open browser
 open_browser() {
-    local url="http://localhost:$STATIC_SERVER_PORT/wicketwise_unified_dashboard.html"
+    local url="http://localhost:$STATIC_SERVER_PORT/wicketwise_dashboard.html"
     
     if command -v open >/dev/null 2>&1; then
         # macOS
