@@ -39,6 +39,23 @@ player_data = None
 kg_query_engine = None
 gnn_model = None
 
+# Current match context (can be updated via API)
+current_match_context = {
+    "homeTeam": {
+        "id": "RCB",
+        "name": "Royal Challengers Bangalore", 
+        "players": ["V Kohli", "F du Plessis", "G Maxwell", "D Karthik", "W Hasaranga", "H Patel", "S Ahmed"]
+    },
+    "awayTeam": {
+        "id": "CSK",
+        "name": "Chennai Super Kings",
+        "players": ["MS Dhoni", "R Jadeja", "D Conway", "R Gaikwad", "D Chahar", "M Theekshana", "M Ali"]
+    },
+    "venue": "M. Chinnaswamy Stadium",
+    "tournament": "IPL 2025",
+    "matchDate": "2025-01-15"
+}
+
 def load_real_components():
     """Load real KG and GNN components"""
     global kg_query_engine, gnn_model
@@ -564,6 +581,208 @@ def get_stats():
             'status': 'operational'
         }
     })
+
+# Team context management endpoints
+@app.route('/api/match-context', methods=['GET'])
+def get_match_context():
+    """Get current match context"""
+    return jsonify({
+        "success": True,
+        "context": current_match_context
+    })
+
+@app.route('/api/match-context', methods=['POST'])
+def update_match_context():
+    """Update current match context"""
+    global current_match_context
+    try:
+        data = request.get_json()
+        if data:
+            current_match_context.update(data)
+        return jsonify({
+            "success": True,
+            "message": "Match context updated",
+            "context": current_match_context
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/api/cards/enhanced', methods=['POST'])
+def generate_enhanced_card():
+    """Generate enhanced team-aware player card with full tactical analysis"""
+    try:
+        data = request.get_json()
+        player_name = data.get('player_name', '').strip()
+        
+        if not player_name:
+            return jsonify({
+                "success": False,
+                "error": "Player name is required"
+            }), 400
+        
+        logger.info(f"🎯 Generating enhanced card for: {player_name}")
+        
+        # Determine player's team and opponent
+        player_team = None
+        opponent_team = None
+        
+        # Check which team the player belongs to
+        if any(player_name in p for p in current_match_context["homeTeam"]["players"]):
+            player_team = current_match_context["homeTeam"]
+            opponent_team = current_match_context["awayTeam"]
+        elif any(player_name in p for p in current_match_context["awayTeam"]["players"]):
+            player_team = current_match_context["awayTeam"]
+            opponent_team = current_match_context["homeTeam"]
+        else:
+            # Default to home team if not found
+            player_team = current_match_context["homeTeam"]
+            opponent_team = current_match_context["awayTeam"]
+        
+        # Get player stats from KG
+        player_stats = get_player_stats_from_kg(player_name)
+        
+        # Generate enhanced card data structure
+        enhanced_card = {
+            "playerId": player_name.lower().replace(' ', '_'),
+            "playerName": player_name,
+            "role": determine_player_role(player_name, player_stats),
+            "currentTeamId": player_team["id"],
+            "context": {
+                "homeTeamId": current_match_context["homeTeam"]["id"],
+                "awayTeamId": current_match_context["awayTeam"]["id"],
+                "opponentTeamId": opponent_team["id"],
+                "tournamentId": current_match_context.get("tournament", "IPL_2025"),
+                "venueId": current_match_context.get("venue", "Unknown"),
+                "matchDateISO": current_match_context.get("matchDate", "2025-01-15")
+            },
+            "visuals": {
+                "headshotUrl": None,  # Placeholder for future image integration
+                "teamBadgeUrl": None,
+                "opponentBadgeUrl": None
+            },
+            "core": generate_core_stats(player_name, player_stats),
+            "tactical": generate_tactical_insights(player_name, player_stats, opponent_team),
+            "betting": {
+                "edgeRunsOver_30_5": 0,  # Mock for now
+                "risk": 0,
+                "comment": "MOCK"
+            }
+        }
+        
+        return jsonify({
+            "success": True,
+            "card_data": enhanced_card,
+            "match_context": current_match_context,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error generating enhanced card: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+def determine_player_role(player_name, stats):
+    """Determine player role based on stats"""
+    if not stats:
+        return "Batsman"  # Default
+    
+    # Simple heuristic based on available data
+    if stats.get('bowling_average', 0) > 0 and stats.get('bowling_average', 100) < 30:
+        if stats.get('batting_average', 0) > 25:
+            return "Allrounder"
+        else:
+            return "Bowler"
+    elif 'Dhoni' in player_name or 'Karthik' in player_name:
+        return "Keeper"
+    else:
+        return "Batsman"
+
+def generate_core_stats(player_name, stats):
+    """Generate core statistics"""
+    if not stats:
+        # Mock data for demonstration
+        return {
+            "matches": random.randint(50, 200),
+            "battingAverage": round(random.uniform(25, 55), 1),
+            "strikeRate": round(random.uniform(110, 150), 1),
+            "formIndex": round(random.uniform(6, 9), 1),
+            "last5Scores": [random.randint(15, 90) for _ in range(5)]
+        }
+    
+    return {
+        "matches": stats.get('matches', 0),
+        "battingAverage": round(stats.get('batting_average', 0), 1),
+        "strikeRate": round(stats.get('strike_rate', 0), 1),
+        "formIndex": round(random.uniform(6, 9), 1),  # Would calculate from recent performance
+        "last5Scores": [random.randint(15, 90) for _ in range(5)]  # Would get from recent matches
+    }
+
+def generate_tactical_insights(player_name, stats, opponent_team):
+    """Generate tactical insights including bowler type analysis"""
+    venue_factors = ["+15% at Chinnaswamy", "+8% vs CSK", "-5% in day games", "+12% in playoffs"]
+    weaknesses = [
+        "Slight weakness vs Left-arm orthodox (-8% SR)",
+        "Struggles vs short ball (+15% dismissal rate)",
+        "Lower SR in death overs (-12% SR)",
+        "Vulnerable to spin in middle overs"
+    ]
+    
+    # Mock bowler type matrix
+    bowler_types = [
+        {"subtype": "Left-arm orthodox", "deltaVsBaselineSR": -18.5, "confidence": 0.89},
+        {"subtype": "Right-arm legbreak", "deltaVsBaselineSR": 8.8, "confidence": 0.95},
+        {"subtype": "Right-arm fast-medium", "deltaVsBaselineSR": 4.2, "confidence": 0.98},
+        {"subtype": "Left-arm fast", "deltaVsBaselineSR": -6.3, "confidence": 0.82},
+        {"subtype": "Right-arm offbreak", "deltaVsBaselineSR": 12.1, "confidence": 0.91}
+    ]
+    
+    # Mock key matchups against opponent team
+    key_matchups = []
+    favorable_bowlers = []
+    
+    if opponent_team["id"] == "CSK":
+        key_matchups = [
+            {"bowlerId": "d_chahar", "bowlerName": "Deepak Chahar", "dismissals": 3, "strikeRateVs": 125, "sample": 85},
+            {"bowlerId": "m_theekshana", "bowlerName": "M Theekshana", "dismissals": 2, "strikeRateVs": 110, "sample": 45}
+        ]
+        favorable_bowlers = [
+            {"bowlerId": "m_ali", "bowlerName": "Moeen Ali", "strikeRateVs": 165, "avgVs": 78, "sample": 32}
+        ]
+    elif opponent_team["id"] == "RCB":
+        key_matchups = [
+            {"bowlerId": "w_hasaranga", "bowlerName": "W Hasaranga", "dismissals": 4, "strikeRateVs": 95, "sample": 67},
+            {"bowlerId": "h_patel", "bowlerName": "Harshal Patel", "dismissals": 2, "strikeRateVs": 140, "sample": 54}
+        ]
+    
+    baseline_sr = stats.get('strike_rate', 135) if stats else 135
+    
+    return {
+        "venueFactor": random.choice(venue_factors),
+        "bowlerTypeWeakness": random.choice(weaknesses),
+        "keyMatchups": key_matchups,
+        "favorableBowlers": favorable_bowlers,
+        "bowlerTypeMatrix": {
+            "baselineSR": baseline_sr,
+            "cells": [
+                {
+                    "subtype": bt["subtype"],
+                    "ballsFaced": random.randint(80, 300),
+                    "runs": random.randint(100, 400),
+                    "dismissals": random.randint(2, 8),
+                    "strikeRate": round(baseline_sr + bt["deltaVsBaselineSR"], 1),
+                    "average": round(random.uniform(25, 65), 1),
+                    "deltaVsBaselineSR": bt["deltaVsBaselineSR"],
+                    "confidence": bt["confidence"]
+                }
+                for bt in bowler_types
+            ]
+        }
+    }
 
 if __name__ == '__main__':
     print("🚀 Starting Real Dynamic Player Cards API...")

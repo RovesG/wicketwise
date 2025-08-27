@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Player Card v2 - Team Aware</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .player-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            max-width: 480px;
+            margin: 0 auto;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .player-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .player-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            border: 2px solid #cbd5e1;
+            object-fit: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .player-details h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .player-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .team-matchup {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .team-badge {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.625rem;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .core-stats {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            align-items: center;
+        }
+
+        .form-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge.form {
+            background: linear-gradient(135deg, #fef3c7, #fed7aa);
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+
+        .matches-info {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .sparkline-container {
+            margin-top: 0.5rem;
+        }
+
+        .sparkline {
+            stroke: #c8712d;
+            fill: none;
+        }
+
+        .stats-display {
+            text-align: right;
+        }
+
+        .stat-group {
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-bottom: 0.125rem;
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .pills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .matchups-section {
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+
+        .matchups-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .matchup-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.75rem;
+        }
+
+        .matchup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .matchup-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .sample-badge {
+            background: white;
+            border: 1px solid #d1d5db;
+            padding: 0.125rem 0.375rem;
+            border-radius: 8px;
+            font-size: 0.625rem;
+            color: #6b7280;
+        }
+
+        .matchup-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .matchup-stats span.value {
+            color: #1f2937;
+            font-weight: 500;
+        }
+
+        .bowler-types-section {
+            margin-bottom: 1rem;
+        }
+
+        .bowler-type-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .bowler-type-name {
+            font-size: 0.875rem;
+        }
+
+        .delta-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 120px;
+        }
+
+        .delta-bar-left, .delta-bar-right {
+            height: 8px;
+            width: 40px;
+            background: #f1f5f9;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .delta-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .delta-fill.negative {
+            background: #ef4444;
+        }
+
+        .delta-fill.positive {
+            background: #10b981;
+        }
+
+        .delta-value {
+            font-size: 0.75rem;
+            font-variant-numeric: tabular-nums;
+            width: 32px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .actions-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 0.75rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: white;
+            color: #374151;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+
+        .btn.primary {
+            background: #c8712d;
+            color: white;
+            border-color: #c8712d;
+        }
+
+        .btn.primary:hover {
+            background: #b8661f;
+        }
+
+        .betting-strip {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .betting-strip .label {
+            color: #64748b;
+        }
+
+        .betting-strip .value {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .mock-badge {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 0.125rem 0.375rem;
+            border-radius: 6px;
+            font-size: 0.625rem;
+            font-weight: 500;
+        }
+
+        .current-teams {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .teams-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .team-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .team-name {
+            font-weight: 600;
+            color: #0369a1;
+        }
+
+        .vs-separator {
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .team-players {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .team-roster {
+            background: white;
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+
+        .roster-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #374151;
+        }
+
+        .player-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+
+        .player-chip {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            color: #475569;
+        }
+
+        .player-chip.current {
+            background: #c8712d;
+            color: white;
+            border-color: #c8712d;
+        }
+    </style>
+</head>
+<body>
+    <div class="current-teams" id="current-teams">
+        <div class="teams-header">
+            <div class="team-info">
+                <div class="team-badge" id="home-team-badge">RCB</div>
+                <span class="team-name" id="home-team-name">Royal Challengers Bangalore</span>
+            </div>
+            <span class="vs-separator">vs</span>
+            <div class="team-info">
+                <div class="team-badge" id="away-team-badge">CSK</div>
+                <span class="team-name" id="away-team-name">Chennai Super Kings</span>
+            </div>
+        </div>
+        <div class="team-players">
+            <div class="team-roster">
+                <div class="roster-title" id="home-roster-title">RCB Squad</div>
+                <div class="player-list" id="home-players">
+                    <span class="player-chip">V Kohli</span>
+                    <span class="player-chip">F du Plessis</span>
+                    <span class="player-chip">G Maxwell</span>
+                    <span class="player-chip">D Karthik</span>
+                    <span class="player-chip">W Hasaranga</span>
+                </div>
+            </div>
+            <div class="team-roster">
+                <div class="roster-title" id="away-roster-title">CSK Squad</div>
+                <div class="player-list" id="away-players">
+                    <span class="player-chip">MS Dhoni</span>
+                    <span class="player-chip">R Jadeja</span>
+                    <span class="player-chip">D Conway</span>
+                    <span class="player-chip">R Gaikwad</span>
+                    <span class="player-chip">D Chahar</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="player-card" id="player-card">
+        <div class="card-header">
+            <div class="player-info">
+                <div class="player-avatar" id="player-avatar">VK</div>
+                <div class="player-details">
+                    <h3 id="player-name">Virat Kohli</h3>
+                    <div class="player-meta">
+                        <span id="player-role">Batsman</span>
+                        <span>•</span>
+                        <span style="display: flex; align-items: center; gap: 0.25rem;">
+                            <i data-lucide="sparkles" style="width: 12px; height: 12px;"></i>
+                            REAL KG DATA
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="team-matchup">
+                <div class="team-badge" id="current-team-badge">RCB</div>
+                <i data-lucide="swords" style="width: 16px; height: 16px; color: #64748b;"></i>
+                <div class="team-badge" id="opponent-team-badge">CSK</div>
+            </div>
+        </div>
+
+        <div class="core-stats">
+            <div>
+                <div class="form-section">
+                    <div class="badge form">
+                        <i data-lucide="flame" style="width: 14px; height: 14px;"></i>
+                        Form <span id="form-index">8.7</span>/10
+                    </div>
+                    <div class="matches-info">
+                        Matches <span id="matches-count">779</span>
+                    </div>
+                </div>
+                <div class="sparkline-container">
+                    <svg width="120" height="32" id="sparkline-svg">
+                        <polyline class="sparkline" id="sparkline-path" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="stats-display">
+                <div class="stat-group">
+                    <div class="stat-label">Avg</div>
+                    <div class="stat-value" id="batting-average">52.0</div>
+                </div>
+                <div class="stat-group">
+                    <div class="stat-label">SR</div>
+                    <div class="stat-value" id="strike-rate">136.4</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pills-container">
+            <div class="pill">
+                <i data-lucide="trending-up" style="width: 12px; height: 12px;"></i>
+                <span id="venue-factor">+15% at Chinnaswamy</span>
+            </div>
+            <div class="pill">
+                <i data-lucide="info" style="width: 12px; height: 12px;"></i>
+                <span id="bowler-weakness">Slight weakness vs Left-arm orthodox (-8% SR)</span>
+            </div>
+            <div class="pill">
+                <i data-lucide="bar-chart-3" style="width: 12px; height: 12px;"></i>
+                Baseline SR <span id="baseline-sr">136.4</span>
+            </div>
+        </div>
+
+        <div class="matchups-section">
+            <div class="section-title">Key matchups vs <span id="opponent-name">CSK</span></div>
+            <div class="matchups-grid" id="matchups-grid">
+                <div class="matchup-card">
+                    <div class="matchup-header">
+                        <div class="matchup-name">Rashid Khan</div>
+                        <div class="sample-badge">n=120</div>
+                    </div>
+                    <div class="matchup-stats">
+                        <div>Dismissals <span class="value">5</span></div>
+                        <div>SR vs <span class="value">85</span></div>
+                    </div>
+                </div>
+                <div class="matchup-card">
+                    <div class="matchup-header">
+                        <div class="matchup-name">Mitchell Starc</div>
+                        <div class="sample-badge">n=64</div>
+                    </div>
+                    <div class="matchup-stats">
+                        <div>Dismissals <span class="value">3</span></div>
+                        <div>SR vs <span class="value">70</span></div>
+                    </div>
+                </div>
+                <div class="matchup-card">
+                    <div class="matchup-header">
+                        <div class="matchup-name">Favorable: Deepak Chahar</div>
+                        <div class="sample-badge">n=55</div>
+                    </div>
+                    <div class="matchup-stats">
+                        <div>Avg vs <span class="value">65</span></div>
+                        <div>SR vs <span class="value">145</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bowler-types-section">
+            <div class="section-title">By bowler subtype (Δ SR vs baseline)</div>
+            <div id="bowler-types-list">
+                <div class="bowler-type-row">
+                    <div class="bowler-type-name">Left-arm orthodox</div>
+                    <div class="delta-bar">
+                        <div class="delta-bar-left">
+                            <div class="delta-fill negative" style="width: 62%;"></div>
+                        </div>
+                        <div class="delta-value">-18.5</div>
+                        <div class="delta-bar-right"></div>
+                    </div>
+                </div>
+                <div class="bowler-type-row">
+                    <div class="bowler-type-name">Right-arm legbreak</div>
+                    <div class="delta-bar">
+                        <div class="delta-bar-left"></div>
+                        <div class="delta-value">+8.8</div>
+                        <div class="delta-bar-right">
+                            <div class="delta-fill positive" style="width: 29%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bowler-type-row">
+                    <div class="bowler-type-name">Right-arm fast-medium</div>
+                    <div class="delta-bar">
+                        <div class="delta-bar-left"></div>
+                        <div class="delta-value">+4.2</div>
+                        <div class="delta-bar-right">
+                            <div class="delta-fill positive" style="width: 14%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions-section">
+            <div class="action-buttons">
+                <button class="btn primary" onclick="viewDetails()">View Details</button>
+                <button class="btn" onclick="askAI()">Ask AI</button>
+                <button class="btn" onclick="compare()">Compare</button>
+            </div>
+            <div class="betting-strip">
+                <span class="label">Betting</span>
+                <span class="mock-badge">MOCK</span>
+                <span class="label">Edge >30.5:</span>
+                <span class="value" id="betting-edge">0</span>
+                <span class="label">Risk:</span>
+                <span class="value" id="betting-risk">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Mock data structure based on the React component
+        const mockPlayerData = {
+            playerId: "virat_kohli",
+            playerName: "Virat Kohli",
+            role: "Batsman",
+            currentTeamId: "RCB",
+            context: {
+                homeTeamId: "RCB",
+                awayTeamId: "CSK",
+                opponentTeamId: "CSK",
+                tournamentId: "IPL_2025",
+                venueId: "Chinnaswamy",
+                matchDateISO: "2025-01-15"
+            },
+            visuals: {
+                headshotUrl: null, // Will show initials
+                teamBadgeUrl: null,
+                opponentBadgeUrl: null
+            },
+            core: {
+                matches: 779,
+                battingAverage: 52.0,
+                strikeRate: 136.4,
+                formIndex: 8.7,
+                last5Scores: [67, 45, 23, 89, 34]
+            },
+            tactical: {
+                venueFactor: "+15% at Chinnaswamy",
+                bowlerTypeWeakness: "Slight weakness vs Left-arm orthodox (-8% SR)",
+                keyMatchups: [
+                    { bowlerId: "rashid_khan", bowlerName: "Rashid Khan", dismissals: 5, strikeRateVs: 85, sample: 120 },
+                    { bowlerId: "mitchell_starc", bowlerName: "Mitchell Starc", dismissals: 3, strikeRateVs: 70, sample: 64 }
+                ],
+                favorableBowlers: [
+                    { bowlerId: "deepak_chahar", bowlerName: "Deepak Chahar", strikeRateVs: 145, avgVs: 65, sample: 55 }
+                ],
+                bowlerTypeMatrix: {
+                    baselineSR: 136.4,
+                    cells: [
+                        { subtype: "Left-arm orthodox", ballsFaced: 140, runs: 165, dismissals: 5, strikeRate: 117.9, average: 33.0, deltaVsBaselineSR: -18.5, confidence: 0.89 },
+                        { subtype: "Right-arm legbreak", ballsFaced: 210, runs: 305, dismissals: 4, strikeRate: 145.2, average: 76.3, deltaVsBaselineSR: 8.8, confidence: 0.95 },
+                        { subtype: "Right-arm fast-medium", ballsFaced: 320, runs: 450, dismissals: 6, strikeRate: 140.6, average: 75.0, deltaVsBaselineSR: 4.2, confidence: 0.98 }
+                    ]
+                }
+            },
+            betting: { edgeRunsOver_30_5: 0, risk: 0, comment: "MOCK" }
+        };
+
+        // Team data
+        const currentMatch = {
+            homeTeam: {
+                id: "RCB",
+                name: "Royal Challengers Bangalore",
+                players: ["V Kohli", "F du Plessis", "G Maxwell", "D Karthik", "W Hasaranga", "H Patel", "S Ahmed"]
+            },
+            awayTeam: {
+                id: "CSK", 
+                name: "Chennai Super Kings",
+                players: ["MS Dhoni", "R Jadeja", "D Conway", "R Gaikwad", "D Chahar", "M Theekshana", "M Ali"]
+            }
+        };
+
+        // Sparkline generation
+        function generateSparkline(values) {
+            if (!values || values.length === 0) return;
+            
+            const svg = document.getElementById('sparkline-svg');
+            const path = document.getElementById('sparkline-path');
+            
+            const width = 120;
+            const height = 32;
+            const padding = 2;
+            
+            const max = Math.max(...values);
+            const min = Math.min(...values);
+            const range = max - min || 1;
+            
+            const points = values.map((value, index) => {
+                const x = padding + (index * (width - 2 * padding)) / (values.length - 1);
+                const y = padding + ((max - value) / range) * (height - 2 * padding);
+                return `${x},${y}`;
+            }).join(' ');
+            
+            path.setAttribute('points', points);
+        }
+
+        // Delta bar generation
+        function generateDeltaBar(delta, confidence = 0.9) {
+            const maxAbs = 30;
+            const pct = Math.min(Math.abs(delta) / maxAbs, 1) * 100;
+            const isPositive = delta >= 0;
+            
+            return {
+                percentage: pct,
+                isPositive: isPositive,
+                opacity: Math.max(confidence, 0.35)
+            };
+        }
+
+        // Populate player card
+        function populatePlayerCard(data) {
+            // Basic info
+            document.getElementById('player-name').textContent = data.playerName;
+            document.getElementById('player-role').textContent = data.role;
+            document.getElementById('player-avatar').textContent = data.playerName.split(' ').map(n => n[0]).join('');
+            
+            // Team badges
+            document.getElementById('current-team-badge').textContent = data.currentTeamId;
+            document.getElementById('opponent-team-badge').textContent = data.context.opponentTeamId;
+            
+            // Core stats
+            document.getElementById('form-index').textContent = data.core.formIndex.toFixed(1);
+            document.getElementById('matches-count').textContent = data.core.matches.toLocaleString();
+            document.getElementById('batting-average').textContent = data.core.battingAverage.toFixed(1);
+            document.getElementById('strike-rate').textContent = data.core.strikeRate.toFixed(1);
+            
+            // Generate sparkline
+            generateSparkline(data.core.last5Scores);
+            
+            // Tactical info
+            document.getElementById('venue-factor').textContent = data.tactical.venueFactor;
+            document.getElementById('bowler-weakness').textContent = data.tactical.bowlerTypeWeakness;
+            document.getElementById('baseline-sr').textContent = data.tactical.bowlerTypeMatrix.baselineSR.toFixed(1);
+            document.getElementById('opponent-name').textContent = data.context.opponentTeamId;
+            
+            // Populate matchups
+            populateMatchups(data.tactical.keyMatchups, data.tactical.favorableBowlers);
+            
+            // Populate bowler types
+            populateBowlerTypes(data.tactical.bowlerTypeMatrix.cells);
+            
+            // Betting info
+            document.getElementById('betting-edge').textContent = data.betting.edgeRunsOver_30_5;
+            document.getElementById('betting-risk').textContent = data.betting.risk;
+        }
+
+        function populateMatchups(keyMatchups, favorableBowlers) {
+            const grid = document.getElementById('matchups-grid');
+            grid.innerHTML = '';
+            
+            // Add key matchups
+            keyMatchups.forEach(matchup => {
+                const card = document.createElement('div');
+                card.className = 'matchup-card';
+                card.innerHTML = `
+                    <div class="matchup-header">
+                        <div class="matchup-name">${matchup.bowlerName}</div>
+                        <div class="sample-badge">n=${matchup.sample}</div>
+                    </div>
+                    <div class="matchup-stats">
+                        <div>Dismissals <span class="value">${matchup.dismissals}</span></div>
+                        <div>SR vs <span class="value">${matchup.strikeRateVs}</span></div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            
+            // Add favorable bowlers
+            favorableBowlers.forEach(bowler => {
+                const card = document.createElement('div');
+                card.className = 'matchup-card';
+                card.innerHTML = `
+                    <div class="matchup-header">
+                        <div class="matchup-name">Favorable: ${bowler.bowlerName}</div>
+                        <div class="sample-badge">n=${bowler.sample}</div>
+                    </div>
+                    <div class="matchup-stats">
+                        <div>Avg vs <span class="value">${bowler.avgVs}</span></div>
+                        <div>SR vs <span class="value">${bowler.strikeRateVs}</span></div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function populateBowlerTypes(cells) {
+            const container = document.getElementById('bowler-types-list');
+            container.innerHTML = '';
+            
+            // Sort by absolute delta value
+            const sortedCells = [...cells].sort((a, b) => 
+                Math.abs(b.deltaVsBaselineSR) - Math.abs(a.deltaVsBaselineSR)
+            );
+            
+            sortedCells.forEach(cell => {
+                const deltaInfo = generateDeltaBar(cell.deltaVsBaselineSR, cell.confidence);
+                
+                const row = document.createElement('div');
+                row.className = 'bowler-type-row';
+                row.innerHTML = `
+                    <div class="bowler-type-name">${cell.subtype}</div>
+                    <div class="delta-bar">
+                        <div class="delta-bar-left">
+                            ${!deltaInfo.isPositive ? `<div class="delta-fill negative" style="width: ${deltaInfo.percentage}%; opacity: ${deltaInfo.opacity};"></div>` : ''}
+                        </div>
+                        <div class="delta-value">${cell.deltaVsBaselineSR > 0 ? '+' : ''}${cell.deltaVsBaselineSR.toFixed(1)}</div>
+                        <div class="delta-bar-right">
+                            ${deltaInfo.isPositive ? `<div class="delta-fill positive" style="width: ${deltaInfo.percentage}%; opacity: ${deltaInfo.opacity};"></div>` : ''}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function populateTeamInfo() {
+            // Home team
+            document.getElementById('home-team-badge').textContent = currentMatch.homeTeam.id;
+            document.getElementById('home-team-name').textContent = currentMatch.homeTeam.name;
+            document.getElementById('home-roster-title').textContent = `${currentMatch.homeTeam.id} Squad`;
+            
+            const homePlayersContainer = document.getElementById('home-players');
+            homePlayersContainer.innerHTML = '';
+            currentMatch.homeTeam.players.forEach(player => {
+                const chip = document.createElement('span');
+                chip.className = 'player-chip';
+                if (player === 'V Kohli') chip.classList.add('current');
+                chip.textContent = player;
+                homePlayersContainer.appendChild(chip);
+            });
+            
+            // Away team
+            document.getElementById('away-team-badge').textContent = currentMatch.awayTeam.id;
+            document.getElementById('away-team-name').textContent = currentMatch.awayTeam.name;
+            document.getElementById('away-roster-title').textContent = `${currentMatch.awayTeam.id} Squad`;
+            
+            const awayPlayersContainer = document.getElementById('away-players');
+            awayPlayersContainer.innerHTML = '';
+            currentMatch.awayTeam.players.forEach(player => {
+                const chip = document.createElement('span');
+                chip.className = 'player-chip';
+                chip.textContent = player;
+                awayPlayersContainer.appendChild(chip);
+            });
+        }
+
+        // Action handlers
+        function viewDetails() {
+            console.log('View details for:', mockPlayerData.playerId);
+            alert('View Details functionality would open detailed player analysis');
+        }
+
+        function askAI() {
+            console.log('Ask AI about:', mockPlayerData.playerId);
+            alert('Ask AI functionality would open AI chat for this player');
+        }
+
+        function compare() {
+            console.log('Compare player:', mockPlayerData.playerId);
+            alert('Compare functionality would open player comparison tool');
+        }
+
+        // Initialize the card
+        document.addEventListener('DOMContentLoaded', function() {
+            populateTeamInfo();
+            populatePlayerCard(mockPlayerData);
+            lucide.createIcons();
+        });
+
+        // API integration function (for future use)
+        async function loadPlayerData(playerId, context) {
+            try {
+                const response = await fetch('http://127.0.0.1:5004/api/cards/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        player_name: playerId,
+                        context: context
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    populatePlayerCard(data.card_data);
+                }
+            } catch (error) {
+                console.error('Error loading player data:', error);
+            }
+        }
+    </script>
+</body>
+</html>
