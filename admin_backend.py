@@ -1531,6 +1531,77 @@ def get_current_simulation_match():
             "message": "Failed to get simulation match context"
         }), 500
 
+@app.route('/api/enriched-weather', methods=['GET'])
+def get_enriched_weather():
+    """Get enriched weather data for a specific match date and venue"""
+    try:
+        date = request.args.get('date')
+        venue = request.args.get('venue')
+        
+        if not date or not venue:
+            return jsonify({
+                "status": "error",
+                "error": "Missing required parameters: date and venue"
+            }), 400
+        
+        # Load enriched matches data
+        enriched_path = Path("enriched_data/enriched_betting_matches.json")
+        if not enriched_path.exists():
+            return jsonify({
+                "status": "error", 
+                "error": "Enriched weather data not available"
+            }), 404
+        
+        import json
+        with open(enriched_path, 'r') as f:
+            enriched_matches = json.load(f)
+        
+        # Find matching match by date and venue (flexible matching)
+        target_date = date
+        target_venue = venue.lower()
+        
+        for match in enriched_matches:
+            match_date = match.get('date')
+            match_venue = match.get('venue', {}).get('name', '').lower()
+            
+            # Flexible venue matching - check if either venue contains the other
+            venue_match = (target_venue in match_venue or 
+                          match_venue in target_venue or
+                          # Handle common venue name variations
+                          ('punjab' in target_venue and 'punjab' in match_venue) or
+                          ('chinnaswamy' in target_venue and 'chinnaswamy' in match_venue))
+            
+            if match_date == target_date and venue_match:
+                
+                weather_hourly = match.get('weather_hourly', [])
+                if weather_hourly and len(weather_hourly) > 0:
+                    # Get weather data for match time (typically evening)
+                    match_weather = weather_hourly[0]  # First available hour
+                    
+                    return jsonify({
+                        "status": "success",
+                        "temperature": match_weather.get('temperature_c'),
+                        "feels_like": match_weather.get('feels_like_c'),
+                        "humidity": match_weather.get('humidity_pct'),
+                        "conditions": match_weather.get('weather_code'),
+                        "wind_speed": match_weather.get('wind_speed_kph'),
+                        "cloud_cover": match_weather.get('cloud_cover_pct'),
+                        "precipitation": match_weather.get('precip_mm'),
+                        "time": match_weather.get('time_local')
+                    })
+        
+        return jsonify({
+            "status": "not_found",
+            "message": f"No enriched weather data found for {date} at {venue}"
+        }), 404
+        
+    except Exception as e:
+        logger.error(f"Error getting enriched weather data: {e}")
+        return jsonify({
+            "status": "error",
+            "error": str(e)
+        }), 500
+
 @app.route('/api/simulation/run', methods=['POST'])
 def run_simulation():
     """Run a strategy simulation"""
@@ -1604,6 +1675,328 @@ def run_simulation():
             "status": "error",
             "message": f"Simulation failed: {str(e)}"
         })
+
+# Ball-by-Ball Simulation API for Dashboard
+simulation_state = {
+    "active": False,
+    "match_data": None,
+    "current_ball": 0,
+    "total_balls": 0,
+    "match_events": [],
+    "market_data": [],
+    "betting_odds": {},
+    "last_6_balls": [],
+    "current_score": {"runs": 0, "wickets": 0, "overs": 0.0},
+    "target": None,
+    "win_probability": 50.0
+}
+
+@app.route('/api/simulation/start-live', methods=['POST'])
+def start_live_simulation():
+    """Start a ball-by-ball simulation for dashboard"""
+    global simulation_state
+    
+    try:
+        data = request.get_json() or {}
+        match_id = data.get('match_id', 'auto')
+        
+        # Import SIM modules
+        sys.path.insert(0, str(Path(__file__).parent / 'sim'))
+        from sim.data_integration import HoldoutDataManager
+        
+        manager = HoldoutDataManager()
+        
+        # Get match data
+        if match_id == 'auto':
+            holdout_matches = manager.get_holdout_matches()
+            logger.info(f"🔍 DEBUG: Found {len(holdout_matches) if holdout_matches else 0} holdout matches")
+            if holdout_matches:
+                match_id = holdout_matches[0]
+                logger.info(f"🔍 DEBUG: Selected match_id: {match_id}")
+        
+        # Load match events
+        logger.info(f"🔍 DEBUG: Loading match data for {match_id}")
+        match_data = manager.get_match_data([match_id])
+        logger.info(f"🔍 DEBUG: Match data type: {type(match_data)}")
+        
+        # Check if we have data
+        if match_data is None:
+            logger.error("❌ DEBUG: match_data is None")
+            return jsonify({
+                "status": "error",
+                "message": "No match data found"
+            })
+        
+        # Check if DataFrame is empty using len() instead of .empty
+        try:
+            if hasattr(match_data, '__len__') and len(match_data) == 0:
+                logger.error("❌ DEBUG: DataFrame has no rows")
+                return jsonify({
+                    "status": "error",
+                    "message": "Match data is empty"
+                })
+        except Exception as e:
+            logger.error(f"❌ DEBUG: Error checking DataFrame length: {e}")
+            return jsonify({
+                "status": "error",
+                "message": f"Error checking DataFrame: {str(e)}"
+            })
+        
+        # Convert DataFrame to list of dictionaries
+        try:
+            if hasattr(match_data, 'to_dict'):
+                logger.info(f"🔍 DEBUG: Converting DataFrame with {len(match_data)} rows to records")
+                match_events = match_data.to_dict('records')
+            else:
+                logger.info("🔍 DEBUG: Data is not a DataFrame, converting to list")
+                match_events = list(match_data) if hasattr(match_data, '__iter__') else [match_data]
+            
+            logger.info(f"✅ DEBUG: Successfully converted to {len(match_events)} events")
+        except Exception as e:
+            logger.error(f"❌ DEBUG: Error converting match data: {e}")
+            return jsonify({
+                "status": "error",
+                "message": f"Error converting match data: {str(e)}"
+            })
+        
+        # Determine target score from match data
+        target_score = 180  # Default T20 target
+        if match_events:
+            # Look for innings break or final score in the data
+            max_runs = 0
+            for event in match_events:
+                # Try different field names for total runs
+                total_runs = (event.get('total_runs', 0) or 
+                             event.get('runs_total', 0) or 
+                             event.get('cumulative_runs', 0) or
+                             event.get('match_runs', 0))
+                if total_runs > max_runs:
+                    max_runs = total_runs
+            
+            # If we have a reasonable total, use it as target (+1 to win)
+            if max_runs > 50:  # Reasonable T20 score
+                target_score = max_runs + 1
+                logger.info(f"🎯 Using match target: {target_score} (based on max runs: {max_runs})")
+            else:
+                logger.info(f"🎯 Using default target: {target_score} (max runs found: {max_runs})")
+        else:
+            logger.info(f"🎯 Using default target: {target_score} (no match events)")
+        
+        logger.info(f"🔍 FINAL DEBUG: target_score before simulation_state = {target_score}")
+        
+        # Initialize simulation state
+        simulation_state.update({
+            "active": True,
+            "match_data": match_events,
+            "current_ball": 0,
+            "total_balls": len(match_events),
+            "match_events": match_events,
+            "last_6_balls": [],
+            "current_score": {"runs": 0, "wickets": 0, "overs": 0.0},
+            "target": target_score,
+            "win_probability": 50.0,
+            "betting_odds": {
+                "home_win": 2.0,
+                "away_win": 2.0
+            }
+        })
+        
+        logger.info(f"🎯 DEBUG: Set target_score to {target_score} in simulation_state")
+        
+        logger.info(f"🎮 Started live simulation for match {match_id} with {len(match_events)} balls")
+        
+        return jsonify({
+            "status": "success",
+            "message": "Live simulation started",
+            "match_id": match_id,
+            "total_balls": len(match_events),
+            "teams": _get_team_info_from_match_data(match_events)
+        })
+        
+    except Exception as e:
+        logger.error(f"Error starting live simulation: {e}")
+        return jsonify({
+            "status": "error",
+            "message": f"Failed to start simulation: {str(e)}"
+        })
+
+@app.route('/api/simulation/next-ball', methods=['POST'])
+def simulate_next_ball():
+    """Advance simulation by one ball"""
+    global simulation_state
+    
+    try:
+        if not simulation_state["active"]:
+            return jsonify({
+                "status": "error",
+                "message": "No active simulation"
+            })
+        
+        current_ball = simulation_state["current_ball"]
+        total_balls = simulation_state["total_balls"]
+        
+        if current_ball >= total_balls:
+            simulation_state["active"] = False
+            return jsonify({
+                "status": "completed",
+                "message": "Simulation completed"
+            })
+        
+        # Get current ball event
+        ball_event = simulation_state["match_events"][current_ball]
+        
+        # Update score
+        runs_scored = ball_event.get('runs_off_bat', 0) + ball_event.get('extras', 0)
+        simulation_state["current_score"]["runs"] += runs_scored
+        
+        if ball_event.get('wicket_type'):
+            simulation_state["current_score"]["wickets"] += 1
+        
+        # Update overs
+        simulation_state["current_score"]["overs"] = ball_event.get('over', 0) + (ball_event.get('ball', 1) / 6)
+        
+        # Update last 6 balls
+        ball_outcome = str(runs_scored) if not ball_event.get('wicket_type') else 'W'
+        simulation_state["last_6_balls"].append(ball_outcome)
+        if len(simulation_state["last_6_balls"]) > 6:
+            simulation_state["last_6_balls"] = simulation_state["last_6_balls"][-6:]
+        
+        # Update betting odds (mock calculation)
+        current_over = ball_event.get('over', 0)
+        target = simulation_state.get("target", 180)
+        if target and current_over > 10:
+            # Simulate changing odds based on match situation
+            runs_needed = target - simulation_state["current_score"]["runs"]
+            balls_left = (20 * 6) - (current_ball + 1)
+            required_rate = (runs_needed / balls_left * 6) if balls_left > 0 else 0
+            
+            if required_rate > 12:
+                simulation_state["betting_odds"]["home_win"] = 3.5
+                simulation_state["betting_odds"]["away_win"] = 1.3
+                simulation_state["win_probability"] = 25.0
+            elif required_rate < 6:
+                simulation_state["betting_odds"]["home_win"] = 1.2
+                simulation_state["betting_odds"]["away_win"] = 4.0
+                simulation_state["win_probability"] = 80.0
+            else:
+                simulation_state["betting_odds"]["home_win"] = 2.0
+                simulation_state["betting_odds"]["away_win"] = 2.0
+                simulation_state["win_probability"] = 50.0
+        
+        # Advance to next ball
+        simulation_state["current_ball"] += 1
+        
+        # Determine match phase
+        phase = "Powerplay" if current_over < 6 else ("Middle Overs" if current_over < 16 else "Death Overs")
+        
+        return jsonify({
+            "status": "success",
+            "ball_number": current_ball + 1,
+            "total_balls": total_balls,
+            "ball_event": {
+                "over": ball_event.get('over', 0),
+                "ball": ball_event.get('ball', 1),
+                "runs": runs_scored,
+                "wicket": bool(ball_event.get('wicket_type')),
+                "batsman": ball_event.get('striker', 'Unknown'),
+                "bowler": ball_event.get('bowler', 'Unknown')
+            },
+            "match_state": {
+                "score": simulation_state["current_score"],
+                "last_6_balls": simulation_state["last_6_balls"],
+                "phase": phase,
+                "betting_odds": simulation_state["betting_odds"],
+                "win_probability": simulation_state["win_probability"],
+                "target": simulation_state.get("target", 180),
+                "required_rate": _calculate_required_rate(simulation_state)
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error simulating next ball: {e}")
+        return jsonify({
+            "status": "error",
+            "message": f"Simulation error: {str(e)}"
+        })
+
+@app.route('/api/simulation/state', methods=['GET'])
+def get_simulation_state():
+    """Get current simulation state"""
+    global simulation_state
+    
+    if not simulation_state["active"]:
+        return jsonify({
+            "status": "inactive",
+            "message": "No active simulation"
+        })
+    
+    current_ball = simulation_state["current_ball"]
+    current_over = 0
+    phase = "Powerplay"
+    
+    if simulation_state["match_events"] and current_ball < len(simulation_state["match_events"]):
+        ball_event = simulation_state["match_events"][current_ball]
+        current_over = ball_event.get('over', 0)
+        phase = "Powerplay" if current_over < 6 else ("Middle Overs" if current_over < 16 else "Death Overs")
+    
+    return jsonify({
+        "status": "active",
+        "ball_number": current_ball,
+        "total_balls": simulation_state["total_balls"],
+        "match_state": {
+            "score": simulation_state["current_score"],
+            "last_6_balls": simulation_state["last_6_balls"],
+            "phase": phase,
+            "betting_odds": simulation_state["betting_odds"],
+            "win_probability": simulation_state["win_probability"],
+            "target": simulation_state.get("target", 180),
+            "required_rate": _calculate_required_rate(simulation_state)
+        }
+    })
+
+@app.route('/api/simulation/stop', methods=['POST'])
+def stop_simulation():
+    """Stop the current simulation"""
+    global simulation_state
+    
+    simulation_state["active"] = False
+    
+    return jsonify({
+        "status": "success",
+        "message": "Simulation stopped"
+    })
+
+def _get_team_info_from_match_data(match_data):
+    """Extract team information from match data"""
+    try:
+        if not match_data or len(match_data) == 0:
+            return {"home": "Team A", "away": "Team B"}
+        
+        # Try to extract from first ball
+        first_ball = match_data[0] if isinstance(match_data, list) else {}
+        
+        return {
+            "home": first_ball.get('batting_team', first_ball.get('home', 'Team A')),
+            "away": first_ball.get('bowling_team', first_ball.get('away', 'Team B'))
+        }
+    except Exception as e:
+        logger.error(f"❌ DEBUG: Error extracting team info: {e}")
+        return {"home": "Team A", "away": "Team B"}
+
+def _calculate_required_rate(state):
+    """Calculate required run rate"""
+    target = state.get("target", 180)  # Default to 180 if None
+    if not target or target is None or target <= 0:
+        return 0.0
+    
+    current_runs = state.get("current_score", {}).get("runs", 0)
+    runs_needed = target - current_runs
+    balls_left = (20 * 6) - state.get("current_ball", 0)
+    
+    if balls_left <= 0 or runs_needed <= 0:
+        return 0.0
+    
+    return round((runs_needed / balls_left) * 6, 2)
 
 @app.route('/api/clear-caches', methods=['POST'])
 def clear_all_caches():

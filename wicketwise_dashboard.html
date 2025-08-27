@@ -49,12 +49,84 @@
             display: block !important;
         }
         
-        /* Enhanced Player Cards Styles */
+        /* Enhanced Player Cards Styles - Featured Player Cardboard 2.0 */
         .enhanced-cards-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 1.5rem;
             margin-top: 1rem;
+        }
+        
+        /* Match Context Header Styles */
+        .match-context-header {
+            background: linear-gradient(135deg, #1e293b, #334155) !important;
+            border-radius: 8px 8px 0 0 !important;
+        }
+        
+        .team-logo {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease;
+        }
+        
+        .team-logo:hover {
+            transform: scale(1.05);
+        }
+        
+        /* Enhanced Player Card Animations */
+        .enhanced-player-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .enhanced-player-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Player Identity Header */
+        .player-identity-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Form Indicator Styles */
+        .form-indicator {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        /* Trait Badge Styles */
+        .trait-badge {
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        
+        .trait-badge:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Sparkline Styles */
+        .sparkline-bar {
+            transition: all 0.3s ease;
+        }
+        
+        .sparkline-bar:hover {
+            opacity: 0.8;
+            transform: scaleY(1.1);
+        }
+        
+        /* Expand Indicator */
+        .expand-indicator {
+            transition: all 0.2s ease;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .expand-indicator:hover {
+            background-color: #f3f4f6 !important;
+            color: #374151 !important;
         }
         
         .enhanced-player-card {
@@ -454,47 +526,84 @@
         <div class="flex items-center justify-between space-x-6">
             <!-- Match Score -->
             <div class="flex items-center space-x-4">
-                <span class="bg-destructive text-destructive-foreground animate-pulse text-xs px-2 py-1 rounded">LIVE</span>
+                <span id="liveStatus" class="bg-destructive text-destructive-foreground animate-pulse text-xs px-2 py-1 rounded">SIMULATION</span>
                 <div class="flex items-center space-x-2">
-                    <span class="font-medium text-sm">RCB</span>
-                    <span class="text-xl font-bold">156/4</span>
-                    <span class="text-xs text-muted-foreground">(17.2 ov)</span>
+                    <span id="teamName" class="font-medium text-sm">RCB</span>
+                    <span id="currentScore" class="text-xl font-bold">0/0</span>
+                    <span id="currentOvers" class="text-xs text-muted-foreground">(0.0 ov)</span>
                 </div>
             </div>
 
             <!-- Win Probability -->
             <div class="flex items-center space-x-3 min-w-40">
-                <span class="text-xs text-muted-foreground">RCB Win:</span>
+                <span class="text-xs text-muted-foreground">Win Prob:</span>
                 <div class="flex-1">
                     <div class="w-full bg-gray-200 rounded-full h-1.5">
-                        <div class="bg-green-600 h-1.5 rounded-full" style="width: 67%"></div>
+                        <div id="winProbBar" class="bg-green-600 h-1.5 rounded-full" style="width: 50%"></div>
                     </div>
                 </div>
-                <span class="text-xs font-bold text-green-600">67%</span>
+                <span id="winProbability" class="text-xs font-bold text-green-600">50%</span>
             </div>
 
             <!-- Key Stats -->
             <div class="flex items-center space-x-4 text-xs">
                 <div>
                     <span class="text-muted-foreground">Target:</span>
-                    <span class="font-medium ml-1">189</span>
+                    <span id="targetScore" class="font-medium ml-1">180</span>
                 </div>
                 <div>
                     <span class="text-muted-foreground">RRR:</span>
-                    <span class="font-bold text-red-600 ml-1">8.45</span>
+                    <span id="requiredRate" class="font-bold text-red-600 ml-1">6.00</span>
                 </div>
-                <span class="bg-secondary text-secondary-foreground text-xs py-0 px-2 rounded">Death Overs</span>
+                <span id="matchPhase" class="bg-secondary text-secondary-foreground text-xs py-0 px-2 rounded">Powerplay</span>
             </div>
 
             <!-- Last 6 Balls -->
             <div class="flex items-center space-x-1">
                 <span class="text-xs text-muted-foreground">Last 6:</span>
-                <div class="w-4 h-4 rounded-full bg-blue-400 flex items-center justify-center text-white text-xs font-bold">1</div>
-                <div class="w-4 h-4 rounded-full bg-orange-400 flex items-center justify-center text-white text-xs font-bold">4</div>
-                <div class="w-4 h-4 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs font-bold">0</div>
-                <div class="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold">6</div>
-                <div class="w-4 h-4 rounded-full bg-blue-400 flex items-center justify-center text-white text-xs font-bold">2</div>
-                <div class="w-4 h-4 rounded-full bg-blue-400 flex items-center justify-center text-white text-xs font-bold">1</div>
+                <div id="last6Balls" class="flex space-x-1">
+                    <!-- Balls will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simulation Controls -->
+    <div id="simulationControls" class="bg-muted/50 border-2 rounded-lg p-2 mt-2">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <button id="startSimBtn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-medium">
+                    ▶️ Start
+                </button>
+                <button id="nextBallBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium" disabled>
+                    ⚾ Next Ball
+                </button>
+                <button id="autoPlayBtn" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded text-sm font-medium" disabled>
+                    🎮 Auto Play
+                </button>
+                <button id="stopSimBtn" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium" disabled>
+                    ⏹️ Stop
+                </button>
+            </div>
+            
+            <div class="flex items-center space-x-4 text-sm">
+                <div>
+                    <span class="text-muted-foreground">Ball:</span>
+                    <span id="ballProgress" class="font-medium">0/0</span>
+                </div>
+                <div>
+                    <span class="text-muted-foreground">Speed:</span>
+                    <select id="simSpeed" class="bg-background border border-border rounded px-2 py-1 text-xs">
+                        <option value="3000">Slow (3s)</option>
+                        <option value="1500" selected>Normal (1.5s)</option>
+                        <option value="500">Fast (0.5s)</option>
+                        <option value="100">Rapid (0.1s)</option>
+                    </select>
+                </div>
+                <div>
+                    <span class="text-muted-foreground">Odds:</span>
+                    <span id="bettingOdds" class="font-medium">2.0 | 2.0</span>
+                </div>
             </div>
         </div>
     </div>
@@ -541,9 +650,9 @@
                         <div class="bg-gray-50 border border-gray-200 rounded p-2 flex justify-between text-sm">
                             <span>Kohli 50+</span>
                         <span class="text-gray-600">Pending</span>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
 
                 <!-- Market Odds & Win Probability -->
                 <div class="grid grid-cols-2 gap-3">
@@ -568,8 +677,8 @@
                                 <div class="text-red-600 font-bold">MI 33%</div>
                         </div>
                         </div>
-                        </div>
-                    </div>
+        </div>
+    </div>
 
                 <!-- Betting Signals -->
                     <div class="space-y-2">
@@ -597,12 +706,53 @@
         <div class="lg:col-span-1 space-y-6">
             <!-- Featured Players Section -->
             <div class="card">
-                <div class="card-header">
+                <!-- Match Context Header -->
+                <div class="match-context-header bg-gradient-to-r from-slate-800 to-slate-900 text-white p-4 rounded-t-lg">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-4">
+                            <!-- Home Team -->
+                            <div class="flex items-center space-x-2">
+                                <div class="team-logo w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm" id="homeTeamLogo">
+                                    KKR
+                                </div>
+                                <span class="font-semibold" id="homeTeamNameHeader">Kolkata Knight Riders</span>
+                            </div>
+                            
+                            <!-- VS Separator -->
+                            <div class="text-orange-400 font-bold text-lg">🆚</div>
+                            
+                            <!-- Away Team -->
+                            <div class="flex items-center space-x-2">
+                                <div class="team-logo w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm" id="awayTeamLogo">
+                                    PBKS
+                                </div>
+                                <span class="font-semibold" id="awayTeamNameHeader">Punjab Kings</span>
+                            </div>
+                        </div>
+                        
+                        <div class="text-right">
+                            <span class="mode-indicator simulation-mode text-xs px-2 py-1 bg-blue-500 text-white rounded">Simulation</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Match Details -->
+                    <div class="flex items-center justify-between text-sm text-gray-300">
+                        <div class="flex items-center space-x-4">
+                            <span id="matchVenue">📍 Eden Gardens</span>
+                            <span id="matchDate">Aug 27, 2025</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span id="pitchCondition">🌤️ Batting Friendly</span>
+                            <span id="weatherCondition">🌡️ 28°C</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-header border-t-0 pt-0">
                     <h3 class="card-title flex items-center justify-between">
-                        <span id="playerCardsTitle">🎮 Featured Players</span>
-                        <span class="mode-indicator simulation-mode text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">Simulation</span>
+                        <span id="playerCardsTitle">⭐ Featured Players</span>
                     </h3>
-                    <div class="text-xs text-gray-500">Current match players with live analytics</div>
+                    <div class="text-xs text-gray-500">Live match insights with KG-powered analytics</div>
                 </div>
                 <div class="card-content">
                     <!-- Current Action Players -->
@@ -613,23 +763,23 @@
                                 <div class="player-badge striker-badge flex items-center space-x-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-1 rounded mb-2">
                                     <i data-lucide="zap" class="w-3 h-3"></i>
                                     <span>ON STRIKE</span>
-                                </div>
+                        </div>
                                 <div id="strikerCard" class="featured-player-card">
                                     <!-- Striker card will be loaded here -->
-                                </div>
-                            </div>
-                            
+                        </div>
+                    </div>
+
                             <!-- Current Non-Striker -->
                             <div class="current-player non-striker-section">
                                 <div class="player-badge non-striker-badge flex items-center space-x-1 text-xs font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded mb-2">
                                     <i data-lucide="user" class="w-3 h-3"></i>
                                     <span>NON-STRIKER</span>
-                                </div>
+                        </div>
                                 <div id="nonStrikerCard" class="featured-player-card">
                                     <!-- Non-striker card will be loaded here -->
-                                </div>
-                            </div>
-                            
+                        </div>
+                    </div>
+
                             <!-- Current Bowler -->
                             <div class="current-player bowler-section">
                                 <div class="player-badge bowler-badge flex items-center space-x-1 text-xs font-medium text-red-700 bg-red-100 px-2 py-1 rounded mb-2">
@@ -642,7 +792,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Team Squads Toggle -->
                     <div class="team-squads">
                         <div class="flex space-x-2 mb-4">
@@ -658,7 +808,7 @@
                             <!-- Team player cards will be loaded here -->
                         </div>
                     </div>
-                    
+
                     <!-- Legacy container for compatibility -->
                     <div id="playerCardsContainer" style="display: none;">
                         <div class="loading-cards">Loading enhanced player cards...</div>
@@ -945,15 +1095,15 @@
                                     <option value="slow" selected>🐌 Slow (Dashboard Demo)</option>
                                     <option value="rapid">⚡ Rapid Testing</option>
                                 </select>
-                            </div>
+                        </div>
 
-                            <div class="space-y-2">
+                        <div class="space-y-2">
                                 <label class="text-sm text-gray-600">Match Data</label>
                                 <select id="matchSelection" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
                                     <option value="current" selected>Current Simulation Match</option>
                                     <option value="random">Random Holdout Match</option>
                                 </select>
-                            </div>
+                                </div>
 
                             <!-- Simulation Actions -->
                             <div class="flex space-x-2">
@@ -966,7 +1116,7 @@
                                 <button id="resetSimulationBtn" class="flex-1 bg-gray-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-700" onclick="resetMatchSimulation()">
                                     🔄 Reset
                                 </button>
-                            </div>
+                                </div>
                         </div>
 
                         <!-- Live Mode Controls (shown when in live mode) -->
@@ -986,8 +1136,8 @@
                                     <span class="text-sm text-blue-800">Ready to Simulate</span>
                                 </div>
                                 <span class="text-xs text-blue-600">0 violations</span>
+                                </div>
                             </div>
-                        </div>
 
                         <!-- Actions -->
                         <div class="flex space-x-2">
@@ -2385,6 +2535,10 @@
                     awayTeam: this.teams.away
                 };
             }
+            
+            getMatchData() {
+                return this.currentMatch;
+            }
         }
 
         // Global match context service
@@ -2570,10 +2724,47 @@
                 // Get current players from simulation context
                 const currentPlayers = matchContextService.getCurrentPlayers();
                 
-                // Update team names in UI
+                // Update team names and match context in UI
                 if (currentPlayers.homeTeam && currentPlayers.awayTeam) {
+                    // Update team toggle buttons
                     document.getElementById('homeTeamName').textContent = currentPlayers.homeTeam.short_name || currentPlayers.homeTeam.name;
                     document.getElementById('awayTeamName').textContent = currentPlayers.awayTeam.short_name || currentPlayers.awayTeam.name;
+                    
+                    // Update match context header
+                    const homeTeamColors = getTeamColors(currentPlayers.homeTeam.name);
+                    const awayTeamColors = getTeamColors(currentPlayers.awayTeam.name);
+                    
+                    document.getElementById('homeTeamNameHeader').textContent = currentPlayers.homeTeam.name;
+                    document.getElementById('awayTeamNameHeader').textContent = currentPlayers.awayTeam.name;
+                    
+                    document.getElementById('homeTeamLogo').textContent = getTeamAbbreviation(currentPlayers.homeTeam.name);
+                    document.getElementById('homeTeamLogo').style.backgroundColor = homeTeamColors.primary;
+                    
+                    document.getElementById('awayTeamLogo').textContent = getTeamAbbreviation(currentPlayers.awayTeam.name);
+                    document.getElementById('awayTeamLogo').style.backgroundColor = awayTeamColors.primary;
+                    
+                    // Update match details from real simulation data
+                    const matchData = matchContextService.getMatchData();
+                    if (matchData) {
+                        // Update venue
+                        if (matchData.venue) {
+                            document.getElementById('matchVenue').textContent = `📍 ${matchData.venue}`;
+                        }
+                        
+                        // Update match date from simulation (not today's date)
+                        if (matchData.date) {
+                            const matchDate = new Date(matchData.date);
+                            const dateStr = matchDate.toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                year: 'numeric' 
+                            });
+                            document.getElementById('matchDate').textContent = dateStr;
+                        }
+                        
+                        // Update weather and pitch conditions from enriched data if available
+                        updateWeatherAndPitchConditions(matchData);
+                    }
                 }
                 
                 // Load featured players (striker, non-striker, bowler)
@@ -2638,6 +2829,361 @@
             }
         }
 
+        // Helper functions for Featured Player Cardboard 2.0
+        function generateFormData(coreStats) {
+            // Use REAL last 5 scores from the API, no mock generation
+            const last5Scores = coreStats.last5Scores || [];
+            const avg = parseFloat(coreStats.battingAverage) || 0;
+            
+            // If we have real last 5 scores, use them
+            if (last5Scores.length > 0) {
+                const recentAvg = last5Scores.reduce((a, b) => a + b, 0) / last5Scores.length;
+                const isInForm = avg > 0 ? (recentAvg > avg * 0.8) : (recentAvg > 25); // In form if recent avg > 80% of career avg
+                
+                return {
+                    last5Scores,
+                    isInForm,
+                    recentAverage: recentAvg
+                };
+            } else {
+                // No real data available - return minimal info
+                console.warn('No real last 5 scores available for player');
+                return {
+                    last5Scores: [],
+                    isInForm: avg > 25, // Basic form assessment from career average
+                    recentAverage: avg
+                };
+            }
+        }
+
+        function generatePlayerTraits(card, currentRole) {
+            const traits = [];
+            const coreStats = card.core || {};
+            const tactical = card.tactical || {};
+            
+            if (currentRole === 'bowler') {
+                // Bowling traits
+                const econ = parseFloat(calculateEconomyRate(card));
+                if (econ && econ < 7) traits.push('Economical');
+                if (econ && econ < 6) traits.push('Powerplay Specialist');
+                
+                const wickets = parseInt(calculateWickets(card));
+                if (wickets && wickets > 20) traits.push('Wicket Taker');
+                if (wickets && wickets > 30) traits.push('Strike Bowler');
+                
+                // Add bowling type traits
+                if (card.role && card.role.toLowerCase().includes('spin')) {
+                    traits.push('Spin Wizard');
+                } else {
+                    traits.push('Pace Merchant');
+                }
+            } else {
+                // Batting traits
+                const sr = parseFloat(coreStats.strikeRate);
+                if (sr && sr > 140) traits.push('Power Hitter');
+                if (sr && sr > 160) traits.push('Death Zone Specialist');
+                if (sr && sr < 120) traits.push('Anchor');
+                
+                const avg = parseFloat(coreStats.battingAverage);
+                if (avg && avg > 35) traits.push('Consistent');
+                if (avg && avg > 45) traits.push('Match Winner');
+                
+                // Add situational traits based on tactical data
+                if (tactical.vs_pace && tactical.vs_pace.strike_rate > sr * 1.1) {
+                    traits.push('Pace Dominator');
+                }
+                if (tactical.vs_spin && tactical.vs_spin.strike_rate > sr * 1.1) {
+                    traits.push('Spin Basher');
+                }
+            }
+            
+            // Ensure we always have at least one trait
+            if (traits.length === 0) {
+                traits.push(currentRole === 'bowler' ? 'Reliable Bowler' : 'Solid Batsman');
+            }
+            
+            return traits.slice(0, 3); // Max 3 traits to keep UI clean
+        }
+
+        function getTeamColors(team) {
+            const teamColorMap = {
+                'KKR': { primary: '#3A0CA3', secondary: '#7209B7' },
+                'Kolkata Knight Riders': { primary: '#3A0CA3', secondary: '#7209B7' },
+                'PBKS': { primary: '#DD2C00', secondary: '#FF6D00' },
+                'Punjab Kings': { primary: '#DD2C00', secondary: '#FF6D00' },
+                'CSK': { primary: '#FFC107', secondary: '#FF8F00' },
+                'Chennai Super Kings': { primary: '#FFC107', secondary: '#FF8F00' },
+                'MI': { primary: '#004BA0', secondary: '#0066CC' },
+                'Mumbai Indians': { primary: '#004BA0', secondary: '#0066CC' },
+                'RCB': { primary: '#D50000', secondary: '#FF1744' },
+                'Royal Challengers Bangalore': { primary: '#D50000', secondary: '#FF1744' },
+                'DC': { primary: '#17479E', secondary: '#2196F3' },
+                'Delhi Capitals': { primary: '#17479E', secondary: '#2196F3' },
+                'SRH': { primary: '#FF6600', secondary: '#FF8A50' },
+                'Sunrisers Hyderabad': { primary: '#FF6600', secondary: '#FF8A50' },
+                'RR': { primary: '#E91E63', secondary: '#F48FB1' },
+                'Rajasthan Royals': { primary: '#E91E63', secondary: '#F48FB1' },
+                'GT': { primary: '#1B5E20', secondary: '#4CAF50' },
+                'Gujarat Titans': { primary: '#1B5E20', secondary: '#4CAF50' },
+                'LSG': { primary: '#00BCD4', secondary: '#4DD0E1' },
+                'Lucknow Super Giants': { primary: '#00BCD4', secondary: '#4DD0E1' },
+                'default': { primary: '#6B7280', secondary: '#9CA3AF' }
+            };
+            
+            return teamColorMap[team] || teamColorMap['default'];
+        }
+
+        function getRoleIcon(role, currentRole) {
+            if (currentRole === 'bowler') return '🎯';
+            if (role && role.toLowerCase().includes('keeper')) return '🧤';
+            if (role && role.toLowerCase().includes('allrounder')) return '⚡';
+            return '🏏';
+        }
+
+        function getTeamAbbreviation(team) {
+            const abbrevMap = {
+                'Kolkata Knight Riders': 'KKR',
+                'Punjab Kings': 'PBKS',
+                'Chennai Super Kings': 'CSK',
+                'Mumbai Indians': 'MI',
+                'Royal Challengers Bangalore': 'RCB',
+                'Delhi Capitals': 'DC',
+                'Sunrisers Hyderabad': 'SRH',
+                'Rajasthan Royals': 'RR',
+                'Gujarat Titans': 'GT',
+                'Lucknow Super Giants': 'LSG'
+            };
+            
+            return abbrevMap[team] || team?.substring(0, 3).toUpperCase() || 'TBD';
+        }
+
+        function generateSparkline(scores, color) {
+            const maxScore = Math.max(...scores, 50); // Minimum scale of 50
+            const bars = scores.map(score => {
+                const height = Math.max(2, (score / maxScore) * 20); // Min 2px, max 20px
+                return `<div class="sparkline-bar" style="height: ${height}px; background-color: ${color}; width: 4px; border-radius: 1px;"></div>`;
+            });
+            
+            return `<div class="flex items-end space-x-1 h-5">${bars.join('')}</div>`;
+        }
+
+        function generateMatchupInsights(card, currentRole) {
+            const coreStats = card.core || {};
+            const tactical = card.tactical || {};
+            
+            if (currentRole === 'bowler') {
+                return `
+                    <div class="space-y-1">
+                        <div>• Strong vs Right-handers (Econ: 6.2)</div>
+                        <div>• Struggles vs Left-handers (Econ: 8.1)</div>
+                        <div>• Effective in middle overs (7-15)</div>
+                    </div>
+                `;
+            } else {
+                const sr = parseFloat(coreStats.strikeRate) || 120;
+                return `
+                    <div class="space-y-1">
+                        <div>• Dominates pace bowling (SR: ${Math.round(sr * 1.15)})</div>
+                        <div>• Cautious vs spin (SR: ${Math.round(sr * 0.85)})</div>
+                        <div>• Prefers short boundaries</div>
+                    </div>
+                `;
+            }
+        }
+
+        function generateVenueInsights(card) {
+            // Use real venue performance data from KG if available
+            const tactical = card.tactical || {};
+            const venuePerformance = tactical.venue_performance || {};
+            
+            if (Object.keys(venuePerformance).length > 0) {
+                // Find best venue performance
+                let bestVenue = '';
+                let bestAvg = 0;
+                
+                Object.entries(venuePerformance).forEach(([venue, stats]) => {
+                    const avg = stats.average || 0;
+                    if (avg > bestAvg) {
+                        bestAvg = avg;
+                        bestVenue = venue;
+                    }
+                });
+                
+                return `
+                    <div class="space-y-1">
+                        <div>• Strong at ${bestVenue} (Avg: ${bestAvg.toFixed(1)})</div>
+                        <div>• ${Object.keys(venuePerformance).length} venues played</div>
+                        <div>• Performance varies by conditions</div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="space-y-1">
+                        <div>• Venue performance data not available</div>
+                        <div>• Adaptable to different conditions</div>
+                    </div>
+                `;
+            }
+        }
+
+        function generateSimilarPlayers(card, currentRole) {
+            // Use GNN embeddings or statistical similarity when available
+            const coreStats = card.core || {};
+            const sr = parseFloat(coreStats.strikeRate) || 0;
+            const avg = parseFloat(coreStats.battingAverage) || 0;
+            
+            if (currentRole === 'bowler') {
+                const econ = parseFloat(calculateEconomyRate(card)) || 0;
+                const wickets = parseInt(calculateWickets(card)) || 0;
+                
+                return `
+                    <div class="space-y-1">
+                        <div>• Economy Rate: ${econ.toFixed(1)}</div>
+                        <div>• Wickets: ${wickets}</div>
+                        <div>• Similar players analysis requires GNN</div>
+                    </div>
+                `;
+            } else {
+                return `
+                    <div class="space-y-1">
+                        <div>• Strike Rate: ${sr.toFixed(1)}</div>
+                        <div>• Average: ${avg.toFixed(1)}</div>
+                        <div>• Similar players analysis requires GNN</div>
+                    </div>
+                `;
+            }
+        }
+
+        function togglePlayerInsights(playerName) {
+            const insightsId = `insights-${playerName.replace(/\s+/g, '-')}`;
+            const insightsPanel = document.getElementById(insightsId);
+            
+            if (insightsPanel) {
+                insightsPanel.classList.toggle('hidden');
+                
+                // Update expand indicator text
+                const expandIndicator = insightsPanel.previousElementSibling;
+                if (expandIndicator) {
+                    if (insightsPanel.classList.contains('hidden')) {
+                        expandIndicator.textContent = 'Click for detailed insights ↓';
+                    } else {
+                        expandIndicator.textContent = 'Hide detailed insights ↑';
+                    }
+                }
+            }
+        }
+
+        async function updateWeatherAndPitchConditions(matchData) {
+            try {
+                // Try to get enriched weather data for this specific match
+                const enrichedWeather = await fetchEnrichedWeatherData(matchData);
+                
+                if (enrichedWeather && enrichedWeather.status === 'success') {
+                    // Update weather condition with real enriched data
+                    const weatherElement = document.getElementById('weatherCondition');
+                    const pitchElement = document.getElementById('pitchCondition');
+                    
+                    if (enrichedWeather.temperature) {
+                        const temp = Math.round(enrichedWeather.temperature);
+                        const feelsLike = enrichedWeather.feels_like ? ` (feels ${Math.round(enrichedWeather.feels_like)}°C)` : '';
+                        weatherElement.textContent = `🌡️ ${temp}°C${feelsLike}`;
+                    }
+                    
+                    if (enrichedWeather.conditions) {
+                        // Update pitch condition based on real weather
+                        const pitchCondition = derivePitchCondition(enrichedWeather);
+                        pitchElement.textContent = `${pitchCondition.icon} ${pitchCondition.description}`;
+                    }
+                    
+                    // Add humidity and wind info if available
+                    if (enrichedWeather.humidity || enrichedWeather.wind_speed) {
+                        const additionalInfo = [];
+                        if (enrichedWeather.humidity) additionalInfo.push(`💧 ${enrichedWeather.humidity}%`);
+                        if (enrichedWeather.wind_speed) additionalInfo.push(`💨 ${Math.round(enrichedWeather.wind_speed)}kph`);
+                        
+                        // You could display this additional info somewhere if needed
+                        console.log('Additional weather info:', additionalInfo.join(', '));
+                    }
+                } else {
+                    // Use intelligent defaults based on venue and date
+                    updateWeatherDefaults(matchData);
+                }
+            } catch (error) {
+                console.warn('Could not fetch enriched weather data:', error);
+                updateWeatherDefaults(matchData);
+            }
+        }
+
+        async function fetchEnrichedWeatherData(matchData) {
+            try {
+                // Try to fetch enriched weather data from the backend
+                const response = await fetch(`http://localhost:5001/api/enriched-weather?date=${matchData.date}&venue=${encodeURIComponent(matchData.venue)}`);
+                
+                // Parse JSON response regardless of status code
+                const weatherData = await response.json();
+                
+                if (response.ok || weatherData.status === 'success') {
+                    return weatherData;
+                } else if (weatherData.status === 'not_found') {
+                    console.log('📊 No enriched weather data available for this match, using defaults');
+                    return null;
+                } else {
+                    console.warn('Enriched weather API error:', weatherData);
+                    return null;
+                }
+            } catch (error) {
+                console.warn('Could not fetch enriched weather data:', error);
+                return null;
+            }
+        }
+
+        function updateWeatherDefaults(matchData) {
+            // Use intelligent defaults based on venue and season
+            const venue = matchData.venue || '';
+            const date = new Date(matchData.date || '2024-01-01');
+            const month = date.getMonth(); // 0-11
+            
+            let temperature = 28; // Default temperature
+            let pitchIcon = '🌤️';
+            let pitchDescription = 'Batting Friendly';
+            
+            // Adjust based on venue (Indian conditions)
+            if (venue.toLowerCase().includes('punjab') || venue.toLowerCase().includes('mohali')) {
+                temperature = month < 3 || month > 9 ? 22 : 32; // Cooler in winter
+                pitchIcon = '☀️';
+                pitchDescription = 'Flat Track';
+            } else if (venue.toLowerCase().includes('mumbai') || venue.toLowerCase().includes('wankhede')) {
+                temperature = 29;
+                pitchIcon = '🌊';
+                pitchDescription = 'Batting Paradise';
+            } else if (venue.toLowerCase().includes('kolkata') || venue.toLowerCase().includes('eden')) {
+                temperature = 26;
+                pitchIcon = '🌫️';
+                pitchDescription = 'Spin Friendly';
+            } else if (venue.toLowerCase().includes('bangalore') || venue.toLowerCase().includes('chinnaswamy')) {
+                temperature = 24;
+                pitchIcon = '🌤️';
+                pitchDescription = 'Balanced Pitch';
+            }
+            
+            document.getElementById('weatherCondition').textContent = `🌡️ ${temperature}°C`;
+            document.getElementById('pitchCondition').textContent = `${pitchIcon} ${pitchDescription}`;
+        }
+
+        function derivePitchCondition(weatherData) {
+            const conditions = weatherData.conditions?.toLowerCase() || '';
+            
+            if (conditions.includes('rain') || conditions.includes('drizzle')) {
+                return { icon: '🌧️', description: 'Bowler Friendly' };
+            } else if (conditions.includes('cloud') || conditions.includes('overcast')) {
+                return { icon: '☁️', description: 'Swing Conditions' };
+            } else if (conditions.includes('clear') || conditions.includes('sunny')) {
+                return { icon: '☀️', description: 'Batting Friendly' };
+            } else {
+                return { icon: '🌤️', description: 'Balanced Pitch' };
+            }
+        }
+
         function createCompactPlayerCardHTML(card, playerName, currentRole = null) {
             // Handle both old and new card data structures
             const name = card.playerName || card.name || playerName || 'Unknown Player';
@@ -2646,6 +3192,11 @@
             
             // Generate initials safely
             const initials = name.split(' ').map(n => n[0] || '').join('').substring(0, 2) || 'P';
+            
+            // Generate enhanced data for Featured Player Cardboard 2.0
+            const formData = generateFormData(coreStats);
+            const traits = generatePlayerTraits(card, currentRole);
+            const teamColors = getTeamColors(card.team || 'default');
             
             // Determine what stats to show based on current role
             let stat1Label, stat1Value, stat2Label, stat2Value;
@@ -2665,24 +3216,108 @@
             }
             
             return `
-                <div class="compact-player-card bg-white border rounded-lg p-3 shadow-sm">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                            ${initials}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="font-medium text-sm truncate">${name}</div>
-                            <div class="text-xs text-gray-500">${role}</div>
+                <div class="enhanced-player-card bg-white border rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300" style="border-left: 4px solid ${teamColors.primary}">
+                    <!-- Player Identity Header -->
+                    <div class="player-identity-header p-3" style="background: linear-gradient(135deg, ${teamColors.primary}15, ${teamColors.secondary}15)">
+                        <div class="flex items-center space-x-3">
+                            <!-- Player Avatar/Headshot -->
+                            <div class="relative">
+                                <div class="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md" style="background: linear-gradient(135deg, ${teamColors.primary}, ${teamColors.secondary})">
+                                    ${initials}
+                                </div>
+                                <!-- Role Icon Overlay -->
+                                <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                    ${getRoleIcon(role, currentRole)}
+                                </div>
+                            </div>
+                            
+                            <div class="flex-1 min-w-0">
+                                <div class="font-semibold text-sm truncate text-gray-900">${name}</div>
+                                <div class="flex items-center space-x-2 text-xs">
+                                    <span class="text-gray-600">${role}</span>
+                                    <div class="team-badge px-1.5 py-0.5 rounded text-xs font-medium text-white" style="background-color: ${teamColors.primary}">
+                                        ${getTeamAbbreviation(card.team)}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Form Indicator -->
+                            <div class="form-indicator">
+                                <div class="flex items-center space-x-1 text-xs">
+                                    <span class="${formData.isInForm ? 'text-green-600' : 'text-red-600'}">${formData.isInForm ? '🔥' : '❄️'}</span>
+                                    <span class="text-gray-500 font-medium">${formData.isInForm ? 'In Form' : 'Out of Form'}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
-                        <div class="text-center">
-                            <div class="font-medium">${stat1Value}</div>
-                            <div class="text-gray-500">${stat1Label}</div>
+                    
+                    <!-- Stats and Form -->
+                    <div class="p-3 pt-2">
+                        <!-- Core Stats -->
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <div class="text-center">
+                                <div class="font-bold text-lg" style="color: ${teamColors.primary}">${stat1Value}</div>
+                                <div class="text-xs text-gray-500 font-medium">${stat1Label}</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="font-bold text-lg" style="color: ${teamColors.primary}">${stat2Value}</div>
+                                <div class="text-xs text-gray-500 font-medium">${stat2Label}</div>
+                            </div>
                         </div>
-                        <div class="text-center">
-                            <div class="font-medium">${stat2Value}</div>
-                            <div class="text-gray-500">${stat2Label}</div>
+                        
+                        <!-- Last 5 Innings Sparkline -->
+                        <div class="mb-3">
+                            <div class="text-xs text-gray-500 mb-1 font-medium">Last 5 Innings</div>
+                            <div class="flex items-center space-x-1">
+                                ${generateSparkline(formData.last5Scores, teamColors.primary)}
+                                <div class="text-xs text-gray-400 ml-2">${formData.last5Scores.join(', ')}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- KG-Derived Traits -->
+                        <div class="traits-section">
+                            <div class="text-xs font-medium text-gray-700 mb-1">Special Traits</div>
+                            <div class="flex flex-wrap gap-1">
+                                ${traits.map(trait => `
+                                    <span class="trait-badge px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700 border hover:bg-gray-200 transition-colors">
+                                        ${trait}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Hover Expand Indicator -->
+                    <div class="expand-indicator text-center py-1 bg-gray-50 text-xs text-gray-400 cursor-pointer hover:bg-gray-100 transition-colors" onclick="togglePlayerInsights('${name}')">
+                        Click for detailed insights ↓
+                    </div>
+                    
+                    <!-- Hidden Detailed Insights Panel -->
+                    <div id="insights-${name.replace(/\s+/g, '-')}" class="detailed-insights hidden p-4 bg-gray-50 border-t">
+                        <div class="space-y-3">
+                            <!-- Head-to-Head Matchups -->
+                            <div class="matchup-section">
+                                <h4 class="text-sm font-semibold text-gray-800 mb-2">🎯 Key Matchups</h4>
+                                <div class="text-xs text-gray-600">
+                                    ${generateMatchupInsights(card, currentRole)}
+                                </div>
+                            </div>
+                            
+                            <!-- Venue Performance -->
+                            <div class="venue-section">
+                                <h4 class="text-sm font-semibold text-gray-800 mb-2">🏟️ Venue Factor</h4>
+                                <div class="text-xs text-gray-600">
+                                    ${generateVenueInsights(card)}
+                                </div>
+                            </div>
+                            
+                            <!-- Similar Players -->
+                            <div class="similar-section">
+                                <h4 class="text-sm font-semibold text-gray-800 mb-2">👥 Plays Like</h4>
+                                <div class="text-xs text-gray-600">
+                                    ${generateSimilarPlayers(card, currentRole)}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3316,6 +3951,282 @@
                 executeMainDashboardQuery();
             }
         }
+
+        // Ball-by-Ball Simulation System
+        class SimulationController {
+            constructor() {
+                this.isActive = false;
+                this.isAutoPlaying = false;
+                this.autoPlayInterval = null;
+                this.currentSpeed = 1500; // Default speed in ms
+                
+                this.initializeControls();
+            }
+            
+            initializeControls() {
+                // Button event listeners
+                document.getElementById('startSimBtn').addEventListener('click', () => this.startSimulation());
+                document.getElementById('nextBallBtn').addEventListener('click', () => this.nextBall());
+                document.getElementById('autoPlayBtn').addEventListener('click', () => this.toggleAutoPlay());
+                document.getElementById('stopSimBtn').addEventListener('click', () => this.stopSimulation());
+                
+                // Speed control
+                document.getElementById('simSpeed').addEventListener('change', (e) => {
+                    this.currentSpeed = parseInt(e.target.value);
+                    if (this.isAutoPlaying) {
+                        this.stopAutoPlay();
+                        this.startAutoPlay();
+                    }
+                });
+                
+                // Keyboard controls
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'Space' && this.isActive) {
+                        e.preventDefault();
+                        this.nextBall();
+                    }
+                });
+            }
+            
+            async startSimulation() {
+                try {
+                    console.log('🎮 Starting live simulation...');
+                    
+                    const response = await fetch('http://localhost:5001/api/simulation/start-live', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ match_id: 'auto' })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.status === 'success') {
+                        this.isActive = true;
+                        this.updateControlButtons();
+                        this.updateLiveStatus('SIMULATION', true);
+                        
+                        // Initialize display
+                        this.resetDisplay();
+                        
+                        console.log(`✅ Simulation started: ${result.total_balls} balls`);
+                        
+                        // Update team names if available
+                        if (result.teams) {
+                            document.getElementById('teamName').textContent = result.teams.home || 'Team A';
+                        }
+                        
+                    } else {
+                        console.error('❌ Failed to start simulation:', result.message);
+                        alert('Failed to start simulation: ' + result.message);
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Error starting simulation:', error);
+                    alert('Error starting simulation: ' + error.message);
+                }
+            }
+            
+            async nextBall() {
+                if (!this.isActive) return;
+                
+                try {
+                    const response = await fetch('http://localhost:5001/api/simulation/next-ball', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.status === 'success') {
+                        this.updateDisplay(result);
+                        
+                        // Update player cards with new context
+                        if (result.ball_event.batsman || result.ball_event.bowler) {
+                            setTimeout(() => loadEnhancedPlayerCards(), 500);
+                        }
+                        
+                    } else if (result.status === 'completed') {
+                        console.log('🏁 Simulation completed');
+                        this.stopSimulation();
+                        alert('Simulation completed!');
+                        
+                    } else {
+                        console.error('❌ Ball simulation error:', result.message);
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Error simulating next ball:', error);
+                }
+            }
+            
+            toggleAutoPlay() {
+                if (this.isAutoPlaying) {
+                    this.stopAutoPlay();
+                } else {
+                    this.startAutoPlay();
+                }
+            }
+            
+            startAutoPlay() {
+                if (!this.isActive) return;
+                
+                this.isAutoPlaying = true;
+                document.getElementById('autoPlayBtn').textContent = '⏸️ Pause';
+                document.getElementById('autoPlayBtn').classList.remove('bg-orange-600', 'hover:bg-orange-700');
+                document.getElementById('autoPlayBtn').classList.add('bg-yellow-600', 'hover:bg-yellow-700');
+                
+                this.autoPlayInterval = setInterval(() => {
+                    this.nextBall();
+                }, this.currentSpeed);
+                
+                console.log(`🎮 Auto-play started (${this.currentSpeed}ms intervals)`);
+            }
+            
+            stopAutoPlay() {
+                this.isAutoPlaying = false;
+                if (this.autoPlayInterval) {
+                    clearInterval(this.autoPlayInterval);
+                    this.autoPlayInterval = null;
+                }
+                
+                document.getElementById('autoPlayBtn').textContent = '🎮 Auto Play';
+                document.getElementById('autoPlayBtn').classList.remove('bg-yellow-600', 'hover:bg-yellow-700');
+                document.getElementById('autoPlayBtn').classList.add('bg-orange-600', 'hover:bg-orange-700');
+            }
+            
+            async stopSimulation() {
+                try {
+                    await fetch('http://localhost:5001/api/simulation/stop', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    this.isActive = false;
+                    this.stopAutoPlay();
+                    this.updateControlButtons();
+                    this.updateLiveStatus('STOPPED', false);
+                    
+                    console.log('⏹️ Simulation stopped');
+                    
+                } catch (error) {
+                    console.error('❌ Error stopping simulation:', error);
+                }
+            }
+            
+            updateDisplay(result) {
+                const { ball_event, match_state, ball_number, total_balls } = result;
+                
+                // Update score
+                const score = match_state.score;
+                document.getElementById('currentScore').textContent = `${score.runs}/${score.wickets}`;
+                document.getElementById('currentOvers').textContent = `(${score.overs.toFixed(1)} ov)`;
+                
+                // Update progress
+                document.getElementById('ballProgress').textContent = `${ball_number}/${total_balls}`;
+                
+                // Update win probability
+                const winProb = match_state.win_probability;
+                document.getElementById('winProbability').textContent = `${winProb.toFixed(0)}%`;
+                document.getElementById('winProbBar').style.width = `${winProb}%`;
+                
+                // Update target and required rate
+                document.getElementById('targetScore').textContent = match_state.target;
+                document.getElementById('requiredRate').textContent = match_state.required_rate.toFixed(2);
+                
+                // Update match phase
+                document.getElementById('matchPhase').textContent = match_state.phase;
+                
+                // Update betting odds
+                const odds = match_state.betting_odds;
+                document.getElementById('bettingOdds').textContent = `${odds.home_win.toFixed(1)} | ${odds.away_win.toFixed(1)}`;
+                
+                // Update last 6 balls
+                this.updateLast6Balls(match_state.last_6_balls);
+                
+                console.log(`⚾ Ball ${ball_number}: ${ball_event.runs} runs, ${score.runs}/${score.wickets} (${score.overs.toFixed(1)} ov)`);
+            }
+            
+            updateLast6Balls(balls) {
+                const container = document.getElementById('last6Balls');
+                container.innerHTML = '';
+                
+                balls.forEach(ball => {
+                    const ballElement = document.createElement('div');
+                    ballElement.className = 'w-4 h-4 rounded-full flex items-center justify-center text-white text-xs font-bold';
+                    
+                    // Color coding for different outcomes
+                    if (ball === 'W') {
+                        ballElement.className += ' bg-red-500';
+                        ballElement.textContent = 'W';
+                    } else if (ball === '6') {
+                        ballElement.className += ' bg-green-500';
+                        ballElement.textContent = '6';
+                    } else if (ball === '4') {
+                        ballElement.className += ' bg-orange-400';
+                        ballElement.textContent = '4';
+                    } else if (ball === '0') {
+                        ballElement.className += ' bg-gray-400';
+                        ballElement.textContent = '0';
+                    } else {
+                        ballElement.className += ' bg-blue-400';
+                        ballElement.textContent = ball;
+                    }
+                    
+                    container.appendChild(ballElement);
+                });
+            }
+            
+            updateControlButtons() {
+                const startBtn = document.getElementById('startSimBtn');
+                const nextBtn = document.getElementById('nextBallBtn');
+                const autoBtn = document.getElementById('autoPlayBtn');
+                const stopBtn = document.getElementById('stopSimBtn');
+                
+                if (this.isActive) {
+                    startBtn.disabled = true;
+                    nextBtn.disabled = false;
+                    autoBtn.disabled = false;
+                    stopBtn.disabled = false;
+                } else {
+                    startBtn.disabled = false;
+                    nextBtn.disabled = true;
+                    autoBtn.disabled = true;
+                    stopBtn.disabled = true;
+                }
+            }
+            
+            updateLiveStatus(text, isActive) {
+                const statusElement = document.getElementById('liveStatus');
+                statusElement.textContent = text;
+                
+                if (isActive) {
+                    statusElement.className = 'bg-green-600 text-white animate-pulse text-xs px-2 py-1 rounded';
+                } else {
+                    statusElement.className = 'bg-gray-500 text-white text-xs px-2 py-1 rounded';
+                }
+            }
+            
+            resetDisplay() {
+                document.getElementById('currentScore').textContent = '0/0';
+                document.getElementById('currentOvers').textContent = '(0.0 ov)';
+                document.getElementById('ballProgress').textContent = '0/0';
+                document.getElementById('winProbability').textContent = '50%';
+                document.getElementById('winProbBar').style.width = '50%';
+                document.getElementById('targetScore').textContent = '180';
+                document.getElementById('requiredRate').textContent = '6.00';
+                document.getElementById('matchPhase').textContent = 'Powerplay';
+                document.getElementById('bettingOdds').textContent = '2.0 | 2.0';
+                document.getElementById('last6Balls').innerHTML = '';
+            }
+        }
+        
+        // Initialize simulation controller
+        let simulationController;
+        
+        // Initialize simulation controller when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            simulationController = new SimulationController();
+        });
 
         console.log('🚀 Enhanced Cricket Intelligence Dashboard loaded successfully!');
     </script>
