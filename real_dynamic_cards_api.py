@@ -722,6 +722,32 @@ def generate_core_stats(player_name, stats):
         "last5Scores": [random.randint(15, 90) for _ in range(5)]  # Would get from recent matches
     }
 
+def get_player_stats_from_kg(player_name):
+    """Get player statistics from Knowledge Graph"""
+    try:
+        if kg_query_engine:
+            # Try to get real stats from KG
+            profile = kg_query_engine.get_complete_player_profile(player_name)
+            if profile and 'batting_stats' in profile:
+                batting = profile['batting_stats']
+                return {
+                    'matches': batting.get('matches', 0),
+                    'batting_average': batting.get('average', 0),
+                    'strike_rate': batting.get('strike_rate', 0),
+                    'runs': batting.get('runs', 0),
+                    'fours': batting.get('fours', 0),
+                    'sixes': batting.get('sixes', 0)
+                }
+        
+        # Fallback to player_data if available
+        if player_data and player_name in player_data:
+            return player_data[player_name]
+            
+        return None
+    except Exception as e:
+        logger.warning(f"Could not get stats for {player_name}: {e}")
+        return None
+
 def generate_tactical_insights(player_name, stats, opponent_team):
     """Generate tactical insights including bowler type analysis"""
     venue_factors = ["+15% at Chinnaswamy", "+8% vs CSK", "-5% in day games", "+12% in playoffs"]
