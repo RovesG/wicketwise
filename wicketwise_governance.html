@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WicketWise - Governance Dashboard</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #c8712d 0%, #002466 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .nav-bar {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-tab {
+            padding: 0.75rem 1.5rem;
+            background: #f1f5f9;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-tab.active {
+            background: #c8712d;
+            color: white;
+        }
+
+        .nav-tab:hover:not(.active) {
+            background: #e2e8f0;
+        }
+
+        .back-button {
+            padding: 0.75rem 1.5rem;
+            background: #64748b;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .back-button:hover {
+            background: #475569;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .grid {
+            display: grid;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metric-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-healthy {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .data-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: #c8712d;
+            box-shadow: 0 0 0 3px rgba(200, 113, 45, 0.1);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: #c8712d;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #b8661f;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #64748b;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e2e8f0;
+            border-top: 2px solid #c8712d;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .cricket-accent {
+            color: #c8712d;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+            <i data-lucide="shield-check"></i>
+            WicketWise Deterministic Governance Layer
+        </h1>
+        <p>AI-Independent Safety Engine for Cricket Betting Governance</p>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('overview')">
+                <i data-lucide="bar-chart-3"></i>
+                Overview
+            </button>
+            <button class="nav-tab" onclick="switchTab('decisions')">
+                <i data-lucide="scale"></i>
+                Decisions
+            </button>
+            <button class="nav-tab" onclick="switchTab('rules')">
+                <i data-lucide="settings"></i>
+                Rules
+            </button>
+            <button class="nav-tab" onclick="switchTab('analytics')">
+                <i data-lucide="trending-up"></i>
+                Analytics
+            </button>
+            <button class="nav-tab" onclick="switchTab('audit')">
+                <i data-lucide="search"></i>
+                Audit
+            </button>
+        </div>
+        <a href="wicketwise_dashboard.html" class="back-button">
+            <i data-lucide="arrow-left"></i>
+            Back to Dashboard
+        </a>
+    </div>
+
+    <div class="container">
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <div class="grid grid-4">
+                <div class="card metric-card">
+                    <div class="metric-value cricket-accent" id="total-decisions">1,247</div>
+                    <div class="metric-label">Total Decisions</div>
+                </div>
+                <div class="card metric-card">
+                    <div class="metric-value" style="color: #16a34a;" id="approved-decisions">1,189</div>
+                    <div class="metric-label">Approved</div>
+                </div>
+                <div class="card metric-card">
+                    <div class="metric-value" style="color: #dc2626;" id="rejected-decisions">58</div>
+                    <div class="metric-label">Rejected</div>
+                </div>
+                <div class="card metric-card">
+                    <div class="metric-value" style="color: #2563eb;" id="system-uptime">99.7%</div>
+                    <div class="metric-label">System Uptime</div>
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i data-lucide="activity"></i>
+                            System Health
+                        </h3>
+                        <span class="status-indicator status-healthy">
+                            <i data-lucide="check-circle"></i>
+                            Healthy
+                        </span>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span>DGL Core Engine</span>
+                            <span class="status-indicator status-healthy">Online</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Rule Engine</span>
+                            <span class="status-indicator status-healthy">Active</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Decision Pipeline</span>
+                            <span class="status-indicator status-healthy">Processing</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Audit Logger</span>
+                            <span class="status-indicator status-warning">Delayed</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i data-lucide="clock"></i>
+                            Recent Activity
+                        </h3>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <div class="flex-1">
+                                <div class="text-sm font-medium">Bet approved: RCB vs MI</div>
+                                <div class="text-xs text-gray-500">2 minutes ago</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                            <div class="flex-1">
+                                <div class="text-sm font-medium">Stake limit exceeded</div>
+                                <div class="text-xs text-gray-500">5 minutes ago</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <div class="flex-1">
+                                <div class="text-sm font-medium">Rule updated: MAX_STAKE</div>
+                                <div class="text-xs text-gray-500">12 minutes ago</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <div class="flex-1">
+                                <div class="text-sm font-medium">Portfolio rebalanced</div>
+                                <div class="text-xs text-gray-500">18 minutes ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i data-lucide="trending-up"></i>
+                        Decision Trends (Last 24 Hours)
+                    </h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="decisionTrendsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Decisions Tab -->
+        <div id="decisions" class="tab-content">
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i data-lucide="scale"></i>
+                            Recent Decisions
+                        </h3>
+                        <button class="btn btn-primary" onclick="refreshDecisions()">
+                            <i data-lucide="refresh-cw"></i>
+                            Refresh
+                        </button>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Type</th>
+                                <th>Decision</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody id="decisions-table">
+                            <tr>
+                                <td>14:32:15</td>
+                                <td>BET_APPROVAL</td>
+                                <td><span class="status-indicator status-healthy">APPROVED</span></td>
+                                <td>Within limits</td>
+                            </tr>
+                            <tr>
+                                <td>14:31:42</td>
+                                <td>STAKE_CHECK</td>
+                                <td><span class="status-indicator status-error">REJECTED</span></td>
+                                <td>Exceeds max stake</td>
+                            </tr>
+                            <tr>
+                                <td>14:30:18</td>
+                                <td>PORTFOLIO_REBALANCE</td>
+                                <td><span class="status-indicator status-healthy">APPROVED</span></td>
+                                <td>Risk within tolerance</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i data-lucide="pie-chart"></i>
+                            Decision Distribution
+                        </h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="decisionDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rules Tab -->
+        <div id="rules" class="tab-content">
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i data-lucide="settings"></i>
+                            Active Rules
+                        </h3>
+                        <button class="btn btn-primary" onclick="addNewRule()">
+                            <i data-lucide="plus"></i>
+                            Add Rule
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="p-4 border border-gray-200 rounded-lg">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-semibold">MAX_STAKE_PERCENTAGE</h4>
+                                <span class="status-indicator status-healthy">Active</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-3">Maximum stake as percentage of portfolio</p>
+                            <div class="flex items-center gap-4">
+                                <input type="number" value="5" class="form-input w-20" id="max-stake-input">
+                                <span class="text-sm text-gray-500">%</span>
+                                <button class="btn btn-secondary btn-sm" onclick="updateRule('MAX_STAKE_PERCENTAGE')">Update</button>
+                            </div>
+                        </div>
+
+                        <div class="p-4 border border-gray-200 rounded-lg">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-semibold">RISK_TOLERANCE</h4>
+                                <span class="status-indicator status-healthy">Active</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-3">Overall risk tolerance level</p>
+                            <div class="flex items-center gap-4">
+                                <select class="form-select w-32" id="risk-tolerance-select">
+                                    <option value="conservative">Conservative</option>
+                                    <option value="moderate" selected>Moderate</option>
+                                    <option value="aggressive">Aggressive</option>
+                                </select>
+                                <button class="btn btn-secondary btn-sm" onclick="updateRule('RISK_TOLERANCE')">Update</button>
+                            </div>
+                        </div>
+
+                        <div class="p-4 border border-gray-200 rounded-lg">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-semibold">DAILY_LOSS_LIMIT</h4>
+                                <span class="status-indicator status-healthy">Active</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-3">Maximum daily loss threshold</p>
+                            <div class="flex items-center gap-4">
+                                <input type="number" value="100" class="form-input w-24" id="daily-loss-input">
+                                <span class="text-sm text-gray-500">USD</span>
+                                <button class="btn btn-secondary btn-sm" onclick="updateRule('DAILY_LOSS_LIMIT')">Update</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i data-lucide="history"></i>
+                            Rule Changes
+                        </h3>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="font-medium text-blue-900">MAX_STAKE_PERCENTAGE</div>
+                                    <div class="text-sm text-blue-700">Changed from 3% to 5%</div>
+                                </div>
+                                <div class="text-xs text-blue-600">2 hours ago</div>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="font-medium text-green-900">RISK_TOLERANCE</div>
+                                    <div class="text-sm text-green-700">Set to Moderate</div>
+                                </div>
+                                <div class="text-xs text-green-600">1 day ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i data-lucide="trending-up"></i>
+                            Performance Metrics
+                        </h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i data-lucide="target"></i>
+                            Risk Analysis
+                        </h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i data-lucide="bar-chart"></i>
+                        Decision Effectiveness
+                    </h3>
+                </div>
+                <div class="grid grid-3">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600">94.3%</div>
+                        <div class="text-sm text-gray-600">Correct Approvals</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-red-600">2.1%</div>
+                        <div class="text-sm text-gray-600">False Positives</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-600">3.6%</div>
+                        <div class="text-sm text-gray-600">False Negatives</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Tab -->
+        <div id="audit" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i data-lucide="search"></i>
+                        Audit Log
+                    </h3>
+                    <div class="flex gap-2">
+                        <input type="date" class="form-input w-40" id="audit-date-filter">
+                        <select class="form-select w-32" id="audit-type-filter">
+                            <option value="">All Types</option>
+                            <option value="BET_APPROVAL">Bet Approval</option>
+                            <option value="RULE_CHANGE">Rule Change</option>
+                            <option value="SYSTEM_EVENT">System Event</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="filterAuditLog()">
+                            <i data-lucide="filter"></i>
+                            Filter
+                        </button>
+                    </div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Event Type</th>
+                            <th>User/System</th>
+                            <th>Action</th>
+                            <th>Details</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-table">
+                        <tr>
+                            <td>2024-01-15 14:32:15</td>
+                            <td>BET_APPROVAL</td>
+                            <td>DGL_SYSTEM</td>
+                            <td>Evaluate bet request</td>
+                            <td>RCB vs MI, Stake: $25</td>
+                            <td><span class="status-indicator status-healthy">APPROVED</span></td>
+                        </tr>
+                        <tr>
+                            <td>2024-01-15 14:31:42</td>
+                            <td>STAKE_CHECK</td>
+                            <td>DGL_SYSTEM</td>
+                            <td>Validate stake amount</td>
+                            <td>Requested: $150, Limit: $100</td>
+                            <td><span class="status-indicator status-error">REJECTED</span></td>
+                        </tr>
+                        <tr>
+                            <td>2024-01-15 14:30:18</td>
+                            <td>RULE_CHANGE</td>
+                            <td>admin_user</td>
+                            <td>Update MAX_STAKE_PERCENTAGE</td>
+                            <td>Changed from 3% to 5%</td>
+                            <td><span class="status-indicator status-healthy">SUCCESS</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Tab switching functionality
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked nav tab
+            event.target.classList.add('active');
+            
+            // Initialize charts for the active tab
+            if (tabName === 'overview') {
+                initDecisionTrendsChart();
+            } else if (tabName === 'decisions') {
+                initDecisionDistributionChart();
+            } else if (tabName === 'analytics') {
+                initPerformanceChart();
+                initRiskChart();
+            }
+        }
+
+        // Chart initialization functions
+        function initDecisionTrendsChart() {
+            const ctx = document.getElementById('decisionTrendsChart');
+            if (!ctx) return;
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                    datasets: [{
+                        label: 'Approved',
+                        data: [12, 19, 25, 32, 28, 35, 42],
+                        borderColor: '#16a34a',
+                        backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Rejected',
+                        data: [2, 3, 1, 5, 2, 3, 4],
+                        borderColor: '#dc2626',
+                        backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function initDecisionDistributionChart() {
+            const ctx = document.getElementById('decisionDistributionChart');
+            if (!ctx) return;
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Approved', 'Rejected', 'Pending'],
+                    datasets: [{
+                        data: [1189, 58, 12],
+                        backgroundColor: ['#16a34a', '#dc2626', '#f59e0b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        function initPerformanceChart() {
+            const ctx = document.getElementById('performanceChart');
+            if (!ctx) return;
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Decisions/Day',
+                        data: [45, 52, 38, 67, 59, 43, 28],
+                        backgroundColor: '#c8712d'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function initRiskChart() {
+            const ctx = document.getElementById('riskChart');
+            if (!ctx) return;
+            
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Stake Risk', 'Portfolio Risk', 'Market Risk', 'Liquidity Risk', 'Time Risk'],
+                    datasets: [{
+                        label: 'Current Risk Level',
+                        data: [3, 2, 4, 2, 3],
+                        borderColor: '#c8712d',
+                        backgroundColor: 'rgba(200, 113, 45, 0.2)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 5
+                        }
+                    }
+                }
+            });
+        }
+
+        // Rule management functions
+        async function updateRule(ruleId) {
+            let value;
+            if (ruleId === 'MAX_STAKE_PERCENTAGE') {
+                value = parseFloat(document.getElementById('max-stake-input').value);
+            } else if (ruleId === 'RISK_TOLERANCE') {
+                value = document.getElementById('risk-tolerance-select').value;
+            } else if (ruleId === 'DAILY_LOSS_LIMIT') {
+                value = parseFloat(document.getElementById('daily-loss-input').value);
+            }
+            
+            try {
+                const response = await fetch(`http://localhost:5001/api/governance/rules/${ruleId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ value: value })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showAlert('success', `Rule ${ruleId} updated successfully`);
+                } else {
+                    showAlert('error', `Failed to update rule: ${data.message}`);
+                }
+            } catch (error) {
+                console.error(`Error updating ${ruleId}:`, error);
+                showAlert('error', `Error updating rule: ${error.message}`);
+            }
+        }
+
+        function addNewRule() {
+            // This would open a modal or form to add a new rule
+            showAlert('info', 'Add new rule functionality would be implemented here');
+        }
+
+        function refreshDecisions() {
+            // This would refresh the decisions table from the API
+            showAlert('info', 'Refreshing decisions...');
+        }
+
+        function filterAuditLog() {
+            const date = document.getElementById('audit-date-filter').value;
+            const type = document.getElementById('audit-type-filter').value;
+            
+            // This would filter the audit log based on the selected criteria
+            console.log(`Filtering audit log: date=${date}, type=${type}`);
+            showAlert('info', 'Filtering audit log...');
+        }
+
+        // Utility functions
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                <i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info'}"></i>
+                ${message}
+            `;
+            
+            document.body.insertBefore(alertDiv, document.body.firstChild);
+            
+            // Re-initialize icons for the new alert
+            lucide.createIcons();
+            
+            // Remove alert after 3 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
+
+        // Initialize charts on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initDecisionTrendsChart();
+        });
+
+        // Load real data from API
+        async function loadGovernanceData() {
+            try {
+                // Load metrics
+                const metricsResponse = await fetch('http://localhost:5001/api/governance/metrics');
+                if (metricsResponse.ok) {
+                    const metricsData = await metricsResponse.json();
+                    if (metricsData.status === 'success') {
+                        document.getElementById('total-decisions').textContent = metricsData.data.total_decisions.toLocaleString();
+                        document.getElementById('approved-decisions').textContent = metricsData.data.approved_decisions.toLocaleString();
+                        document.getElementById('rejected-decisions').textContent = metricsData.data.rejected_decisions.toLocaleString();
+                        document.getElementById('system-uptime').textContent = metricsData.data.system_uptime + '%';
+                    }
+                }
+
+                // Load recent decisions
+                const decisionsResponse = await fetch('http://localhost:5001/api/governance/decisions');
+                if (decisionsResponse.ok) {
+                    const decisionsData = await decisionsResponse.json();
+                    if (decisionsData.status === 'success') {
+                        updateDecisionsTable(decisionsData.data);
+                    }
+                }
+
+                // Load rules
+                const rulesResponse = await fetch('http://localhost:5001/api/governance/rules');
+                if (rulesResponse.ok) {
+                    const rulesData = await rulesResponse.json();
+                    if (rulesData.status === 'success') {
+                        updateRulesDisplay(rulesData.data);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading governance data:', error);
+            }
+        }
+
+        function updateDecisionsTable(decisions) {
+            const tbody = document.getElementById('decisions-table');
+            tbody.innerHTML = decisions.map(decision => `
+                <tr>
+                    <td>${decision.time}</td>
+                    <td>${decision.type}</td>
+                    <td><span class="status-indicator ${decision.decision === 'APPROVED' ? 'status-healthy' : 'status-error'}">${decision.decision}</span></td>
+                    <td>${decision.reason}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateRulesDisplay(rules) {
+            if (rules.MAX_STAKE_PERCENTAGE) {
+                document.getElementById('max-stake-input').value = rules.MAX_STAKE_PERCENTAGE.value;
+            }
+            if (rules.RISK_TOLERANCE) {
+                document.getElementById('risk-tolerance-select').value = rules.RISK_TOLERANCE.value;
+            }
+            if (rules.DAILY_LOSS_LIMIT) {
+                document.getElementById('daily-loss-input').value = rules.DAILY_LOSS_LIMIT.value;
+            }
+        }
+
+        // Auto-refresh data every 30 seconds
+        setInterval(() => {
+            loadGovernanceData();
+        }, 30000);
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadGovernanceData();
+        });
+    </script>
+</body>
+</html>

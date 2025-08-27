@@ -48,6 +48,50 @@ def get_admin_tools_instance():
         admin_tools = get_admin_tools()
     return admin_tools
 
+# Mock DGL data for governance dashboard
+governance_data = {
+    "system_health": {
+        "dgl_core": "healthy",
+        "rule_engine": "healthy", 
+        "decision_pipeline": "healthy",
+        "audit_logger": "warning"
+    },
+    "metrics": {
+        "total_decisions": 1247,
+        "approved_decisions": 1189,
+        "rejected_decisions": 58,
+        "system_uptime": 99.7
+    },
+    "rules": {
+        "MAX_STAKE_PERCENTAGE": {"value": 5, "type": "number", "unit": "%"},
+        "RISK_TOLERANCE": {"value": "moderate", "type": "select", "options": ["conservative", "moderate", "aggressive"]},
+        "DAILY_LOSS_LIMIT": {"value": 100, "type": "number", "unit": "USD"}
+    },
+    "recent_decisions": [
+        {"time": "14:32:15", "type": "BET_APPROVAL", "decision": "APPROVED", "reason": "Within limits"},
+        {"time": "14:31:42", "type": "STAKE_CHECK", "decision": "REJECTED", "reason": "Exceeds max stake"},
+        {"time": "14:30:18", "type": "PORTFOLIO_REBALANCE", "decision": "APPROVED", "reason": "Risk within tolerance"}
+    ],
+    "audit_log": [
+        {
+            "timestamp": "2024-01-15 14:32:15",
+            "event_type": "BET_APPROVAL", 
+            "user": "DGL_SYSTEM",
+            "action": "Evaluate bet request",
+            "details": "RCB vs MI, Stake: $25",
+            "result": "APPROVED"
+        },
+        {
+            "timestamp": "2024-01-15 14:31:42",
+            "event_type": "STAKE_CHECK",
+            "user": "DGL_SYSTEM", 
+            "action": "Validate stake amount",
+            "details": "Requested: $150, Limit: $100",
+            "result": "REJECTED"
+        }
+    ]
+}
+
 # Global chat agent instance (initialized lazily)
 chat_agent = None
 
@@ -1407,6 +1451,100 @@ def clear_all_caches():
     except Exception as e:
         logger.error(f"Failed to clear caches: {e}")
         return jsonify({"error": str(e)}), 500
+
+# Governance Dashboard API Endpoints
+@app.route('/api/governance/health', methods=['GET'])
+def get_governance_health():
+    """Get system health status for governance dashboard"""
+    try:
+        return jsonify({
+            "status": "success",
+            "data": governance_data["system_health"]
+        })
+    except Exception as e:
+        logger.error(f"Error getting governance health: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/governance/metrics', methods=['GET'])
+def get_governance_metrics():
+    """Get governance metrics"""
+    try:
+        return jsonify({
+            "status": "success", 
+            "data": governance_data["metrics"]
+        })
+    except Exception as e:
+        logger.error(f"Error getting governance metrics: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/governance/decisions', methods=['GET'])
+def get_recent_decisions():
+    """Get recent governance decisions"""
+    try:
+        return jsonify({
+            "status": "success",
+            "data": governance_data["recent_decisions"]
+        })
+    except Exception as e:
+        logger.error(f"Error getting recent decisions: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/governance/rules', methods=['GET'])
+def get_governance_rules():
+    """Get current governance rules"""
+    try:
+        return jsonify({
+            "status": "success",
+            "data": governance_data["rules"]
+        })
+    except Exception as e:
+        logger.error(f"Error getting governance rules: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/governance/rules/<rule_id>', methods=['PUT'])
+def update_governance_rule(rule_id):
+    """Update a governance rule"""
+    try:
+        data = request.get_json()
+        if rule_id in governance_data["rules"]:
+            governance_data["rules"][rule_id]["value"] = data.get("value")
+            logger.info(f"Updated rule {rule_id} to {data.get('value')}")
+            return jsonify({
+                "status": "success",
+                "message": f"Rule {rule_id} updated successfully"
+            })
+        else:
+            return jsonify({
+                "status": "error", 
+                "message": f"Rule {rule_id} not found"
+            }), 404
+    except Exception as e:
+        logger.error(f"Error updating rule {rule_id}: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/governance/audit', methods=['GET'])
+def get_audit_log():
+    """Get governance audit log"""
+    try:
+        # Get optional filters
+        date_filter = request.args.get('date')
+        type_filter = request.args.get('type')
+        
+        audit_log = governance_data["audit_log"]
+        
+        # Apply filters if provided
+        if date_filter:
+            audit_log = [entry for entry in audit_log if entry["timestamp"].startswith(date_filter)]
+        if type_filter:
+            audit_log = [entry for entry in audit_log if entry["event_type"] == type_filter]
+        
+        return jsonify({
+            "status": "success",
+            "data": audit_log
+        })
+    except Exception as e:
+        logger.error(f"Error getting audit log: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
     print("🚀 Starting WicketWise Admin Backend API...")
