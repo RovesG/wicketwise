@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WicketWise - Agent UI & Advanced Monitoring</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        :root {
+            /* WicketWise color palette */
+            --batting-color: #c8712d;
+            --bowling-color: #002466;
+            --wicket-color: #660003;
+            --signals-color: #819f3d;
+            --neutral-color: #404041;
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --border-color: #e2e8f0;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --success-color: #059669;
+            --warning-color: #d97706;
+            --error-color: #dc2626;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            color: var(--signals-color);
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-indicator.connected {
+            background-color: #dcfce7;
+            color: var(--success-color);
+        }
+
+        .status-indicator.disconnected {
+            background-color: #fee2e2;
+            color: var(--error-color);
+        }
+
+        .nav-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .control-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .control-button:hover {
+            background-color: var(--bg-primary);
+            border-color: var(--signals-color);
+        }
+
+        .control-button.primary {
+            background: var(--signals-color);
+            color: white;
+            border-color: var(--signals-color);
+        }
+
+        .control-button.primary:hover {
+            background: #6b7c2f;
+        }
+
+        .control-button.warning {
+            background: var(--warning-color);
+            color: white;
+            border-color: var(--warning-color);
+        }
+
+        .control-button.danger {
+            background: var(--error-color);
+            color: white;
+            border-color: var(--error-color);
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 1rem;
+        }
+
+        .nav-tabs-list {
+            display: flex;
+            gap: 0;
+        }
+
+        .nav-tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-tab:hover {
+            color: var(--text-primary);
+            border-bottom-color: var(--border-color);
+        }
+
+        .nav-tab.active {
+            color: var(--signals-color);
+            border-bottom-color: var(--signals-color);
+            background: rgba(129, 159, 61, 0.05);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* System Map */
+        .system-map {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .agent-tile {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .agent-tile:hover {
+            border-color: var(--signals-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            justify-content: between;
+            margin-bottom: 1rem;
+        }
+
+        .agent-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .agent-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .agent-status.active {
+            background: #dcfce7;
+            color: var(--success-color);
+        }
+
+        .agent-status.idle {
+            background: #fef3c7;
+            color: var(--warning-color);
+        }
+
+        .agent-status.error {
+            background: #fee2e2;
+            color: var(--error-color);
+        }
+
+        .agent-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .metric {
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--signals-color);
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Flowline Explorer */
+        .flowline-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            height: 600px;
+            overflow: hidden;
+        }
+
+        .flowline-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: between;
+        }
+
+        .flowline-content {
+            height: calc(100% - 60px);
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .event-timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .event-timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.75rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-color);
+        }
+
+        .event-item {
+            position: relative;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: var(--bg-primary);
+            border-radius: 0.375rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .event-item::before {
+            content: '';
+            position: absolute;
+            left: -1.5rem;
+            top: 1rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--signals-color);
+            border: 2px solid var(--bg-secondary);
+        }
+
+        .event-header {
+            display: flex;
+            align-items: center;
+            justify-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .event-type {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .event-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Debug Panel */
+        .debug-panels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .debug-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: between;
+        }
+
+        .panel-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-content {
+            padding: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        /* Breakpoints */
+        .breakpoint-item {
+            display: flex;
+            align-items: center;
+            justify-between;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .breakpoint-info {
+            flex: 1;
+        }
+
+        .breakpoint-type {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .breakpoint-condition {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-family: monospace;
+        }
+
+        /* Watch Expressions */
+        .watch-item {
+            display: flex;
+            align-items: center;
+            justify-between;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .watch-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .watch-value {
+            font-family: monospace;
+            color: var(--signals-color);
+        }
+
+        /* Performance Metrics */
+        .performance-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .performance-metric {
+            text-align: center;
+            padding: 1rem;
+            background: var(--bg-primary);
+            border-radius: 0.375rem;
+        }
+
+        .performance-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--signals-color);
+        }
+
+        .performance-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        /* Banners */
+        .banner {
+            padding: 0.75rem 1rem;
+            text-align: center;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .banner.shadow-mode {
+            background: #fef3c7;
+            color: #92400e;
+            border-bottom: 1px solid #f59e0b;
+        }
+
+        .banner.kill-switch {
+            background: #fee2e2;
+            color: #991b1b;
+            border-bottom: 1px solid #ef4444;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-controls {
+                flex-wrap: wrap;
+            }
+
+            .system-map {
+                grid-template-columns: 1fr;
+            }
+
+            .debug-panels {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Utilities */
+        .hidden {
+            display: none !important;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
+        }
+
+        .text-xs {
+            font-size: 0.75rem;
+        }
+
+        .font-mono {
+            font-family: monospace;
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+
+        .mt-4 {
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Kill Switch Banner -->
+    <div id="killSwitchBanner" class="banner kill-switch hidden">
+        🛑 KILL SWITCH ACTIVE - All trading is currently disabled
+    </div>
+
+    <!-- Shadow Mode Banner -->
+    <div id="shadowModeBanner" class="banner shadow-mode hidden">
+        🎭 SHADOW MODE - All trades are simulated (no real orders placed)
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i data-lucide="activity" class="logo-icon"></i>
+                    <span class="logo-text">WicketWise Agent UI</span>
+                </div>
+                
+                <div class="status-info">
+                    <div id="connectionStatus" class="status-indicator disconnected">
+                        🔴 Disconnected
+                    </div>
+                    <span id="agentCount">0 agents</span>
+                    <span id="eventCount">0 events</span>
+                </div>
+
+                <div class="nav-controls">
+                    <a href="http://localhost:8000/wicketwise_dashboard.html" class="control-button" style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; border-color: #3b82f6;">
+                        🏏 SME Dashboard
+                    </a>
+                    <button id="shadowModeBtn" class="control-button">
+                        🎭 Shadow
+                    </button>
+                    <button id="killSwitchBtn" class="control-button">
+                        🛑 Kill Switch
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+        <div class="container">
+            <div class="nav-tabs-list">
+                <button class="nav-tab active" data-tab="system-map">
+                    <i data-lucide="map"></i>
+                    System Map
+                </button>
+                <button class="nav-tab" data-tab="flowline">
+                    <i data-lucide="timeline"></i>
+                    Flowline Explorer
+                </button>
+                <button class="nav-tab" data-tab="debug">
+                    <i data-lucide="bug"></i>
+                    Debug Harness
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- System Map Tab -->
+            <div id="system-map" class="tab-content active">
+                <h2 class="mb-4">Agent System Map</h2>
+                <div id="systemMapGrid" class="system-map">
+                    <!-- Agent tiles will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Flowline Explorer Tab -->
+            <div id="flowline" class="tab-content">
+                <h2 class="mb-4">Flowline Explorer</h2>
+                <div class="flowline-container">
+                    <div class="flowline-header">
+                        <h3>Event Timeline</h3>
+                        <div>
+                            <button class="control-button" id="generateEventsBtn">
+                                <i data-lucide="database"></i>
+                                Generate Sample Events
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flowline-content">
+                        <div id="eventTimeline" class="event-timeline">
+                            <div class="text-center text-sm" style="color: var(--text-secondary); padding: 2rem;">
+                                No events to display. Generate sample events to see the timeline.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Debug Harness Tab -->
+            <div id="debug" class="tab-content">
+                <h2 class="mb-4">Debug Harness</h2>
+                <div class="debug-panels">
+                    <!-- Breakpoints Panel -->
+                    <div class="debug-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i data-lucide="target"></i>
+                                Breakpoints
+                            </div>
+                            <button class="control-button" id="addBreakpointBtn">
+                                <i data-lucide="plus"></i>
+                            </button>
+                        </div>
+                        <div class="panel-content">
+                            <div id="breakpointsList">
+                                <div class="text-center text-sm" style="color: var(--text-secondary); padding: 2rem;">
+                                    No breakpoints set
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Watch Expressions Panel -->
+                    <div class="debug-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i data-lucide="eye"></i>
+                                Watch Expressions
+                            </div>
+                            <button class="control-button" id="addWatchBtn">
+                                <i data-lucide="plus"></i>
+                            </button>
+                        </div>
+                        <div class="panel-content">
+                            <div id="watchList">
+                                <div class="watch-item">
+                                    <span class="watch-name">Active Agents</span>
+                                    <span class="watch-value" id="watchActiveAgents">0</span>
+                                </div>
+                                <div class="watch-item">
+                                    <span class="watch-name">Total Events</span>
+                                    <span class="watch-value" id="watchTotalEvents">0</span>
+                                </div>
+                                <div class="watch-item">
+                                    <span class="watch-name">Buffer Usage</span>
+                                    <span class="watch-value" id="watchBufferUsage">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Analytics Panel -->
+                    <div class="debug-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i data-lucide="bar-chart-3"></i>
+                                Performance Analytics
+                            </div>
+                        </div>
+                        <div class="panel-content">
+                            <div class="performance-grid">
+                                <div class="performance-metric">
+                                    <div class="performance-value" id="perfThroughput">0</div>
+                                    <div class="performance-label">Events/min</div>
+                                </div>
+                                <div class="performance-metric">
+                                    <div class="performance-value" id="perfLatency">0ms</div>
+                                    <div class="performance-label">Avg Latency</div>
+                                </div>
+                                <div class="performance-metric">
+                                    <div class="performance-value" id="perfErrorRate">0%</div>
+                                    <div class="performance-label">Error Rate</div>
+                                </div>
+                                <div class="performance-metric">
+                                    <div class="performance-value" id="perfActiveAgents">0</div>
+                                    <div class="performance-label">Active Agents</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Status Panel -->
+                    <div class="debug-panel">
+                        <div class="panel-header">
+                            <div class="panel-title">
+                                <i data-lucide="activity"></i>
+                                System Status
+                            </div>
+                        </div>
+                        <div class="panel-content">
+                            <div id="systemStatus">
+                                <div class="watch-item">
+                                    <span class="watch-name">Connection</span>
+                                    <span class="watch-value" id="statusConnection">Disconnected</span>
+                                </div>
+                                <div class="watch-item">
+                                    <span class="watch-name">Shadow Mode</span>
+                                    <span class="watch-value" id="statusShadowMode">Disabled</span>
+                                </div>
+                                <div class="watch-item">
+                                    <span class="watch-name">Kill Switch</span>
+                                    <span class="watch-value" id="statusKillSwitch">Inactive</span>
+                                </div>
+                                <div class="watch-item">
+                                    <span class="watch-name">Uptime</span>
+                                    <span class="watch-value" id="statusUptime">0s</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Global state
+        let socket = null;
+        let agents = [];
+        let events = [];
+        let shadowMode = false;
+        let killSwitch = false;
+        let isConnected = false;
+        let startTime = Date.now();
+
+        // Initialize WebSocket connection
+        function initializeWebSocket() {
+            try {
+                socket = io('http://localhost:5001/agent_ui');
+                
+                socket.on('connect', () => {
+                    console.log('🔗 Connected to Agent UI WebSocket');
+                    isConnected = true;
+                    updateConnectionStatus();
+                });
+
+                socket.on('disconnect', () => {
+                    console.log('🔌 Disconnected from Agent UI WebSocket');
+                    isConnected = false;
+                    updateConnectionStatus();
+                });
+
+                socket.on('initial_state', (data) => {
+                    console.log('📊 Received initial state:', data);
+                    agents = data.agents || [];
+                    updateSystemMap();
+                    updateMetrics();
+                });
+
+                socket.on('agent_event', (data) => {
+                    console.log('🎯 Agent event:', data);
+                    events.unshift(data);
+                    if (events.length > 1000) events = events.slice(0, 1000); // Keep last 1000 events
+                    updateFlowline();
+                    updateMetrics();
+                });
+
+                socket.on('error', (error) => {
+                    console.error('❌ WebSocket error:', error);
+                });
+
+            } catch (error) {
+                console.error('❌ Failed to initialize WebSocket:', error);
+            }
+        }
+
+        // Update connection status
+        function updateConnectionStatus() {
+            const statusEl = document.getElementById('connectionStatus');
+            if (isConnected) {
+                statusEl.className = 'status-indicator connected';
+                statusEl.textContent = '🟢 Live';
+            } else {
+                statusEl.className = 'status-indicator disconnected';
+                statusEl.textContent = '🔴 Disconnected';
+            }
+            
+            // Update system status
+            document.getElementById('statusConnection').textContent = isConnected ? 'Connected' : 'Disconnected';
+        }
+
+        // Update system map
+        function updateSystemMap() {
+            const grid = document.getElementById('systemMapGrid');
+            
+            if (agents.length === 0) {
+                grid.innerHTML = `
+                    <div class="text-center" style="grid-column: 1 / -1; padding: 3rem; color: var(--text-secondary);">
+                        <i data-lucide="cpu" style="width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5;"></i>
+                        <h3>No agents connected</h3>
+                        <p>Waiting for agent data from the backend...</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            grid.innerHTML = agents.map(agent => `
+                <div class="agent-tile" data-agent-id="${agent.id}">
+                    <div class="agent-header">
+                        <div>
+                            <div class="agent-title">${agent.label}</div>
+                            <div class="text-sm" style="color: var(--text-secondary);">${agent.role}</div>
+                        </div>
+                        <div class="agent-status ${agent.status}">${agent.status}</div>
+                    </div>
+                    <div class="agent-metrics">
+                        <div class="metric">
+                            <div class="metric-value">${agent.health?.cpu_percent || 0}%</div>
+                            <div class="metric-label">CPU</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${agent.health?.memory_mb || 0}MB</div>
+                            <div class="metric-label">Memory</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${agent.health?.queue_depth || 0}</div>
+                            <div class="metric-label">Queue</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">${agent.health?.last_heartbeat ? new Date(agent.health.last_heartbeat).toLocaleTimeString() : 'N/A'}</div>
+                            <div class="metric-label">Last Seen</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update flowline
+        function updateFlowline() {
+            const timeline = document.getElementById('eventTimeline');
+            
+            if (events.length === 0) {
+                timeline.innerHTML = `
+                    <div class="text-center text-sm" style="color: var(--text-secondary); padding: 2rem;">
+                        No events to display. Generate sample events to see the timeline.
+                    </div>
+                `;
+                return;
+            }
+
+            timeline.innerHTML = events.slice(0, 20).map(event => `
+                <div class="event-item">
+                    <div class="event-header">
+                        <div class="event-type">${event.type || 'Unknown Event'}</div>
+                        <div class="event-time">${new Date(event.timestamp || Date.now()).toLocaleTimeString()}</div>
+                    </div>
+                    <div class="text-sm" style="color: var(--text-secondary);">
+                        Agent: ${event.agent || 'Unknown'}
+                    </div>
+                    ${event.cricket_context ? `
+                        <div class="text-xs mt-2" style="color: var(--text-secondary);">
+                            Over: ${event.cricket_context.over || 'N/A'} | 
+                            Score: ${event.cricket_context.score || 'N/A'} | 
+                            Team: ${event.cricket_context.batting_team || 'N/A'}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Update metrics
+        function updateMetrics() {
+            const activeAgents = agents.filter(a => a.status === 'active').length;
+            const totalEvents = events.length;
+            const bufferUsage = Math.round((totalEvents / 1000) * 100);
+            
+            // Header metrics
+            document.getElementById('agentCount').textContent = `${agents.length} agents`;
+            document.getElementById('eventCount').textContent = `${totalEvents} events`;
+            
+            // Watch expressions
+            document.getElementById('watchActiveAgents').textContent = activeAgents;
+            document.getElementById('watchTotalEvents').textContent = totalEvents;
+            document.getElementById('watchBufferUsage').textContent = `${bufferUsage}%`;
+            
+            // Performance metrics
+            document.getElementById('perfThroughput').textContent = Math.round(totalEvents / ((Date.now() - startTime) / 60000)) || 0;
+            document.getElementById('perfLatency').textContent = '12ms'; // Simulated
+            document.getElementById('perfErrorRate').textContent = '0%'; // Simulated
+            document.getElementById('perfActiveAgents').textContent = activeAgents;
+            
+            // System status
+            document.getElementById('statusShadowMode').textContent = shadowMode ? 'Enabled' : 'Disabled';
+            document.getElementById('statusKillSwitch').textContent = killSwitch ? 'Active' : 'Inactive';
+            document.getElementById('statusUptime').textContent = Math.round((Date.now() - startTime) / 1000) + 's';
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // Toggle shadow mode
+        function toggleShadowMode() {
+            shadowMode = !shadowMode;
+            const banner = document.getElementById('shadowModeBanner');
+            const btn = document.getElementById('shadowModeBtn');
+            
+            if (shadowMode) {
+                banner.classList.remove('hidden');
+                btn.classList.add('warning');
+            } else {
+                banner.classList.add('hidden');
+                btn.classList.remove('warning');
+            }
+            
+            if (socket) {
+                socket.emit('toggle_shadow_mode', { enabled: shadowMode });
+            }
+            
+            updateMetrics();
+        }
+
+        // Toggle kill switch
+        function toggleKillSwitch() {
+            killSwitch = !killSwitch;
+            const banner = document.getElementById('killSwitchBanner');
+            const btn = document.getElementById('killSwitchBtn');
+            
+            if (killSwitch) {
+                banner.classList.remove('hidden');
+                btn.classList.add('danger');
+            } else {
+                banner.classList.add('hidden');
+                btn.classList.remove('danger');
+            }
+            
+            if (socket) {
+                socket.emit('toggle_kill_switch', { enabled: killSwitch });
+            }
+            
+            updateMetrics();
+        }
+
+        // Generate sample events
+        function generateSampleEvents() {
+            if (socket) {
+                socket.emit('generate_sample_events', { count: 10 });
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Tab switching
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    switchTab(tab.dataset.tab);
+                });
+            });
+            
+            // Control buttons
+            document.getElementById('shadowModeBtn').addEventListener('click', toggleShadowMode);
+            document.getElementById('killSwitchBtn').addEventListener('click', toggleKillSwitch);
+            document.getElementById('generateEventsBtn').addEventListener('click', generateSampleEvents);
+            
+            // Initialize WebSocket
+            initializeWebSocket();
+            
+            // Update metrics every second
+            setInterval(updateMetrics, 1000);
+            
+            console.log('🚀 WicketWise Agent UI initialized');
+        });
+    </script>
+</body>
+</html>

@@ -227,47 +227,87 @@ run_performance_tests() {
 run_frontend_tests() {
     print_header "Running Frontend Tests"
     
+    # Test legacy frontend
     if [ -d "frontend" ]; then
+        print_step "Testing legacy frontend"
         cd frontend
         
         # Check if Node.js is installed
         if ! command -v npm &> /dev/null; then
-            print_warning "Node.js/npm not found. Skipping frontend tests."
+            print_warning "Node.js/npm not found. Skipping legacy frontend tests."
             cd ..
-            return 0
-        fi
-        
-        print_step "Installing frontend dependencies"
-        npm install --silent >> "../${LOG_FILE}" 2>&1
-        
-        print_step "Running frontend linting"
-        npm run lint >> "../${LOG_FILE}" 2>&1 || print_warning "Frontend linting completed with warnings"
-        
-        print_step "Running TypeScript type checking"
-        npm run type-check >> "../${LOG_FILE}" 2>&1
-        
-        if [ $? -eq 0 ]; then
-            print_success "TypeScript type checking passed"
         else
-            print_error "TypeScript type checking failed"
+            print_step "Installing legacy frontend dependencies"
+            npm install --silent >> "../${LOG_FILE}" 2>&1
+            
+            print_step "Running legacy frontend linting"
+            npm run lint >> "../${LOG_FILE}" 2>&1 || print_warning "Legacy frontend linting completed with warnings"
+            
+            print_step "Running legacy TypeScript type checking"
+            npm run type-check >> "../${LOG_FILE}" 2>&1
+            
+            if [ $? -eq 0 ]; then
+                print_success "Legacy TypeScript type checking passed"
+            else
+                print_error "Legacy TypeScript type checking failed"
+                cd ..
+                return 1
+            fi
+            
+            print_step "Building legacy frontend"
+            npm run build >> "../${LOG_FILE}" 2>&1
+            
+            if [ $? -eq 0 ]; then
+                print_success "Legacy frontend build successful"
+            else
+                print_error "Legacy frontend build failed"
+                cd ..
+                return 1
+            fi
+            
             cd ..
-            return 1
         fi
-        
-        print_step "Building frontend"
-        npm run build >> "../${LOG_FILE}" 2>&1
-        
-        if [ $? -eq 0 ]; then
-            print_success "Frontend build successful"
-        else
-            print_error "Frontend build failed"
-            cd ..
-            return 1
-        fi
-        
-        cd ..
     else
-        print_warning "Frontend directory not found. Skipping frontend tests."
+        print_warning "Legacy frontend directory not found."
+    fi
+    
+    # Test Agent UI (HTML file)
+    if [ -f "wicketwise_agent_ui.html" ]; then
+        print_step "Testing Agent UI HTML file"
+        
+        # Check HTML file validity
+        if command -v tidy &> /dev/null; then
+            print_step "Validating Agent UI HTML structure"
+            tidy -q -e wicketwise_agent_ui.html >> "${LOG_FILE}" 2>&1
+            if [ $? -eq 0 ]; then
+                print_success "Agent UI HTML validation passed"
+            else
+                print_warning "Agent UI HTML validation completed with warnings"
+            fi
+        fi
+        
+        # Check for required elements
+        if grep -q "WicketWise Agent UI" wicketwise_agent_ui.html; then
+            print_success "Agent UI contains required title"
+        else
+            print_error "Agent UI missing required title"
+        fi
+        
+        if grep -q "socket.io" wicketwise_agent_ui.html; then
+            print_success "Agent UI includes WebSocket support"
+        else
+            print_error "Agent UI missing WebSocket support"
+        fi
+        
+        if grep -q "System Map" wicketwise_agent_ui.html; then
+            print_success "Agent UI includes System Map functionality"
+        else
+            print_error "Agent UI missing System Map"
+        fi
+        
+        print_success "Agent UI HTML file tests completed"
+    else
+        print_warning "Agent UI HTML file not found."
     fi
 }
 
@@ -275,18 +315,18 @@ run_frontend_tests() {
 run_api_tests() {
     print_header "Running API Tests"
     
-    print_step "Starting API server for testing"
+    print_step "Starting Admin Backend API for testing"
     
-    # Start the API server in background
-    python modern_api_gateway.py &
+    # Start the Admin Backend API server in background
+    python admin_backend.py &
     API_PID=$!
     
     # Wait for server to start
     sleep 5
     
     # Check if server is running
-    if ! curl -s http://127.0.0.1:5005/api/health > /dev/null; then
-        print_error "API server failed to start"
+    if ! curl -s http://127.0.0.1:5001/api/health > /dev/null; then
+        print_error "Admin Backend API server failed to start"
         kill $API_PID 2>/dev/null || true
         return 1
     fi
@@ -302,12 +342,47 @@ run_api_tests() {
     
     API_TEST_RESULT=$?
     
+    print_step "Testing Agent UI WebSocket endpoints"
+    
+    # Test Agent UI specific endpoints
+    python -c "
+import requests
+import json
+import sys
+
+def test_agent_ui_endpoints():
+    base_url = 'http://127.0.0.1:5001'
+    
+    try:
+        # Test health endpoint
+        response = requests.get(f'{base_url}/api/health')
+        assert response.status_code == 200
+        print('✅ Health endpoint working')
+        
+        # Test system status
+        response = requests.get(f'{base_url}/api/system-status')
+        assert response.status_code == 200
+        print('✅ System status endpoint working')
+        
+        print('✅ All Agent UI API tests passed')
+        return True
+        
+    except Exception as e:
+        print(f'❌ Agent UI API test failed: {e}')
+        return False
+
+if not test_agent_ui_endpoints():
+    sys.exit(1)
+" 2>&1 | tee -a "${LOG_FILE}"
+    
+    AGENT_UI_TEST_RESULT=$?
+    
     # Stop API server
     print_step "Stopping API server"
     kill $API_PID 2>/dev/null || true
     sleep 2
     
-    if [ $API_TEST_RESULT -eq 0 ]; then
+    if [ $API_TEST_RESULT -eq 0 ] && [ $AGENT_UI_TEST_RESULT -eq 0 ]; then
         print_success "API tests passed"
     else
         print_error "API tests failed"

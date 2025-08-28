@@ -11,10 +11,10 @@ import math
 from pathlib import Path
 
 try:
-    from .state import MatchState, MarketState, MatchEvent, MarketSnapshot, MatchPhase, MarketStatus
+    from .state import MatchState, MarketState, MatchEvent, MarketSnapshot, MatchPhase, MarketStatus, WicketInfo, WicketKind
     from .config import SimulationConfig
 except ImportError:
-    from state import MatchState, MarketState, MatchEvent, MarketSnapshot, MatchPhase, MarketStatus
+    from state import MatchState, MarketState, MatchEvent, MarketSnapshot, MatchPhase, MarketStatus, WicketInfo, WicketKind
     from config import SimulationConfig
 
 
@@ -461,8 +461,51 @@ class ReplayAdapter(EnvironmentAdapter):
                 batsman = str(row.get('batsman', row.get('Batsman', f'batsman_{over}_{ball}')))
                 bowler = str(row.get('bowler', row.get('Bowler', f'bowler_{over}')))
                 
-                # Extract runs
+                # Extract runs and extras
                 runs = int(row.get('runs', row.get('Runs', 0)))
+                
+                # Extract all cricket extras
+                extras_total = int(row.get('extras', 0))
+                wide_runs = int(row.get('wide', 0))
+                noball_runs = int(row.get('noball', 0))
+                bye_runs = int(row.get('byes', 0))
+                legbye_runs = int(row.get('legbyes', 0))
+                
+                # Calculate total extras if not provided
+                if extras_total == 0:
+                    extras_total = wide_runs + noball_runs + bye_runs + legbye_runs
+                
+                # Determine if this is a legal delivery
+                is_legal_delivery = (wide_runs == 0 and noball_runs == 0)
+                
+                # Extract wicket information
+                wicket_info = WicketInfo()
+                
+                # Check for wicket in various possible columns
+                wicket_indicator = row.get('wicket', row.get('Wicket', 0))
+                if wicket_indicator and str(wicket_indicator).lower() not in ['0', 'nan', 'none', '']:
+                    wicket_info.is_wicket = True
+                    
+                    # Get wicket type if available
+                    wicket_type = row.get('wickettype', row.get('WicketType', ''))
+                    if wicket_type and str(wicket_type).lower() not in ['nan', 'none', '']:
+                        # Map wicket types to WicketKind enum
+                        wicket_type_lower = str(wicket_type).lower()
+                        if 'bowled' in wicket_type_lower:
+                            wicket_info.kind = WicketKind.BOWLED
+                        elif 'caught' in wicket_type_lower:
+                            wicket_info.kind = WicketKind.CAUGHT
+                        elif 'lbw' in wicket_type_lower:
+                            wicket_info.kind = WicketKind.LBW
+                        elif 'stumped' in wicket_type_lower:
+                            wicket_info.kind = WicketKind.STUMPED
+                        elif 'run' in wicket_type_lower and 'out' in wicket_type_lower:
+                            wicket_info.kind = WicketKind.RUN_OUT
+                        elif 'hit' in wicket_type_lower and 'wicket' in wicket_type_lower:
+                            wicket_info.kind = WicketKind.HIT_WICKET
+                    
+                    # Set player out (usually the batsman)
+                    wicket_info.player_out = batsman
                 
                 # Create timestamp (approximate)
                 base_time = datetime.now()
@@ -485,9 +528,20 @@ class ReplayAdapter(EnvironmentAdapter):
                     bat_non_striker=f"non_striker_{over}_{ball}",
                     bowler=bowler,
                     runs_batter=runs,
-                    runs_extras=0,
+                    runs_extras=extras_total,
+                    wicket=wicket_info,
                     phase=phase
                 )
+                
+                # Add extras information as metadata for detailed tracking
+                event.extras_breakdown = {
+                    'wides': wide_runs,
+                    'noballs': noball_runs,
+                    'byes': bye_runs,
+                    'legbyes': legbye_runs,
+                    'total': extras_total,
+                    'is_legal_delivery': is_legal_delivery
+                }
                 
                 events.append(event)
                 

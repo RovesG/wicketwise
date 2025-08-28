@@ -214,6 +214,33 @@ class HoldoutDataManager:
             # Filter for requested matches
             match_data = df[df[match_col].astype(str).isin(match_ids)]
             
+            # Sort by match, innings, over, and ball to ensure proper chronological order
+            sort_columns = []
+            if match_col in match_data.columns:
+                sort_columns.append(match_col)
+            
+            # Add innings column if available
+            for innings_col in ['innings', 'Innings', 'inning']:
+                if innings_col in match_data.columns:
+                    sort_columns.append(innings_col)
+                    break
+            
+            # Add over column if available  
+            for over_col in ['over', 'Over', 'overs']:
+                if over_col in match_data.columns:
+                    sort_columns.append(over_col)
+                    break
+                    
+            # Add ball column if available
+            for ball_col in ['ball', 'Ball', 'ball_in_over']:
+                if ball_col in match_data.columns:
+                    sort_columns.append(ball_col)
+                    break
+            
+            if sort_columns:
+                match_data = match_data.sort_values(sort_columns).reset_index(drop=True)
+                logger.info(f"📊 Sorted match data by: {sort_columns}")
+            
             logger.info(f"📊 Retrieved {len(match_data):,} balls for {len(match_ids)} matches")
             return match_data
             

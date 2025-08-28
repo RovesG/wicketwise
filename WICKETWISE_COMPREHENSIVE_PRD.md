@@ -1,8 +1,8 @@
 # 🏏 WicketWise: Comprehensive Product Requirements Document
 
-## **Version:** 3.0  
-## **Date:** December 2024  
-## **Status:** Production Ready with DGL
+## **Version:** 4.0  
+## **Date:** August 2025  
+## **Status:** Production Ready with Agent UI & Advanced Debug Tools
 
 ---
 
@@ -17,10 +17,11 @@
 7. [Betting Intelligence & Fine-Tuning](#7-betting-intelligence--fine-tuning)
 8. [Data Sources & Enrichment Pipeline](#8-data-sources--enrichment-pipeline)
 9. [Automated Update System](#9-automated-update-system)
-10. [User Interface & Experience](#10-user-interface--experience)
-11. [Performance & Scalability](#11-performance--scalability)
-12. [Security & Compliance](#12-security--compliance)
-13. [Technical Specifications](#13-technical-specifications)
+10. [Agent UI & Advanced Monitoring](#10-agent-ui--advanced-monitoring)
+11. [User Interface & Experience](#11-user-interface--experience)
+12. [Performance & Scalability](#12-performance--scalability)
+13. [Security & Compliance](#13-security--compliance)
+14. [Technical Specifications](#14-technical-specifications)
 
 ---
 
@@ -37,6 +38,7 @@ WicketWise is an advanced cricket intelligence platform that combines cutting-ed
 - **⚡ Real-Time Processing**: Live ball-by-ball predictions and updates
 - **💰 Betting Intelligence**: Advanced odds analysis and mispricing detection
 - **🌍 Automated Data Pipeline**: Self-updating from Cricsheet.org with enrichment
+- **🎯 Agent UI**: Professional-grade real-time agent monitoring and debugging
 - **📊 Production-Ready**: Microservices architecture with monitoring and security
 
 ### **1.3 Target Users**
@@ -1368,9 +1370,121 @@ class LiveBettingPipeline:
 
 ---
 
-## **10. User Interface & Experience**
+## **10. Agent UI & Advanced Monitoring**
 
-### **10.1 Main Betting UI Dashboard**
+### **10.1 Agent UI Overview**
+
+The WicketWise Agent UI is a professional-grade React/TypeScript application providing real-time monitoring, debugging, and explainability for the multi-agent betting system. It offers unprecedented visibility into agent interactions, decision-making processes, and system performance.
+
+### **10.2 Core Features**
+
+#### **10.2.1 System Map**
+- **Real-time Agent Visualization**: Interactive tiles showing 8 WicketWise agents with live status
+- **Agent Health Monitoring**: CPU, memory, queue depth, and response time metrics
+- **Handoff Visualization**: Animated connections showing message flow between agents
+- **Status Indicators**: Active, idle, degraded, and error states with color coding
+- **Cricket Context Integration**: Match-aware agent performance tracking
+
+#### **10.2.2 Flowline Explorer**
+- **Timeline-based Analysis**: Chronological view of agent events across lanes
+- **Event Inspection**: Detailed payload examination with cricket context
+- **Decision Cards**: Comprehensive explainability for betting decisions including:
+  - Match state (over, score, required rate, batting team)
+  - Market data (odds, liquidity, movement)
+  - Model signals (confidence scores, probability calculations)
+  - AI reasoning (impact analysis, risk assessment)
+  - Governance constraints (exposure limits, bankroll checks)
+  - Betting outcomes (stake, price, expected value)
+- **Playback Controls**: Play, pause, step, and speed controls for event replay
+- **Search & Filtering**: Advanced filtering by agent, event type, and cricket context
+
+#### **10.2.3 Advanced Debug Tools**
+- **Breakpoint System**: 
+  - Agent breakpoints (break on specific agent activity)
+  - Event type breakpoints (break on decision events, errors)
+  - Condition breakpoints (JavaScript expression evaluation)
+  - Hit count tracking and enable/disable controls
+- **Watch Expressions**: 
+  - Live JavaScript expression evaluation
+  - Cricket context variables (match state, agents, events)
+  - Real-time value monitoring with error handling
+  - Pre-built useful expressions and suggestions
+- **Performance Analytics**:
+  - Event throughput (events per minute)
+  - Response time metrics (average and P95 latency)
+  - Agent-specific performance statistics
+  - Error rate monitoring with automatic alerts
+  - Time window selection (1min to 1hour analysis)
+
+### **10.3 Technical Architecture**
+
+#### **10.3.1 Frontend Stack**
+- **React 18**: Modern functional components with hooks
+- **TypeScript**: Full type safety with comprehensive interfaces
+- **Vite**: Fast development server with hot module replacement
+- **Tailwind CSS**: Utility-first styling with WicketWise theme
+- **ReactFlow**: Interactive node-based visualizations
+- **Zustand**: Lightweight state management for debug tools
+- **Socket.IO Client**: Real-time WebSocket communication
+
+#### **10.3.2 Backend Integration**
+- **Flask-SocketIO**: WebSocket server with `/agent_ui` namespace
+- **Agent Adapter**: Python class converting WicketWise data to UI contracts
+- **Real-time Events**: Live agent status, decision events, performance metrics
+- **Sample Data Generation**: Backend-driven event simulation for testing
+- **Cricket Context**: Match-aware data enrichment and formatting
+
+#### **10.3.3 Data Contracts**
+```typescript
+interface AgentDefinition {
+  id: string;
+  label: string;
+  role: string;
+  status: 'active' | 'idle' | 'degraded' | 'error';
+  health: {
+    cpu_percent: number;
+    memory_mb: number;
+    queue_depth: number;
+    last_heartbeat: number;
+  };
+  cricket_context?: CricketContext;
+}
+
+interface DecisionRecord {
+  decision_id: string;
+  run_id: string;
+  t: number;
+  context: {
+    over: number;
+    score: string;
+    batting_team: string;
+    required_rate: number;
+  };
+  signals: ModelSignal[];
+  deliberation: ReasoningStep[];
+  constraints: GovernanceCheck[];
+  outcome: BettingAction;
+}
+```
+
+### **10.4 Performance Specifications**
+- **Response Time**: <100ms UI interactions
+- **WebSocket Latency**: <30ms real-time updates
+- **Event Processing**: 2000+ events/hour capacity
+- **Memory Usage**: <512MB frontend footprint
+- **Concurrent Users**: 10+ simultaneous connections
+
+### **10.5 Navigation & Integration**
+- **Seamless Navigation**: One-click switching between Agent UI and Legacy Dashboard
+- **Unified Authentication**: Shared security model with admin backend
+- **Cross-platform Access**: Desktop-first responsive design
+- **Production Deployment**: Integrated with start.sh and test.sh scripts
+
+---
+
+## **11. User Interface & Experience**
+
+### **11.1 Main Betting UI Dashboard**
 
 **URL**: `http://localhost:8000/wicketwise_dashboard.html`
 

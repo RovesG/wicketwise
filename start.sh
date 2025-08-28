@@ -17,6 +17,7 @@ NC='\033[0m' # No Color
 DGL_PORT=${DGL_PORT:-8001}
 ENHANCED_API_PORT=${ENHANCED_API_PORT:-5001}
 STATIC_SERVER_PORT=${STATIC_SERVER_PORT:-8000}
+AGENT_UI_PORT=${AGENT_UI_PORT:-3001}
 ENVIRONMENT=${ENVIRONMENT:-development}
 
 echo -e "${BLUE}🏏 WicketWise Complete System Startup${NC}"
@@ -196,11 +197,11 @@ start_enhanced_api() {
     
     # Install dependencies
     print_info "Installing Enhanced API dependencies..."
-    pip install -q flask flask-cors requests pandas numpy
+    pip install -q flask flask-cors flask-socketio requests pandas numpy
     pip install -q networkx scikit-learn plotly
     
     # Start Admin Backend service in background
-    print_info "Launching Admin Backend API..."
+    print_info "Launching Admin Backend API with Agent UI support..."
     nohup python admin_backend.py > logs/admin_backend.log 2>&1 &
     ENHANCED_API_PID=$!
     echo $ENHANCED_API_PID > pids/enhanced_api.pid
@@ -210,6 +211,20 @@ start_enhanced_api() {
         print_status "Admin Backend API started successfully (PID: $ENHANCED_API_PID)"
         return 0
     else
+        return 1
+    fi
+}
+
+# Function to check Agent UI availability
+check_agent_ui() {
+    print_info "Checking Agent UI availability..."
+    
+    # Agent UI is now a static HTML file served by the static server
+    if [ -f "wicketwise_agent_ui.html" ]; then
+        print_status "Agent UI (HTML) is available at http://localhost:$STATIC_SERVER_PORT/wicketwise_agent_ui.html"
+        return 0
+    else
+        print_warning "Agent UI HTML file not found"
         return 1
     fi
 }
@@ -235,18 +250,18 @@ show_system_status() {
     fi
     
     # Check Enhanced Dashboard API
-    if curl -s "http://localhost:$ENHANCED_API_PORT/api/enhanced/health" >/dev/null 2>&1; then
-        print_status "Enhanced Dashboard API: Running on http://localhost:$ENHANCED_API_PORT"
+    if curl -s "http://localhost:$ENHANCED_API_PORT/api/health" >/dev/null 2>&1; then
+        print_status "Admin Backend API: Running on http://localhost:$ENHANCED_API_PORT"
     else
-        print_error "Enhanced Dashboard API: Not running"
+        print_error "Admin Backend API: Not running"
     fi
     
-    echo ""
-    print_info "🎯 Main URLs:"
-    echo "  🏏 Main Dashboard: http://localhost:$STATIC_SERVER_PORT/wicketwise_dashboard.html"
-    echo "  ⚙️  Legacy Admin Panel: http://localhost:$STATIC_SERVER_PORT/wicketwise_admin_redesigned.html"
-    echo "  🛡️  DGL API: http://localhost:$DGL_PORT"
-    echo "  📊 Enhanced API: http://localhost:$ENHANCED_API_PORT"
+    # Check Agent UI (HTML file)
+    if [ -f "wicketwise_agent_ui.html" ]; then
+        print_status "Agent UI: Available at http://localhost:$STATIC_SERVER_PORT/wicketwise_agent_ui.html"
+    else
+        print_error "Agent UI: HTML file not found"
+    fi
     
     # Check Player Cards API
     if curl -s "http://localhost:5004/api/match-context" >/dev/null 2>&1; then
@@ -256,11 +271,27 @@ show_system_status() {
     fi
     
     echo ""
+    print_info "🎯 Main URLs:"
+    echo "  🏏 Main Dashboard: http://localhost:$STATIC_SERVER_PORT/wicketwise_dashboard.html"
+    echo "  🤖 Agent UI (NEW): http://localhost:$STATIC_SERVER_PORT/wicketwise_agent_ui.html"
+    echo "  ⚙️  Legacy Admin Panel: http://localhost:$STATIC_SERVER_PORT/wicketwise_admin_redesigned.html"
+    echo "  🛡️  DGL API: http://localhost:$DGL_PORT"
+    echo "  📊 Admin Backend API: http://localhost:$ENHANCED_API_PORT"
+    
+    echo ""
     print_info "🔗 Key API Endpoints:"
     echo "  📊 Holdout Matches: GET http://localhost:$ENHANCED_API_PORT/api/simulation/holdout-matches"
     echo "  🎯 Run Simulation: POST http://localhost:$ENHANCED_API_PORT/api/simulation/run"
     echo "  🏏 Player Search: GET http://localhost:$ENHANCED_API_PORT/api/enhanced/search-players"
     echo "  🎴 Enhanced Player Cards: POST http://localhost:5004/api/cards/enhanced"
+    echo "  🤖 Agent UI WebSocket: ws://localhost:$ENHANCED_API_PORT/agent_ui"
+    echo ""
+    
+    print_info "🚀 Agent UI Features:"
+    echo "  • System Map - Real-time agent visualization"
+    echo "  • Flowline Explorer - Timeline-based event analysis"
+    echo "  • Advanced Debug Tools - Breakpoints, watch expressions, performance analytics"
+    echo "  • Cricket Intelligence - Match-aware betting decision explainability"
     echo ""
 }
 
@@ -269,7 +300,7 @@ stop_services() {
     print_info "Stopping WicketWise services..."
     
     # Stop services using PID files
-    local pid_files=("pids/dgl.pid" "pids/enhanced_api.pid" "pids/static_server.pid" "pids/player_cards_api.pid")
+    local pid_files=("pids/dgl.pid" "pids/enhanced_api.pid" "pids/static_server.pid" "pids/player_cards_api.pid" "pids/agent_ui.pid")
     
     for pid_file in "${pid_files[@]}"; do
         if [ -f "$pid_file" ]; then
@@ -283,7 +314,7 @@ stop_services() {
     done
     
     # Also kill by port
-    for port in $DGL_PORT $ENHANCED_API_PORT $STATIC_SERVER_PORT 5004; do
+    for port in $DGL_PORT $ENHANCED_API_PORT $STATIC_SERVER_PORT $AGENT_UI_PORT 5004; do
         lsof -ti:$port | xargs kill -9 2>/dev/null || true
     done
     
@@ -298,7 +329,7 @@ setup_directories() {
     mkdir -p logs pids
     
     # Create log files
-    touch logs/dgl.log logs/enhanced_api.log logs/static_server.log
+    touch logs/dgl.log logs/enhanced_api.log logs/static_server.log logs/agent_ui.log logs/agent_ui_install.log
     
     print_status "Directories setup complete"
 }
@@ -395,11 +426,33 @@ main() {
                 print_warning "Player Cards API failed to start (continuing...)"
             fi
             
+            # Check Agent UI availability
+            if check_agent_ui; then
+                print_status "Agent UI is available"
+            else
+                print_warning "Agent UI HTML file not found (continuing...)"
+            fi
+            
             show_system_status
             
             print_status "WicketWise Complete System startup complete! 🚀"
-            print_info "Opening main dashboard in browser..."
-            open_browser
+            print_info "Opening Agent UI in browser..."
+            
+            # Open Agent UI (HTML file)
+            local agent_ui_url="http://localhost:$STATIC_SERVER_PORT/wicketwise_agent_ui.html"
+            
+            if command -v open >/dev/null 2>&1; then
+                # macOS
+                open "$agent_ui_url"
+            elif command -v xdg-open >/dev/null 2>&1; then
+                # Linux
+                xdg-open "$agent_ui_url"
+            elif command -v start >/dev/null 2>&1; then
+                # Windows
+                start "$agent_ui_url"
+            else
+                print_info "Please open $agent_ui_url in your browser"
+            fi
             ;;
             
         "stop")
@@ -441,13 +494,14 @@ main() {
             echo "  restart   Restart all WicketWise services"
             echo "  status    Show system status"
             echo "  test      Run quick system test"
-            echo "  logs      Show logs (specify service: dgl, enhanced_api, static_server)"
+            echo "  logs      Show logs (specify service: dgl, enhanced_api, static_server, agent_ui)"
             echo "  help      Show this help message"
             echo ""
             echo "Environment Variables:"
             echo "  DGL_PORT=$DGL_PORT"
             echo "  ENHANCED_API_PORT=$ENHANCED_API_PORT"
             echo "  STATIC_SERVER_PORT=$STATIC_SERVER_PORT"
+            echo "  AGENT_UI_PORT=$AGENT_UI_PORT"
             echo "  ENVIRONMENT=$ENVIRONMENT"
             ;;
             

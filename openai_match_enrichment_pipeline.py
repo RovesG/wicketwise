@@ -212,8 +212,8 @@ IMPORTANT:
                     {"role": "system", "content": "You are a cricket data expert who provides accurate, structured JSON responses about cricket matches."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.1,  # Low temperature for factual accuracy
-                max_tokens=4000,
+                temperature=1.0,  # Use default temperature for gpt-5-mini
+                max_completion_tokens=4000,
                 response_format={"type": "json_object"}  # Ensure JSON response
             )
             

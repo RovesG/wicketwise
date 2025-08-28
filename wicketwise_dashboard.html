@@ -510,6 +510,10 @@
             <div class="text-sm text-muted-foreground">
                 Portfolio: <span class="font-medium text-red-600">-$61</span>
             </div>
+            <a href="wicketwise_agent_ui.html" class="inline-flex items-center px-3 py-1 border border-input rounded-md text-sm text-white no-underline" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-color: #667eea;">
+                <i data-lucide="cpu" class="w-4 h-4 mr-1"></i>
+                Agent UI
+            </a>
             <a href="wicketwise_admin_redesigned.html" class="inline-flex items-center px-3 py-1 border border-input rounded-md text-sm bg-background hover:bg-accent text-inherit no-underline">
                 <i data-lucide="settings" class="w-4 h-4 mr-1"></i>
                 Admin
@@ -2796,8 +2800,8 @@
                             document.getElementById('matchDate').textContent = dateStr;
                         }
                         
-                        // Update weather and pitch conditions from enriched data if available
-                        updateWeatherAndPitchConditions(matchData);
+                        // Weather conditions are now updated by simulation controller to avoid excessive calls
+                        // updateWeatherAndPitchConditions(matchData);
                     }
                 }
                 
@@ -3150,8 +3154,12 @@
 
         async function fetchEnrichedWeatherData(matchData) {
             try {
+                // Check if we're in simulation mode to avoid expensive enrichment calls
+                const isSimulationMode = window.simulationController && window.simulationController.isActive;
+                const simulationParam = isSimulationMode ? '&simulation_mode=true' : '';
+                
                 // Try to fetch enriched weather data from the backend
-                const response = await fetch(`http://localhost:5001/api/enriched-weather?date=${matchData.date}&venue=${encodeURIComponent(matchData.venue)}`);
+                const response = await fetch(`http://localhost:5001/api/enriched-weather?date=${matchData.date}&venue=${encodeURIComponent(matchData.venue)}${simulationParam}`);
                 
                 // Parse JSON response regardless of status code
                 const weatherData = await response.json();
@@ -3159,7 +3167,14 @@
                 if (response.ok || weatherData.status === 'success') {
                     return weatherData;
                 } else if (weatherData.status === 'not_found') {
-                    console.log('📊 No enriched weather data available for this match, using defaults');
+                    // Check if this is a simulation warning
+                    if (weatherData.simulation_mode && weatherData.warning) {
+                        console.warn('⚠️ SIMULATION WARNING:', weatherData.warning);
+                        // Show user warning for missing enrichment data
+                        this.showEnrichmentWarning(weatherData.warning);
+                    } else {
+                        console.log('📊 No enriched weather data available for this match, using defaults');
+                    }
                     return null;
                 } else {
                     console.warn('Enriched weather API error:', weatherData);
@@ -3169,6 +3184,42 @@
                 console.warn('Could not fetch enriched weather data:', error);
                 return null;
             }
+        }
+
+        function showEnrichmentWarning(warningMessage) {
+            // Create and show a warning notification to the user
+            const warningDiv = document.createElement('div');
+            warningDiv.className = 'fixed top-4 right-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded shadow-lg z-50 max-w-md';
+            warningDiv.innerHTML = `
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium">⚠️ Simulation Warning</p>
+                        <p class="text-sm mt-1">${warningMessage}</p>
+                        <p class="text-xs mt-2 text-yellow-600">Consider enriching this match data for better model accuracy.</p>
+                    </div>
+                    <div class="ml-auto pl-3">
+                        <button onclick="this.parentElement.parentElement.remove()" class="text-yellow-400 hover:text-yellow-600">
+                            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(warningDiv);
+            
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                if (warningDiv.parentNode) {
+                    warningDiv.remove();
+                }
+            }, 10000);
         }
 
         function updateWeatherDefaults(matchData) {
@@ -3200,8 +3251,30 @@
                 pitchDescription = 'Balanced Pitch';
             }
             
-            document.getElementById('weatherCondition').textContent = `🌡️ ${temperature}°C`;
-            document.getElementById('pitchCondition').textContent = `${pitchIcon} ${pitchDescription}`;
+            // Update weather display
+            const weatherElement = document.getElementById('weatherCondition');
+            const pitchElement = document.getElementById('pitchCondition');
+            
+            weatherElement.textContent = `🌡️ ${temperature}°C`;
+            pitchElement.textContent = `${pitchIcon} ${pitchDescription}`;
+            
+            // Add warning indicator if using defaults in simulation
+            const isSimulationMode = window.simulationController && window.simulationController.isActive;
+            if (isSimulationMode) {
+                // Add warning to weather
+                const weatherWarning = document.createElement('span');
+                weatherWarning.className = 'text-yellow-500 text-xs ml-2';
+                weatherWarning.innerHTML = '⚠️ Default';
+                weatherWarning.title = 'Using default weather data - no enriched data available for this match';
+                
+                // Remove existing warning if present
+                const existingWeatherWarning = weatherElement.parentElement.querySelector('.text-yellow-500');
+                if (existingWeatherWarning) {
+                    existingWeatherWarning.remove();
+                }
+                
+                weatherElement.parentElement.appendChild(weatherWarning);
+            }
         }
 
         function derivePitchCondition(weatherData) {
@@ -3993,6 +4066,12 @@
                 this.isAutoPlaying = false;
                 this.autoPlayInterval = null;
                 this.currentSpeed = 1500; // Default speed in ms
+                this.lastBatsman = '';
+                this.lastBowler = '';
+                this.lastWeatherUpdate = 0; // Track when weather was last updated
+                this.weatherUpdateInterval = 6; // Update weather every 6 balls (1 over)
+                this.ballCount = 0; // Track total balls played
+                this.enrichmentWarningShown = false; // Track if enrichment warning has been shown
                 
                 this.initializeControls();
             }
@@ -4036,6 +4115,7 @@
                     
                     if (result.status === 'success') {
                         this.isActive = true;
+                        this.enrichmentWarningShown = false; // Reset warning flag for new simulation
                         this.updateControlButtons();
                         this.updateLiveStatus('SIMULATION', true);
                         
@@ -4074,9 +4154,17 @@
                     if (result.status === 'success') {
                         this.updateDisplay(result);
                         
-                        // Update player cards with new context
-                        if (result.ball_event.batsman || result.ball_event.bowler) {
+                        // Only update player cards when players actually change (not every ball)
+                        const currentBatsman = this.lastBatsman || '';
+                        const currentBowler = this.lastBowler || '';
+                        const newBatsman = result.ball_event.batsman || '';
+                        const newBowler = result.ball_event.bowler || '';
+                        
+                        if (currentBatsman !== newBatsman || currentBowler !== newBowler) {
+                            console.log('🔄 Player change detected, updating cards...');
                             setTimeout(() => loadEnhancedPlayerCards(), 500);
+                            this.lastBatsman = newBatsman;
+                            this.lastBowler = newBowler;
                         }
                         
                     } else if (result.status === 'completed') {
@@ -4150,6 +4238,9 @@
             updateDisplay(result) {
                 const { ball_event, match_state, ball_number, total_balls } = result;
                 
+                // Update ball count for weather optimization
+                this.ballCount = ball_number;
+                
                 // Update score
                 const score = match_state.score;
                 document.getElementById('currentScore').textContent = `${score.runs}/${score.wickets}`;
@@ -4177,6 +4268,18 @@
                 // Update last 6 balls
                 this.updateLast6Balls(match_state.last_6_balls);
                 
+                                        // Only update weather conditions periodically (every over or when starting)
+                        if (this.ballCount === 1 || (this.ballCount - this.lastWeatherUpdate) >= this.weatherUpdateInterval) {
+                            console.log(`🌤️ Updating weather conditions (ball ${this.ballCount})`);
+                            this.updateWeatherConditions();
+                            this.lastWeatherUpdate = this.ballCount;
+                            
+                            // Show enrichment warning on first ball if needed
+                            if (this.ballCount === 1) {
+                                this.checkEnrichmentStatus();
+                            }
+                        }
+                
                 console.log(`⚾ Ball ${ball_number}: ${ball_event.runs} runs, ${score.runs}/${score.wickets} (${score.overs.toFixed(1)} ov)`);
             }
             
@@ -4188,10 +4291,26 @@
                     const ballElement = document.createElement('div');
                     ballElement.className = 'w-4 h-4 rounded-full flex items-center justify-center text-white text-xs font-bold';
                     
-                    // Color coding for different outcomes
+                    // Color coding for different outcomes including extras
                     if (ball === 'W') {
                         ballElement.className += ' bg-red-500';
                         ballElement.textContent = 'W';
+                    } else if (ball.startsWith('Wd')) {
+                        ballElement.className += ' bg-yellow-500';
+                        ballElement.textContent = ball;
+                        ballElement.title = 'Wide';
+                    } else if (ball.startsWith('Nb')) {
+                        ballElement.className += ' bg-purple-500';
+                        ballElement.textContent = ball;
+                        ballElement.title = 'No Ball';
+                    } else if (ball.startsWith('B')) {
+                        ballElement.className += ' bg-indigo-400';
+                        ballElement.textContent = ball;
+                        ballElement.title = 'Byes';
+                    } else if (ball.startsWith('Lb')) {
+                        ballElement.className += ' bg-pink-400';
+                        ballElement.textContent = ball;
+                        ballElement.title = 'Leg Byes';
                     } else if (ball === '6') {
                         ballElement.className += ' bg-green-500';
                         ballElement.textContent = '6';
@@ -4208,6 +4327,41 @@
                     
                     container.appendChild(ballElement);
                 });
+            }
+            
+            updateWeatherConditions() {
+                // Get current match data for weather update
+                const matchData = matchContextService.getMatchData();
+                if (matchData) {
+                    // Only call weather update if we have match data
+                    updateWeatherAndPitchConditions(matchData);
+                } else {
+                    console.log('⚠️ No match data available for weather update');
+                }
+            }
+            
+            async checkEnrichmentStatus() {
+                // Check if current match has enriched data available
+                const matchData = matchContextService.getMatchData();
+                if (!matchData) return;
+                
+                try {
+                    const response = await fetch(`http://localhost:5001/api/enriched-weather?date=${matchData.date}&venue=${encodeURIComponent(matchData.venue)}&simulation_mode=true`);
+                    const weatherData = await response.json();
+                    
+                    if (weatherData.status === 'not_found' && weatherData.simulation_mode) {
+                        console.warn(`⚠️ SIMULATION ALERT: Match ${matchData.venue} on ${matchData.date} has no enriched data`);
+                        console.warn('⚠️ Model predictions may be less accurate without weather/venue enrichment');
+                        
+                        // Show a one-time alert for this simulation session
+                        if (!this.enrichmentWarningShown) {
+                            showEnrichmentWarning(`No enriched data for ${matchData.venue} on ${matchData.date}`);
+                            this.enrichmentWarningShown = true;
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Could not check enrichment status:', error);
+                }
             }
             
             updateControlButtons() {
@@ -4260,6 +4414,7 @@
         // Initialize simulation controller when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
             simulationController = new SimulationController();
+            window.simulationController = simulationController; // Make globally accessible
         });
 
         console.log('🚀 Enhanced Cricket Intelligence Dashboard loaded successfully!');

@@ -10,13 +10,18 @@ import os
 from pathlib import Path
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit, join_room, leave_room
 import logging
 import threading
 import time
 from datetime import datetime
 from functools import wraps
+from typing import Optional, Dict
 import hashlib
 import secrets
+import openai
+import asyncio
+from openai_match_enrichment_pipeline import MatchEnrichmentPipeline
 
 # Load environment variables from .env file
 try:
@@ -31,6 +36,7 @@ from config.settings import settings
 
 from admin_tools import get_admin_tools
 from crickformers.chat import KGChatAgent
+from agent_ui_adapter import WicketWiseAgentAdapter
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -39,6 +45,38 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 if settings.CORS_ENABLED:
     CORS(app)
+
+# Initialize SocketIO for real-time communication
+socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True)
+
+# Initialize Agent UI Adapter
+agent_adapter = None
+
+def initialize_agent_adapter():
+    """Initialize the agent UI adapter with available components"""
+    global agent_adapter
+    try:
+        # Try to get orchestration engine and other components
+        orchestration_engine = None
+        audit_logger = None
+        dgl_engine = None
+        
+        # Initialize adapter with available components
+        agent_adapter = WicketWiseAgentAdapter(
+            orchestration_engine=orchestration_engine,
+            audit_logger=audit_logger,
+            dgl_engine=dgl_engine,
+            socketio=socketio
+        )
+        
+        # Store reference in app for access from routes
+        app.agent_adapter = agent_adapter
+        
+        logger.info("✅ Agent UI Adapter initialized successfully")
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize Agent UI Adapter: {e}")
+        agent_adapter = None
 
 # Security configuration
 ADMIN_TOKEN = os.getenv('ADMIN_TOKEN')
@@ -1637,6 +1675,86 @@ def get_current_simulation_match():
             "message": "Failed to get simulation match context"
         }), 500
 
+def enrich_and_cache_weather_data(date: str, venue: str) -> Optional[Dict]:
+    """
+    Use the existing enrichment pipeline to enrich weather data for a match
+    and add it to the cached enriched data
+    """
+    try:
+        logger.info(f"🌤️ Starting weather enrichment for {date} at {venue}")
+        
+        # Initialize enrichment pipeline
+        enrichment_pipeline = MatchEnrichmentPipeline()
+        
+        # Create match info for enrichment
+        match_info = {
+            'date': date,
+            'venue': venue,
+            'home': 'Team A',  # Placeholder - enrichment focuses on venue/weather
+            'away': 'Team B',  # Placeholder - enrichment focuses on venue/weather
+            'competition': 'Weather Enrichment Request'
+        }
+        
+        # Use the enricher to get weather data
+        enriched_data = enrichment_pipeline.enricher.enrich_match(match_info)
+        
+        logger.info(f"🔍 Enriched data result: {enriched_data is not None}")
+        if enriched_data:
+            logger.info(f"🔍 Weather hourly data: {hasattr(enriched_data, 'weather_hourly')} - {len(getattr(enriched_data, 'weather_hourly', []))}")
+        
+        if enriched_data and enriched_data.weather_hourly:
+            logger.info(f"✅ Successfully enriched weather data for {date} at {venue}")
+            
+            # Cache the enriched data
+            enrichment_pipeline._cache_match(match_info, enriched_data)
+            
+            # Use the first weather entry or average if multiple
+            weather_entry = enriched_data.weather_hourly[0] if enriched_data.weather_hourly else None
+            
+            if weather_entry:
+                # Return weather data in expected format
+                weather_response = {
+                    "status": "success",
+                    "message": f"Enriched weather data for {date} at {venue}",
+                    "weather": {
+                        "temperature": weather_entry.temperature,
+                        "humidity": weather_entry.humidity,
+                        "wind_speed": weather_entry.wind_speed,
+                        "conditions": weather_entry.conditions,
+                        "precipitation": getattr(weather_entry, 'precipitation', 0),
+                        "visibility": getattr(weather_entry, 'visibility', 10),
+                        "pressure": getattr(weather_entry, 'pressure', 1013),
+                        "uv_index": getattr(weather_entry, 'uv_index', 5)
+                    },
+                    "pitch_conditions": {
+                        "surface": getattr(enriched_data.venue, 'pitch_type', 'Good'),
+                        "moisture": "Normal",
+                        "bounce": "Medium", 
+                        "turn": "Minimal"
+                    },
+                    "match_impact": {
+                        "batting_advantage": "Neutral",
+                        "bowling_advantage": "Neutral",
+                        "dew_factor": "Low",
+                        "toss_importance": "Medium"
+                    },
+                    "data_source": "openai_enrichment",
+                    "weather_hourly": [
+                        {
+                            "time": w.time,
+                            "temperature": w.temperature,
+                            "humidity": w.humidity,
+                            "conditions": w.conditions
+                        } for w in enriched_data.weather_hourly[:6]  # First 6 hours
+                    ]
+                }
+            
+            return weather_response
+            
+    except Exception as e:
+        logger.error(f"❌ Weather enrichment failed for {date} at {venue}: {e}")
+        return None
+
 @app.route('/api/enriched-weather', methods=['GET'])
 def get_enriched_weather():
     """Get enriched weather data for a specific match date and venue"""
@@ -1696,9 +1814,77 @@ def get_enriched_weather():
                         "time": match_weather.get('time_local')
                     })
         
+        # If no match found, check if this is a simulation request
+        logger.info(f"No weather data found for {date} at {venue}")
+        
+        # For simulation mode, avoid expensive OpenAI enrichment but still try to use cached data
+        if request.args.get('simulation_mode') == 'true':
+            logger.info("🎮 Simulation mode detected, checking for cached enrichment without OpenAI calls")
+            
+            # Try to find enriched data in the main enrichment cache without triggering OpenAI
+            try:
+                enriched_matches_path = Path("enriched_data/enriched_betting_matches.json")
+                if enriched_matches_path.exists():
+                    with open(enriched_matches_path, 'r') as f:
+                        all_enriched_matches = json.load(f)
+                    
+                    # Look for match in cached enrichments
+                    for match in all_enriched_matches:
+                        match_date = match.get('date')
+                        match_venue = match.get('venue', {}).get('name', '').lower()
+                        target_venue = venue.lower()
+                        
+                        # Flexible venue matching
+                        venue_match = (target_venue in match_venue or 
+                                      match_venue in target_venue or
+                                      ('punjab' in target_venue and 'punjab' in match_venue) or
+                                      ('chinnaswamy' in target_venue and 'chinnaswamy' in match_venue))
+                        
+                        if match_date == date and venue_match:
+                            weather_data = match.get('weather', {})
+                            if weather_data:
+                                logger.info(f"✅ Found cached enriched weather for simulation: {date} at {venue}")
+                                return jsonify({
+                                    "status": "success",
+                                    "temperature": weather_data.get('temperature'),
+                                    "feels_like": weather_data.get('feels_like'),
+                                    "humidity": weather_data.get('humidity'),
+                                    "conditions": weather_data.get('conditions'),
+                                    "wind_speed": weather_data.get('wind_speed'),
+                                    "cloud_cover": weather_data.get('cloud_cover'),
+                                    "precipitation": weather_data.get('precipitation'),
+                                    "cached": True,
+                                    "simulation_mode": True
+                                })
+                
+                logger.warning(f"⚠️ SIMULATION WARNING: No enriched weather data found for {date} at {venue}")
+                logger.warning("⚠️ This may impact model accuracy - consider enriching this match data")
+                return jsonify({
+                    "status": "not_found",
+                    "message": "No enriched weather data available, using defaults",
+                    "warning": f"No enriched weather data for {venue} on {date} - using defaults may impact model accuracy",
+                    "simulation_mode": True,
+                    "enrichment_available": False
+                })
+                
+            except Exception as e:
+                logger.warning(f"Error checking cached enrichments in simulation mode: {e}")
+                return jsonify({
+                    "status": "not_found",
+                    "message": "No enriched weather data available, using defaults"
+                })
+        
+        # Only trigger expensive OpenAI enrichment for non-simulation requests
+        logger.info(f"Requesting OpenAI enrichment for {date} at {venue}...")
+        enriched_weather = enrich_and_cache_weather_data(date, venue)
+        if enriched_weather:
+            logger.info(f"✅ Successfully enriched weather data for {date} at {venue}")
+            return jsonify(enriched_weather), 200
+        
+        # Only fall back to not found if enrichment fails
         return jsonify({
-            "status": "not_found",
-            "message": f"No enriched weather data found for {date} at {venue}"
+            "status": "not_found", 
+            "message": f"No enriched weather data found for {date} at {venue} and enrichment failed"
         }), 404
         
     except Exception as e:
@@ -1951,18 +2137,61 @@ def simulate_next_ball():
         # Get current ball event
         ball_event = simulation_state["match_events"][current_ball]
         
-        # Update score
-        runs_scored = ball_event.get('runs_off_bat', 0) + ball_event.get('extras', 0)
+        # Update score - try multiple field names for runs
+        runs_off_bat = (ball_event.get('runs_off_bat', 0) or 
+                       ball_event.get('runs', 0) or 
+                       ball_event.get('runs_scored', 0))
+        extras = ball_event.get('extras', 0)
+        runs_scored = runs_off_bat + extras
         simulation_state["current_score"]["runs"] += runs_scored
         
-        if ball_event.get('wicket_type'):
+        # Check for wicket in multiple possible formats
+        is_wicket = False
+        if hasattr(ball_event, 'wicket') and hasattr(ball_event.wicket, 'is_wicket'):
+            # MatchEvent format with WicketInfo object
+            is_wicket = ball_event.wicket.is_wicket
+        elif isinstance(ball_event, dict):
+            # Dictionary format - check various possible wicket fields
+            wicket_data = ball_event.get('wicket', {})
+            if isinstance(wicket_data, dict):
+                is_wicket = wicket_data.get('is_wicket', False)
+            else:
+                # Check for other wicket indicators
+                is_wicket = (ball_event.get('wicket_type') or 
+                           ball_event.get('wicket') or 
+                           ball_event.get('is_wicket', False))
+        
+        if is_wicket:
             simulation_state["current_score"]["wickets"] += 1
         
         # Update overs
         simulation_state["current_score"]["overs"] = ball_event.get('over', 0) + (ball_event.get('ball', 1) / 6)
         
-        # Update last 6 balls
-        ball_outcome = str(runs_scored) if not ball_event.get('wicket_type') else 'W'
+        # Update last 6 balls with proper cricket notation
+        ball_outcome = str(runs_scored) if not is_wicket else 'W'
+        
+        # Check for extras and add proper cricket notation
+        if hasattr(ball_event, 'extras_breakdown'):
+            extras_info = ball_event.extras_breakdown
+            if extras_info['wides'] > 0:
+                ball_outcome = f"Wd{runs_scored}" if runs_scored > 1 else "Wd"
+            elif extras_info['noballs'] > 0:
+                ball_outcome = f"Nb{runs_scored}" if runs_scored > 1 else "Nb"
+            elif extras_info['byes'] > 0:
+                ball_outcome = f"B{runs_scored}" if runs_scored > 0 else "B"
+            elif extras_info['legbyes'] > 0:
+                ball_outcome = f"Lb{runs_scored}" if runs_scored > 0 else "Lb"
+        elif isinstance(ball_event, dict):
+            # Check dictionary format for extras
+            if ball_event.get('wide', 0) > 0:
+                ball_outcome = f"Wd{runs_scored}" if runs_scored > 1 else "Wd"
+            elif ball_event.get('noball', 0) > 0:
+                ball_outcome = f"Nb{runs_scored}" if runs_scored > 1 else "Nb"
+            elif ball_event.get('byes', 0) > 0:
+                ball_outcome = f"B{runs_scored}" if runs_scored > 0 else "B"
+            elif ball_event.get('legbyes', 0) > 0:
+                ball_outcome = f"Lb{runs_scored}" if runs_scored > 0 else "Lb"
+        
         simulation_state["last_6_balls"].append(ball_outcome)
         if len(simulation_state["last_6_balls"]) > 6:
             simulation_state["last_6_balls"] = simulation_state["last_6_balls"][-6:]
@@ -2003,9 +2232,19 @@ def simulate_next_ball():
                 "over": ball_event.get('over', 0),
                 "ball": ball_event.get('ball', 1),
                 "runs": runs_scored,
-                "wicket": bool(ball_event.get('wicket_type')),
+                "runs_off_bat": runs_off_bat,
+                "extras": extras,
+                "wicket": is_wicket,
                 "batsman": ball_event.get('striker', 'Unknown'),
-                "bowler": ball_event.get('bowler', 'Unknown')
+                "bowler": ball_event.get('bowler', 'Unknown'),
+                "extras_breakdown": getattr(ball_event, 'extras_breakdown', {
+                    'wides': ball_event.get('wide', 0) if isinstance(ball_event, dict) else 0,
+                    'noballs': ball_event.get('noball', 0) if isinstance(ball_event, dict) else 0,
+                    'byes': ball_event.get('byes', 0) if isinstance(ball_event, dict) else 0,
+                    'legbyes': ball_event.get('legbyes', 0) if isinstance(ball_event, dict) else 0,
+                    'total': extras,
+                    'is_legal_delivery': extras == 0 or (ball_event.get('wide', 0) == 0 and ball_event.get('noball', 0) == 0)
+                })
             },
             "match_state": {
                 "score": simulation_state["current_score"],
@@ -2229,12 +2468,197 @@ def get_audit_log():
         logger.error(f"Error getting audit log: {str(e)}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
+# ==================== AGENT UI WEBSOCKET HANDLERS ====================
+
+@socketio.on('connect', namespace='/agent_ui')
+def agent_ui_connect():
+    """Handle agent UI WebSocket connections"""
+    logger.info(f"🔗 Agent UI client connected: {request.sid}")
+    join_room('agent_events')
+    
+    # Send initial state if adapter is available
+    if agent_adapter:
+        try:
+            initial_state = {
+                'agents': agent_adapter.generate_agent_definitions(),
+                'handoffs': agent_adapter.generate_handoff_links(),
+                'flows': agent_adapter.generate_flow_definitions()
+            }
+            emit('initial_state', initial_state)
+            logger.info(f"📊 Sent initial state to client {request.sid}")
+        except Exception as e:
+            logger.error(f"❌ Error sending initial state: {e}")
+            emit('error', {'message': 'Failed to load initial state'})
+
+@socketio.on('disconnect', namespace='/agent_ui')
+def agent_ui_disconnect():
+    """Handle agent UI WebSocket disconnections"""
+    logger.info(f"🔌 Agent UI client disconnected: {request.sid}")
+    leave_room('agent_events')
+
+@socketio.on('subscribe_to_agent', namespace='/agent_ui')
+def subscribe_to_agent(data):
+    """Subscribe to specific agent events"""
+    agent_id = data.get('agent_id')
+    if agent_id:
+        join_room(f'agent_{agent_id}')
+        emit('subscription_confirmed', {'agent_id': agent_id})
+        logger.info(f"📡 Client {request.sid} subscribed to agent {agent_id}")
+
+@socketio.on('set_breakpoint', namespace='/agent_ui')
+def set_breakpoint(data):
+    """Set debugging breakpoint"""
+    breakpoint_config = data.get('breakpoint')
+    if breakpoint_config and agent_adapter:
+        try:
+            # Store breakpoint in agent adapter (would be implemented)
+            # agent_adapter.add_breakpoint(breakpoint_config)
+            emit('breakpoint_set', breakpoint_config)
+            logger.info(f"🔍 Breakpoint set: {breakpoint_config}")
+        except Exception as e:
+            logger.error(f"❌ Error setting breakpoint: {e}")
+            emit('error', {'message': 'Failed to set breakpoint'})
+
+@socketio.on('toggle_shadow_mode', namespace='/agent_ui')
+def toggle_shadow_mode(data):
+    """Toggle shadow mode for safe experimentation"""
+    shadow_enabled = data.get('enabled', False)
+    
+    try:
+        # Update DGL shadow mode (would integrate with actual DGL)
+        # if hasattr(app, 'dgl_engine'):
+        #     app.dgl_engine.set_shadow_mode(shadow_enabled)
+        
+        emit('shadow_mode_toggled', {'enabled': shadow_enabled})
+        logger.info(f"🎭 Shadow mode {'enabled' if shadow_enabled else 'disabled'}")
+        
+        # Broadcast to all agent UI clients
+        socketio.emit('shadow_mode_update', {'enabled': shadow_enabled}, 
+                     namespace='/agent_ui', room='agent_events')
+        
+    except Exception as e:
+        logger.error(f"❌ Error toggling shadow mode: {e}")
+        emit('error', {'message': 'Failed to toggle shadow mode'})
+
+@socketio.on('toggle_kill_switch', namespace='/agent_ui')
+def toggle_kill_switch(data):
+    """Toggle kill switch for emergency stop"""
+    kill_switch_enabled = data.get('enabled', False)
+    
+    try:
+        # This would integrate with actual execution engine
+        # if hasattr(app, 'execution_engine'):
+        #     app.execution_engine.set_kill_switch(kill_switch_enabled)
+        
+        emit('kill_switch_toggled', {'enabled': kill_switch_enabled})
+        logger.warning(f"🛑 Kill switch {'ACTIVATED' if kill_switch_enabled else 'DEACTIVATED'}")
+        
+        # Broadcast to all agent UI clients
+        socketio.emit('kill_switch_update', {'enabled': kill_switch_enabled}, 
+                     namespace='/agent_ui', room='agent_events')
+        
+    except Exception as e:
+        logger.error(f"❌ Error toggling kill switch: {e}")
+        emit('error', {'message': 'Failed to toggle kill switch'})
+
+@socketio.on('request_snapshot', namespace='/agent_ui')
+def request_snapshot():
+    """Create system state snapshot"""
+    if agent_adapter:
+        try:
+            snapshot = {
+                'timestamp': datetime.now().isoformat(),
+                'agents': agent_adapter.generate_agent_definitions(),
+                'flows': agent_adapter.generate_flow_definitions(),
+                'buffer_size': len(agent_adapter.event_stream),
+                'system_state': {
+                    'active_agents': len([a for a in agent_adapter.generate_agent_definitions() 
+                                        if a['status'] == 'active']),
+                    'total_events': len(agent_adapter.event_stream)
+                }
+            }
+            
+            emit('snapshot_created', snapshot)
+            logger.info(f"📸 System snapshot created for client {request.sid}")
+            
+        except Exception as e:
+            logger.error(f"❌ Error creating snapshot: {e}")
+            emit('error', {'message': 'Failed to create snapshot'})
+
+@socketio.on('clear_event_buffer', namespace='/agent_ui')
+def clear_event_buffer():
+    """Clear the event buffer"""
+    if agent_adapter:
+        try:
+            agent_adapter.event_stream.clear()
+            emit('buffer_cleared', {'timestamp': datetime.now().isoformat()})
+            logger.info(f"🧹 Event buffer cleared by client {request.sid}")
+        except Exception as e:
+            logger.error(f"❌ Error clearing buffer: {e}")
+            emit('error', {'message': 'Failed to clear buffer'})
+
+@socketio.on('simulate_agent_event', namespace='/agent_ui')
+def simulate_agent_event(data):
+    """Simulate an agent event for testing"""
+    if agent_adapter:
+        try:
+            agent_id = data.get('agent_id', 'test_agent')
+            event_type = data.get('event_type', 'test_event')
+            payload = data.get('payload', {})
+            cricket_context = data.get('cricket_context', {})
+            
+            agent_adapter.emit_agent_event(agent_id, event_type, payload, cricket_context)
+            
+            emit('event_simulated', {
+                'agent_id': agent_id,
+                'event_type': event_type,
+                'timestamp': datetime.now().isoformat()
+            })
+            
+            logger.info(f"🎭 Simulated event {event_type} for agent {agent_id}")
+            
+        except Exception as e:
+            logger.error(f"❌ Error simulating event: {e}")
+            emit('error', {'message': 'Failed to simulate event'})
+
+@socketio.on('generate_sample_events', namespace='/agent_ui')
+def generate_sample_events(data):
+    """Generate multiple sample events for testing the Flowline Explorer"""
+    if agent_adapter:
+        try:
+            count = data.get('count', 10)
+            count = min(count, 50)  # Limit to prevent spam
+            
+            # Generate events in background thread to avoid blocking
+            import threading
+            
+            def generate_events():
+                agent_adapter.generate_sample_events(count)
+            
+            thread = threading.Thread(target=generate_events)
+            thread.daemon = True
+            thread.start()
+            
+            emit('sample_events_started', {
+                'count': count,
+                'timestamp': datetime.now().isoformat()
+            })
+            
+            logger.info(f"🎭 Started generating {count} sample events")
+            
+        except Exception as e:
+            logger.error(f"❌ Error generating sample events: {e}")
+            emit('error', {'message': 'Failed to generate sample events'})
+
+# ==================== END AGENT UI HANDLERS ====================
+
 if __name__ == '__main__':
     print("🚀 Starting WicketWise Admin Backend API...")
     print("📊 Real knowledge graph building enabled")
     print("🤖 Real model training pipeline connected") 
     print("🌐 CORS enabled for admin interface")
     print("🔧 Admin tools initialized")
+    print("🤖 Agent UI system enabled")
     print()
     print("API Endpoints:")
     print("  GET  /api/health - Health check")
@@ -2251,6 +2675,12 @@ if __name__ == '__main__':
     print("  GET  /api/simulation/holdout-matches - Get holdout matches for simulation")
     print("  POST /api/simulation/run - Run strategy simulation")
     print()
+    print("WebSocket Namespaces:")
+    print("  /agent_ui - Agent UI real-time events")
+    print()
     
-    # Run using configured host and port
-    app.run(host=settings.BACKEND_HOST, port=settings.BACKEND_PORT, debug=settings.DEBUG_MODE)
+    # Initialize agent adapter
+    initialize_agent_adapter()
+    
+    # Run using configured host and port with SocketIO
+    socketio.run(app, host=settings.BACKEND_HOST, port=settings.BACKEND_PORT, debug=settings.DEBUG_MODE, allow_unsafe_werkzeug=True)
