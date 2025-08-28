@@ -28,11 +28,11 @@
 - ✅ Added field length validation
 - ✅ Service name whitelist validation
 
-### 3. **Authentication & Authorization**
+### 3. **Authentication & Authorization (Optional)**
 - ✅ Added `require_auth` decorator for admin endpoints
-- ✅ Implemented Bearer token authentication
+- ✅ Implemented Bearer token authentication (can be disabled for dev)
 - ✅ Added rate limiting to prevent abuse
-- ✅ Secured sensitive endpoints:
+- ✅ Secured sensitive endpoints (when auth enabled):
   - `/api/build-knowledge-graph` (5 req/5min)
   - `/api/train-model` (3 req/10min)
   - `/api/test-api-key` (20 req/5min)
@@ -52,8 +52,9 @@ CLAUDE_API_KEY=your_claude_key_here
 BETFAIR_API_KEY=your_betfair_key_here
 WEATHER_API_KEY=your_weather_key_here
 
-# Admin Authentication
-ADMIN_TOKEN=your_secure_admin_token_here
+# Admin Authentication (Optional)
+REQUIRE_AUTH=false                    # Set to 'true' for production
+ADMIN_TOKEN=your_secure_admin_token_here  # Only needed if REQUIRE_AUTH=true
 ```
 
 ### Frontend Changes

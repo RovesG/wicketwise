@@ -41,14 +41,26 @@ if settings.CORS_ENABLED:
     CORS(app)
 
 # Security configuration
-ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', secrets.token_urlsafe(32))
-if not os.getenv('ADMIN_TOKEN'):
-    logger.warning(f"No ADMIN_TOKEN set. Generated temporary token: {ADMIN_TOKEN}")
+ADMIN_TOKEN = os.getenv('ADMIN_TOKEN')
+REQUIRE_AUTH = os.getenv('REQUIRE_AUTH', 'false').lower() in ('true', '1', 'yes', 'on')
+
+if REQUIRE_AUTH and not ADMIN_TOKEN:
+    ADMIN_TOKEN = secrets.token_urlsafe(32)
+    logger.warning(f"REQUIRE_AUTH=true but no ADMIN_TOKEN set. Generated temporary token: {ADMIN_TOKEN}")
+elif REQUIRE_AUTH:
+    logger.info("🔒 Admin authentication ENABLED")
+else:
+    logger.info("🔓 Admin authentication DISABLED (development mode)")
 
 def require_auth(f):
-    """Decorator to require authentication for admin endpoints"""
+    """Decorator to require authentication for admin endpoints (optional in dev)"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # Skip authentication if not required (development mode)
+        if not REQUIRE_AUTH:
+            return f(*args, **kwargs)
+        
+        # Require authentication (production mode)
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({"error": "Authentication required"}), 401
@@ -690,7 +702,7 @@ def validate_input(data, required_fields, max_lengths=None):
         
         # Check for basic injection patterns
         value = str(data[field])
-        if any(pattern in value.lower() for pattern in ['<script', 'javascript:', 'on\w+\s*=', 'eval\(', 'document\.']):
+        if any(pattern in value.lower() for pattern in ['<script', 'javascript:', r'on\w+\s*=', r'eval\(', r'document\.']):
             raise ValueError(f"Invalid characters in field: {field}")
         
         # Check length limits
