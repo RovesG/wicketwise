@@ -1214,7 +1214,12 @@
                                         <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
                                             <div class="space-y-3">
                                                 <label class="text-sm font-medium">OpenAI API Key</label>
-                                                <input type="password" placeholder="sk-..." class="w-full p-3 border border-input rounded-md bg-input-background font-mono text-sm h-12">
+                                                <div class="relative">
+                                                    <input type="password" id="openai-key" placeholder="Configure via environment variables" class="w-full p-3 border border-input rounded-md bg-input-background font-mono text-sm h-12" readonly>
+                                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                                        <span class="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">Server-side only</span>
+                                                    </div>
+                                                </div>
                                                 <p class="text-sm text-muted-foreground">Used for AI insights and tactical recommendations</p>
                                             </div>
                                             <div class="space-y-3">
@@ -1224,12 +1229,22 @@
                                             </div>
                                             <div class="space-y-3">
                                                 <label class="text-sm font-medium">Claude API Key</label>
-                                                <input type="password" placeholder="sk-ant-..." class="w-full p-3 border border-input rounded-md bg-input-background font-mono text-sm h-12">
+                                                <div class="relative">
+                                                    <input type="password" id="claude-key" placeholder="Configure via environment variables" class="w-full p-3 border border-input rounded-md bg-input-background font-mono text-sm h-12" readonly>
+                                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                                        <span class="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">Server-side only</span>
+                                                    </div>
+                                                </div>
                                                 <p class="text-sm text-muted-foreground">Advanced reasoning for complex scenarios</p>
                                             </div>
                                             <div class="space-y-3">
                                                 <label class="text-sm font-medium">Betfair API Key</label>
-                                                <input type="password" placeholder="betting-api-key..." class="w-full p-3 border border-input rounded-md bg-input-background font-mono text-sm h-12">
+                                                <div class="relative">
+                                                    <input type="password" id="betfair-key" placeholder="Configure via environment variables" class="w-full p-3 border border-input rounded-md bg-input-background font-mono text-sm h-12" readonly>
+                                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                                        <span class="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">Server-side only</span>
+                                                    </div>
+                                                </div>
                                                 <p class="text-sm text-muted-foreground">Live betting odds and market data</p>
                                             </div>
                                             <div class="space-y-3">
@@ -1239,7 +1254,26 @@
                                             </div>
                                         </div>
                                         <div class="mt-8">
-                                            <button class="bg-primary text-primary-foreground px-6 py-3 rounded-md font-medium">Save API Keys</button>
+                                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                                <div class="flex items-start space-x-3">
+                                                    <div class="flex-shrink-0">
+                                                        <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <h4 class="text-sm font-medium text-blue-800">Security Notice</h4>
+                                                        <p class="mt-1 text-sm text-blue-700">
+                                                            API keys are now managed server-side for enhanced security. Configure them in your <code class="bg-blue-100 px-1 rounded">.env</code> file or environment variables.
+                                                        </p>
+                                                        <div class="mt-2 text-xs text-blue-600">
+                                                            <p>• OPENAI_API_KEY=your_openai_key</p>
+                                                            <p>• CLAUDE_API_KEY=your_claude_key</p>
+                                                            <p>• BETFAIR_API_KEY=your_betfair_key</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

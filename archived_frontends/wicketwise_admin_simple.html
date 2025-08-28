@@ -289,6 +289,25 @@
             display: block;
         }
         
+        .security-notice {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 0.5rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            border: 1px solid #fbbf24;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        input[readonly] {
+            background-color: #f8fafc !important;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
         .btn {
             background: #3b82f6;
             color: white;
@@ -689,7 +708,8 @@
                     
                     <div class="form-group">
                         <label for="openai-key">OpenAI API Key</label>
-                        <input type="password" id="openai-key" placeholder="sk-..." value="">
+                        <input type="password" id="openai-key" placeholder="Configure via .env file" value="" readonly>
+                        <div class="security-notice">⚠️ API keys are now server-side only for security</div>
                         <small>Used for AI insights and tactical recommendations</small>
                     </div>
                     
@@ -701,13 +721,15 @@
                     
                     <div class="form-group">
                         <label for="claude-key">Claude API Key</label>
-                        <input type="password" id="claude-key" placeholder="sk-ant-..." value="">
+                        <input type="password" id="claude-key" placeholder="Configure via .env file" value="" readonly>
+                        <div class="security-notice">⚠️ API keys are now server-side only for security</div>
                         <small>Advanced reasoning for complex scenarios</small>
                     </div>
                     
                     <div class="form-group">
                         <label for="betfair-key">Betfair API Key</label>
-                        <input type="password" id="betfair-key" placeholder="betting-api-key..." value="">
+                        <input type="password" id="betfair-key" placeholder="Configure via .env file" value="" readonly>
+                        <div class="security-notice">⚠️ API keys are now server-side only for security</div>
                         <small>Live betting odds and market data</small>
                     </div>
                     
@@ -1251,91 +1273,21 @@
             });
         });
         
-        // API Keys functionality
+        // API Keys functionality - DISABLED FOR SECURITY
         function saveApiKeys() {
-            const keys = {
-                openai: document.getElementById('openai-key').value,
-                gemini: document.getElementById('gemini-key').value,
-                claude: document.getElementById('claude-key').value,
-                betfair: document.getElementById('betfair-key').value,
-                weather: document.getElementById('weather-key').value
-            };
-            
-            // Save to localStorage with encryption (basic obfuscation)
-            try {
-                const encryptedKeys = btoa(JSON.stringify(keys)); // Basic encoding
-                localStorage.setItem('wicketwise_api_keys', encryptedKeys);
-                localStorage.setItem('wicketwise_keys_timestamp', new Date().toISOString());
-                
-                // Show success message
-                showNotification('✅ API Keys saved successfully!', 'success');
-                console.log('API keys saved to localStorage');
-                
-                // Update save status indicator
-                const saveBtn = document.querySelector('[onclick="saveApiKeys()"]');
-                const originalText = saveBtn.innerHTML;
-                saveBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Saved!';
-                saveBtn.style.background = '#10b981';
-                
-                setTimeout(() => {
-                    saveBtn.innerHTML = originalText;
-                    saveBtn.style.background = '';
-                }, 2000);
-                
-            } catch (error) {
-                console.error('Failed to save API keys:', error);
-                showNotification('❌ Failed to save API keys', 'error');
-            }
+            showNotification('🔒 API keys are now managed server-side for security. Please configure them in your .env file.', 'warning', 5000);
+            console.log('API key saving disabled - use environment variables instead');
         }
         
         function loadApiKeys() {
-            try {
-                const encryptedKeys = localStorage.getItem('wicketwise_api_keys');
-                if (!encryptedKeys) {
-                    console.log('No saved API keys found');
-                    return;
-                }
-                
-                const keys = JSON.parse(atob(encryptedKeys)); // Decode
-                const timestamp = localStorage.getItem('wicketwise_keys_timestamp');
-                
-                // Restore API keys to form fields
-                if (keys.openai) document.getElementById('openai-key').value = keys.openai;
-                if (keys.gemini) document.getElementById('gemini-key').value = keys.gemini;
-                if (keys.claude) document.getElementById('claude-key').value = keys.claude;
-                if (keys.betfair) document.getElementById('betfair-key').value = keys.betfair;
-                if (keys.weather) document.getElementById('weather-key').value = keys.weather;
-                
-                console.log('API keys restored from localStorage');
-                
-                // Show when keys were last saved
-                if (timestamp) {
-                    const lastSaved = new Date(timestamp);
-                    const timeAgo = getTimeAgo(lastSaved);
-                    showNotification(`🔑 API keys loaded (saved ${timeAgo})`, 'info', 3000);
-                }
-                
-            } catch (error) {
-                console.error('Failed to load API keys:', error);
-                showNotification('⚠️ Failed to load saved API keys', 'warning');
-            }
+            // DISABLED FOR SECURITY - API keys are now server-side only
+            console.log('API key loading disabled - keys are managed server-side');
+            showNotification('🔒 API keys are managed server-side. Check your .env configuration.', 'info', 3000);
         }
         
         function clearApiKeys() {
-            if (confirm('Are you sure you want to clear all saved API keys?')) {
-                localStorage.removeItem('wicketwise_api_keys');
-                localStorage.removeItem('wicketwise_keys_timestamp');
-                
-                // Clear form fields
-                document.getElementById('openai-key').value = '';
-                document.getElementById('gemini-key').value = '';
-                document.getElementById('claude-key').value = '';
-                document.getElementById('betfair-key').value = '';
-                document.getElementById('weather-key').value = '';
-                
-                showNotification('🗑️ API keys cleared', 'info');
-                console.log('API keys cleared');
-            }
+            showNotification('🔒 API keys are managed server-side. Use environment variables to configure them.', 'info', 3000);
+            console.log('API key clearing disabled - keys are managed server-side');
         }
         
         function showNotification(message, type = 'info', duration = 5000) {

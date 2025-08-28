@@ -14,6 +14,9 @@ import logging
 import threading
 import time
 from datetime import datetime
+from functools import wraps
+import hashlib
+import secrets
 
 # Load environment variables from .env file
 try:
@@ -36,6 +39,56 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 if settings.CORS_ENABLED:
     CORS(app)
+
+# Security configuration
+ADMIN_TOKEN = os.getenv('ADMIN_TOKEN', secrets.token_urlsafe(32))
+if not os.getenv('ADMIN_TOKEN'):
+    logger.warning(f"No ADMIN_TOKEN set. Generated temporary token: {ADMIN_TOKEN}")
+
+def require_auth(f):
+    """Decorator to require authentication for admin endpoints"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"error": "Authentication required"}), 401
+        
+        token = auth_header.split(' ')[1]
+        if not secrets.compare_digest(token, ADMIN_TOKEN):
+            return jsonify({"error": "Invalid authentication token"}), 403
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Rate limiting storage
+rate_limit_storage = {}
+
+def rate_limit(max_requests=10, window_seconds=60):
+    """Simple rate limiting decorator"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            client_ip = request.remote_addr
+            now = time.time()
+            
+            # Clean old entries
+            rate_limit_storage[client_ip] = [
+                timestamp for timestamp in rate_limit_storage.get(client_ip, [])
+                if now - timestamp < window_seconds
+            ]
+            
+            # Check rate limit
+            if len(rate_limit_storage.get(client_ip, [])) >= max_requests:
+                return jsonify({"error": "Rate limit exceeded"}), 429
+            
+            # Add current request
+            if client_ip not in rate_limit_storage:
+                rate_limit_storage[client_ip] = []
+            rate_limit_storage[client_ip].append(now)
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
 # Global admin tools instance
 # Global admin tools instance - initialized lazily
@@ -107,6 +160,8 @@ def health_check():
     return jsonify({"status": "healthy", "message": "Admin Backend is running"})
 
 @app.route('/api/build-knowledge-graph', methods=['POST'])
+@require_auth
+@rate_limit(max_requests=5, window_seconds=300)  # 5 requests per 5 minutes
 def build_knowledge_graph():
     """Mapped to unified KG build to avoid legacy/cached aggregates"""
 
@@ -280,6 +335,8 @@ def get_operation_status(operation_id):
     return jsonify(background_operations[operation_id])
 
 @app.route('/api/train-model', methods=['POST'])
+@require_auth
+@rate_limit(max_requests=3, window_seconds=600)  # 3 requests per 10 minutes
 def train_model():
     """Train AI model using real training pipeline"""
     
@@ -622,15 +679,52 @@ def update_data_paths():
         logger.error(f"Failed to update data paths: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+def validate_input(data, required_fields, max_lengths=None):
+    """Validate input data to prevent injection attacks"""
+    if not isinstance(data, dict):
+        raise ValueError("Invalid data format")
+    
+    for field in required_fields:
+        if field not in data or not data[field]:
+            raise ValueError(f"Missing required field: {field}")
+        
+        # Check for basic injection patterns
+        value = str(data[field])
+        if any(pattern in value.lower() for pattern in ['<script', 'javascript:', 'on\w+\s*=', 'eval\(', 'document\.']):
+            raise ValueError(f"Invalid characters in field: {field}")
+        
+        # Check length limits
+        if max_lengths and field in max_lengths:
+            if len(value) > max_lengths[field]:
+                raise ValueError(f"Field {field} exceeds maximum length of {max_lengths[field]}")
+    
+    return True
+
 @app.route('/api/test-api-key', methods=['POST'])
+@require_auth
+@rate_limit(max_requests=20, window_seconds=300)  # 20 requests per 5 minutes
 def test_api_key():
     """Test API key functionality"""
-    data = request.get_json()
-    service = data.get('service')
-    api_key = data.get('api_key')
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+        
+        # Validate input
+        validate_input(data, ['service', 'api_key'], {'service': 50, 'api_key': 200})
+        
+        service = data.get('service')
+        api_key = data.get('api_key')
+        
+        # Additional service validation
+        allowed_services = ['openai', 'weather', 'gemini', 'claude', 'betfair']
+        if service not in allowed_services:
+            return jsonify({"error": f"Invalid service. Allowed: {', '.join(allowed_services)}"}), 400
     
-    if not service or not api_key:
-        return jsonify({"error": "Missing service or api_key"}), 400
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": "Invalid request format"}), 400
     
     try:
         # Add real API key testing logic here based on service type
