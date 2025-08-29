@@ -572,142 +572,54 @@
         </div>
     </div>
 
-    <!-- Simulation Controls -->
-    <div id="simulationControls" class="bg-muted/50 border-2 rounded-lg p-2 mt-2">
+    <!-- Consolidated Simulation Controls -->
+    <div id="mainSimulationControls" class="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-3 mt-2">
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <button id="startSimBtn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-medium">
-                    ▶️ Start
+                <button id="startSimBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+                    ▶️ Start Simulation
                 </button>
-                <button id="nextBallBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium" disabled>
+                <button id="nextBallBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md" disabled>
                     ⚾ Next Ball
                 </button>
-                <button id="autoPlayBtn" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded text-sm font-medium" disabled>
+                <button id="autoPlayBtn" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md" disabled>
                     🎮 Auto Play
                 </button>
-                <button id="stopSimBtn" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium" disabled>
+                <button id="stopSimBtn" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md" disabled>
                     ⏹️ Stop
                 </button>
             </div>
             
             <div class="flex items-center space-x-4 text-sm">
-                <div>
-                    <span class="text-muted-foreground">Ball:</span>
-                    <span id="ballProgress" class="font-medium">0/0</span>
+                <div class="flex items-center space-x-2">
+                    <span class="text-gray-600 font-medium">Ball:</span>
+                    <span id="ballProgress" class="font-bold text-blue-600">0/0</span>
                 </div>
-                <div>
-                    <span class="text-muted-foreground">Speed:</span>
-                    <select id="simSpeed" class="bg-background border border-border rounded px-2 py-1 text-xs">
-                        <option value="3000">Slow (3s)</option>
-                        <option value="1500" selected>Normal (1.5s)</option>
+                <div class="flex items-center space-x-2">
+                    <span class="text-gray-600 font-medium">Speed:</span>
+                    <select id="simSpeed" class="bg-white border border-gray-300 rounded-lg px-3 py-1 text-sm shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="3000" selected>Slow (3s)</option>
+                        <option value="1500">Normal (1.5s)</option>
                         <option value="500">Fast (0.5s)</option>
                         <option value="100">Rapid (0.1s)</option>
                     </select>
                 </div>
-                <div>
-                    <span class="text-muted-foreground">Odds:</span>
-                    <span id="bettingOdds" class="font-medium">2.0 | 2.0</span>
+                <div class="flex items-center space-x-2">
+                    <span class="text-gray-600 font-medium">Odds:</span>
+                    <span id="bettingOdds" class="font-bold text-green-600">2.0 | 2.0</span>
+                </div>
+                <div id="simulationStatusIndicator" class="flex items-center space-x-2 px-3 py-1 bg-white rounded-lg border border-gray-200">
+                    <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    <span class="text-sm text-gray-600 font-medium">Ready</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Top Row - Video and Betting Portfolio -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Video Streaming Panel -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Live Video Stream</h3>
-            </div>
-            <div class="card-content">
-                <div class="bg-black rounded-lg aspect-video flex items-center justify-center text-white">
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <i data-lucide="play" class="w-8 h-8"></i>
-                        </div>
-                        <p>Live Stream: RCB vs MI</p>
-                        <p class="text-sm text-gray-300">Ball-by-ball coverage</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Betting Intelligence Hub -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Betting Intelligence Hub</h3>
-                <span class="text-red-600 font-medium">-$61 Total</span>
-            </div>
-            <div class="card-content space-y-4">
-                <!-- Portfolio Summary -->
-                <div class="space-y-2">
-                    <div class="text-sm font-medium">Active Positions</div>
-                    <div class="grid grid-cols-1 gap-2">
-                        <div class="bg-red-50 border border-red-200 rounded p-2 flex justify-between text-sm">
-                            <span>RCB Win</span>
-                        <span class="text-red-600">-$25</span>
-                    </div>
-                        <div class="bg-green-50 border border-green-200 rounded p-2 flex justify-between text-sm">
-                            <span>Over 180.5</span>
-                        <span class="text-green-600">+$18</span>
-                    </div>
-                        <div class="bg-gray-50 border border-gray-200 rounded p-2 flex justify-between text-sm">
-                            <span>Kohli 50+</span>
-                        <span class="text-gray-600">Pending</span>
-                    </div>
-                </div>
-            </div>
-
-                <!-- Market Odds & Win Probability -->
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="space-y-2">
-                        <div class="text-sm font-medium">Market Odds</div>
-                        <div class="space-y-1">
-                            <div class="flex justify-between text-sm">
-                                <span>RCB</span>
-                                <span class="font-bold">1.45 (69%)</span>
-                </div>
-                            <div class="flex justify-between text-sm">
-                                <span>MI</span>
-                                <span class="font-bold">2.75 (36%)</span>
-                        </div>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <div class="text-sm font-medium">Win Probability</div>
-                        <div class="h-16 bg-gray-50 rounded flex items-center justify-center">
-                            <div class="text-center text-xs">
-                                <div class="text-blue-600 font-bold">RCB 67%</div>
-                                <div class="text-red-600 font-bold">MI 33%</div>
-                        </div>
-                        </div>
-        </div>
-    </div>
-
-                <!-- Betting Signals -->
-                    <div class="space-y-2">
-                    <div class="text-sm font-medium flex items-center justify-between">
-                        <span>Betting Signals</span>
-                        <div class="flex space-x-1">
-                            <span class="badge-outline text-xs">High Liquidity</span>
-                            <span class="badge-secondary text-xs">Sharp Movement</span>
-                        </div>
-                    </div>
-                    <div class="bg-green-50 border border-green-200 rounded p-2">
-                        <div class="text-sm font-medium text-green-800">Strong Buy Signal</div>
-                        <div class="text-xs text-green-600">RCB Win @ 1.45 - Model suggests 72% win probability</div>
-                    </div>
-                </div>
-            </div>
-                        </div>
-                    </div>
-
-
-
-    <!-- Main Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <!-- Left Column - Enhanced Player Cards -->
-        <div class="lg:col-span-1 space-y-6">
+    <!-- Main Content: Player Cards (Left) + Betting Intelligence (Right) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Left Column - Player Cards (Half Width) -->
+        <div>
             <!-- Featured Players Section -->
             <div class="card">
                 <!-- Match Context Header -->
@@ -761,30 +673,43 @@
                 <div class="card-content">
                     <!-- Current Action Players -->
                     <div class="current-players mb-6">
-                        <div class="space-y-4">
-                            <!-- Current Striker -->
-                            <div class="current-player striker-section">
-                                <div class="player-badge striker-badge flex items-center space-x-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-1 rounded mb-2">
-                                    <i data-lucide="zap" class="w-3 h-3"></i>
-                                    <span>ON STRIKE</span>
-                        </div>
-                                <div id="strikerCard" class="featured-player-card">
-                                    <!-- Striker card will be loaded here -->
-                        </div>
-                    </div>
+                        <!-- Batsmen Side-by-Side -->
+                        <div class="batsmen-section mb-6">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                                <i data-lucide="users" class="w-4 h-4 mr-2"></i>
+                                Current Batsmen
+                            </h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <!-- Current Striker -->
+                                <div class="current-player striker-section">
+                                    <div class="player-badge striker-badge flex items-center space-x-1 text-xs font-medium text-green-700 bg-green-100 px-2 py-1 rounded mb-2">
+                                        <i data-lucide="zap" class="w-3 h-3"></i>
+                                        <span>ON STRIKE</span>
+                                    </div>
+                                    <div id="strikerCard" class="featured-player-card">
+                                        <!-- Striker card will be loaded here -->
+                                    </div>
+                                </div>
 
-                            <!-- Current Non-Striker -->
-                            <div class="current-player non-striker-section">
-                                <div class="player-badge non-striker-badge flex items-center space-x-1 text-xs font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded mb-2">
-                                    <i data-lucide="user" class="w-3 h-3"></i>
-                                    <span>NON-STRIKER</span>
+                                <!-- Current Non-Striker -->
+                                <div class="current-player non-striker-section">
+                                    <div class="player-badge non-striker-badge flex items-center space-x-1 text-xs font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded mb-2">
+                                        <i data-lucide="user" class="w-3 h-3"></i>
+                                        <span>NON-STRIKER</span>
+                                    </div>
+                                    <div id="nonStrikerCard" class="featured-player-card">
+                                        <!-- Non-striker card will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                                <div id="nonStrikerCard" class="featured-player-card">
-                                    <!-- Non-striker card will be loaded here -->
-                        </div>
-                    </div>
 
-                            <!-- Current Bowler -->
+                        <!-- Current Bowler (Below Batsmen) -->
+                        <div class="bowler-section mb-6">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                                <i data-lucide="target" class="w-4 h-4 mr-2"></i>
+                                Current Bowler
+                            </h4>
                             <div class="current-player bowler-section">
                                 <div class="player-badge bowler-badge flex items-center space-x-1 text-xs font-medium text-red-700 bg-red-100 px-2 py-1 rounded mb-2">
                                     <i data-lucide="target" class="w-3 h-3"></i>
@@ -797,19 +722,41 @@
                         </div>
                     </div>
 
-                    <!-- Team Squads Toggle -->
+                    <!-- Full Team Squads (Two Columns) -->
                     <div class="team-squads">
-                        <div class="flex space-x-2 mb-4">
-                            <button class="team-toggle active text-xs px-3 py-1 bg-orange-100 text-orange-800 rounded hover:bg-orange-200" data-team="home" onclick="toggleTeamView('home')">
-                                <span id="homeTeamName">Home Team</span>
-                            </button>
-                            <button class="team-toggle text-xs px-3 py-1 bg-gray-100 text-gray-800 rounded hover:bg-gray-200" data-team="away" onclick="toggleTeamView('away')">
-                                <span id="awayTeamName">Away Team</span>
-                            </button>
-                        </div>
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                            <i data-lucide="users" class="w-4 h-4 mr-2"></i>
+                            Full Team Squads
+                        </h4>
                         
-                        <div id="teamPlayersContainer" class="space-y-2">
-                            <!-- Team player cards will be loaded here -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Home Team Column -->
+                            <div class="team-column">
+                                <div class="team-header bg-orange-100 text-orange-800 px-3 py-2 rounded-t-lg font-medium text-sm flex items-center justify-center">
+                                    <div class="team-logo w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-xs mr-2" id="homeTeamLogoSmall">
+                                        KKR
+                                    </div>
+                                    <span id="homeTeamNameSquad">Kolkata Knight Riders</span>
+                                </div>
+                                <div id="homeTeamPlayersContainer" class="bg-orange-50 border border-orange-200 rounded-b-lg p-3 space-y-2 min-h-[200px]">
+                                    <!-- Home team player cards will be loaded here -->
+                                    <div class="text-center text-gray-500 text-sm py-8">Loading team players...</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Away Team Column -->
+                            <div class="team-column">
+                                <div class="team-header bg-purple-100 text-purple-800 px-3 py-2 rounded-t-lg font-medium text-sm flex items-center justify-center">
+                                    <div class="team-logo w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-xs mr-2" id="awayTeamLogoSmall">
+                                        PBKS
+                                    </div>
+                                    <span id="awayTeamNameSquad">Punjab Kings</span>
+                                </div>
+                                <div id="awayTeamPlayersContainer" class="bg-purple-50 border border-purple-200 rounded-b-lg p-3 space-y-2 min-h-[200px]">
+                                    <!-- Away team player cards will be loaded here -->
+                                    <div class="text-center text-gray-500 text-sm py-8">Loading team players...</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -819,64 +766,124 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Current Bowler -->
-            <div class="card hover:shadow-lg transition-shadow">
+        </div>
+        
+        <!-- Right Column - Live Betting Intelligence (Half Width) -->
+        <div>
+            <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title flex items-center justify-between">
-                        Current Bowler
-                        <span class="badge-outline">MI</span>
+                    <h3 class="card-title flex items-center space-x-2">
+                        <i data-lucide="trending-up" class="w-5 h-5 text-green-500"></i>
+                        <span>Live Betting Intelligence</span>
                     </h3>
+                    <div class="flex items-center space-x-2">
+                        <div id="agentStatusIndicator" class="flex items-center space-x-1">
+                            <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+                            <span class="text-xs text-gray-500">Agents Idle</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button id="shadowBettingToggle" class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-lg border border-yellow-300 hover:bg-yellow-200 transition-colors">
+                                🎭 Shadow Mode
+                            </button>
+                            <button id="autoBetToggle" class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-lg border border-gray-300 hover:bg-gray-200 transition-colors" disabled>
+                                🤖 Auto Bet: OFF
+                            </button>
+                        </div>
+                        <span id="portfolioTotal" class="text-green-600 font-medium">$0 Total</span>
+                    </div>
                 </div>
                 <div class="card-content space-y-4">
-                    <!-- Player Info -->
-                    <div class="flex items-center space-x-3">
-                        <div class="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
-                            <span class="font-medium">JB</span>
-                        </div>
-                        <div>
-                            <div class="font-medium">Jasprit Bumrah</div>
-                            <div class="text-sm text-muted-foreground">MI</div>
-                        </div>
-                    </div>
-
-                    <!-- Stats -->
-                    <div class="grid grid-cols-3 gap-2">
-                        <div class="text-center">
-                            <div class="text-lg font-bold">3.2</div>
-                            <div class="text-xs text-muted-foreground">Overs</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-lg font-bold">18</div>
-                            <div class="text-xs text-muted-foreground">Runs</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-lg font-bold">2</div>
-                            <div class="text-xs text-muted-foreground">Wickets</div>
-                        </div>
-                    </div>
-
-                    <!-- Economy -->
+                    <!-- Live Agent Activity -->
                     <div class="space-y-2">
-                        <div class="text-sm font-medium">Economy Rate</div>
-                        <div class="flex items-center space-x-2">
-                            <div class="flex-1 bg-gray-200 rounded-full h-2">
-                                <div class="bg-blue-600 h-2 rounded-full" style="width: 56%"></div>
+                        <div class="text-sm font-medium flex items-center justify-between">
+                            <span>Agent Activity</span>
+                            <span id="lastAgentUpdate" class="text-xs text-gray-500">Waiting for simulation...</span>
+                        </div>
+                        <div id="agentActivityFeed" class="space-y-1 max-h-32 overflow-y-auto">
+                            <div class="text-xs text-gray-500 text-center py-4">
+                                Start simulation to see live agent decisions
                             </div>
-                            <span class="text-sm font-bold">5.29</span>
                         </div>
                     </div>
 
-                    <!-- Tags -->
-                    <div class="flex flex-wrap gap-1">
-                        <span class="badge-secondary">2x dismissed Kohli</span>
-                        <span class="badge-secondary">Death specialist</span>
+                    <!-- Live Market Data -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="space-y-2">
+                            <div class="text-sm font-medium">Live Decimal Odds</div>
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-sm">
+                                    <span id="homeTeamName">Team A</span>
+                                    <span id="homeTeamOdds" class="font-bold text-blue-600">2.00</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span id="awayTeamName">Team B</span>
+                                    <span id="awayTeamOdds" class="font-bold text-red-600">2.00</span>
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    <span>Last update: </span><span id="oddsLastUpdate">--:--</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="text-sm font-medium">Win Probability</div>
+                            <div class="h-16 bg-gray-50 rounded flex items-center justify-center">
+                                <div class="text-center text-xs">
+                                    <div id="homeWinProb" class="text-blue-600 font-bold">50%</div>
+                                    <div id="awayWinProb" class="text-red-600 font-bold">50%</div>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-500 text-center">
+                                Model confidence: <span id="modelConfidence">--</span>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="text-sm font-medium">Model Output</div>
+                            <div class="h-16 bg-gray-50 rounded p-2 overflow-y-auto">
+                                <div id="modelOutput" class="text-xs text-gray-600">
+                                    Waiting for model predictions...
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-500 text-center">
+                                <span>Prediction: </span><span id="modelPrediction">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Betting Signals -->
+                    <div class="space-y-2">
+                        <div class="text-sm font-medium flex items-center justify-between">
+                            <span>Live Signals</span>
+                            <div id="signalBadges" class="flex space-x-1">
+                                <!-- Dynamic badges will be added here -->
+                            </div>
+                        </div>
+                        <div id="liveSignalsFeed" class="space-y-1">
+                            <div class="text-xs text-gray-500 text-center py-2">
+                                No active signals - waiting for agent analysis
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Agent Recommendations -->
+                    <div class="space-y-2">
+                        <div class="text-sm font-medium">Agent Recommendations</div>
+                        <div id="agentRecommendations" class="space-y-1">
+                            <div class="text-xs text-gray-500 text-center py-2">
+                                Agents will provide recommendations during simulation
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Middle Column - Betting & AI -->
+
+
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column - Betting & AI -->
         <div class="lg:col-span-1 space-y-6">
 
 
@@ -1075,44 +1082,33 @@
                         </h3>
                     </div>
                     <div class="card-content space-y-4">
-                        <!-- Dashboard Mode Selector -->
-                        <div class="space-y-2">
-                            <label class="text-sm text-gray-600">Dashboard Mode</label>
-                            <div class="mode-selector grid grid-cols-2 gap-2">
-                                <button id="simulationModeBtn" class="mode-btn active bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-sm font-medium border border-blue-200 hover:bg-blue-200" onclick="switchDashboardMode('simulation')">
-                                    🎮 Simulation Mode
-                                </button>
-                                <button id="liveModeBtn" class="mode-btn bg-gray-100 text-gray-600 px-3 py-2 rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-200" onclick="switchDashboardMode('live')" disabled>
-                                    📡 Connect to Live Match
-                                </button>
+                        <!-- Dashboard Status -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm font-medium text-gray-700">Dashboard Mode</label>
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">🎮 Simulation</span>
                             </div>
-                            <div class="text-xs text-gray-500">
-                                <span id="modeDescription">Using T20 holdout match data for realistic simulation</span>
-                            </div>
-                        </div>
-
-                        <!-- Simulation Controls (shown when in simulation mode) -->
-                        <div id="simulationControls" class="space-y-3">
-                            <div class="space-y-2">
-                                <label class="text-sm text-gray-600">Simulation Speed</label>
-                                <select id="simulationSpeed" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
-                                    <option value="slow" selected>🐌 Slow (Dashboard Demo)</option>
-                                    <option value="rapid">⚡ Rapid Testing</option>
-                                </select>
-                        </div>
-
-                        <div class="space-y-2">
-                                <label class="text-sm text-gray-600">Match Data</label>
-                                <select id="matchSelection" class="w-full p-2 border border-gray-300 rounded-lg text-sm">
-                                    <option value="current" selected>Current Simulation Match</option>
-                                    <option value="random">Random Holdout Match</option>
-                                </select>
+                            
+                            <div class="text-xs text-gray-500 bg-gray-50 p-2 rounded-lg">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span>Using T20 holdout match data for realistic simulation</span>
                                 </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="text-sm text-gray-600">Match Selection</label>
+                                <select id="matchSelection" class="w-full p-2 border border-gray-300 rounded-lg text-sm bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="auto" selected>🎯 Auto (Best Match)</option>
+                                    <option value="random">🎲 Random Match</option>
+                                    <option value="specific">📋 Specific Match</option>
+                                </select>
+                            </div>
 
-                            <!-- Simulation Actions -->
+                            <!-- Quick Actions -->
                             <div class="flex space-x-2">
-                                <button id="startSimulationBtn" class="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700" onclick="startMatchSimulation()">
-                                    ▶️ Start Match
+                                <button id="quickStartBtn" class="flex-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors" onclick="simulationController.startSimulation()">
+                                    ⚡ Quick Start
                                 </button>
                                 <button id="pauseSimulationBtn" class="flex-1 bg-yellow-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-yellow-700" onclick="pauseMatchSimulation()" disabled>
                                     ⏸️ Pause
@@ -2854,6 +2850,9 @@
                     // Determine current role based on container ID
                     const currentRole = containerId === 'bowlerCard' ? 'bowler' : 'batsman';
                     container.innerHTML = createCompactPlayerCardHTML(card.cardData, playerName, currentRole);
+                    
+                    // Load GNN similar players asynchronously
+                    loadGNNSimilarPlayers(playerName);
                 } else {
                     console.log('Card response for', playerName, ':', card);
                     container.innerHTML = `<div class="text-xs text-yellow-600">No data for ${playerName}</div>`;
@@ -3009,21 +3008,44 @@
             const coreStats = card.core || {};
             const tactical = card.tactical || {};
             
+            // Try to use real KG data from bowlerTypeMatrix
+            const bowlerMatrix = tactical.bowlerTypeMatrix || {};
+            if (bowlerMatrix.cells && bowlerMatrix.cells.length > 0) {
+                // Sort by performance - best to worst for batters (by strike rate)
+                const sortedMatchups = bowlerMatrix.cells
+                    .filter(cell => cell.strikeRate && cell.average && cell.subtype)
+                    .sort((a, b) => b.strikeRate - a.strikeRate);
+                
+                if (sortedMatchups.length >= 2) {
+                    const best = sortedMatchups[0];
+                    const worst = sortedMatchups[sortedMatchups.length - 1];
+                    const middle = sortedMatchups[Math.floor(sortedMatchups.length / 2)];
+                    
+                    return `
+                        <div class="space-y-1">
+                            <div>• Strong vs ${best.subtype} (SR: ${best.strikeRate}, Avg: ${best.average})</div>
+                            <div>• Struggles vs ${worst.subtype} (SR: ${worst.strikeRate}, Avg: ${worst.average})</div>
+                            <div>• Balanced vs ${middle.subtype} (SR: ${middle.strikeRate})</div>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Fallback to mock data with clear labeling
             if (currentRole === 'bowler') {
                 return `
                     <div class="space-y-1">
-                        <div>• Strong vs Right-handers (Econ: 6.2)</div>
-                        <div>• Struggles vs Left-handers (Econ: 8.1)</div>
-                        <div>• Effective in middle overs (7-15)</div>
+                        <div>• MOCK: Right-handers (Econ: 0)</div>
+                        <div>• MOCK: Left-handers (Econ: 0)</div>
+                        <div>• MOCK: Middle overs (0-0)</div>
                     </div>
                 `;
             } else {
-                const sr = parseFloat(coreStats.strikeRate) || 120;
                 return `
                     <div class="space-y-1">
-                        <div>• Dominates pace bowling (SR: ${Math.round(sr * 1.15)})</div>
-                        <div>• Cautious vs spin (SR: ${Math.round(sr * 0.85)})</div>
-                        <div>• Prefers short boundaries</div>
+                        <div>• MOCK: Pace bowling (SR: 0)</div>
+                        <div>• MOCK: Spin bowling (SR: 0)</div>
+                        <div>• MOCK: Generic insight</div>
                     </div>
                 `;
             }
@@ -3033,6 +3055,28 @@
             // Use real venue performance data from KG if available
             const tactical = card.tactical || {};
             const venuePerformance = tactical.venue_performance || {};
+            
+            // Check for real venue factor data
+            const venueFactor = tactical.venueFactor;
+            const bowlerWeakness = tactical.bowlerTypeWeakness;
+            
+            if (venueFactor && venueFactor !== 'Unknown') {
+                const insights = [`• Venue impact: ${venueFactor}`];
+                
+                if (bowlerWeakness && bowlerWeakness !== 'Unknown') {
+                    insights.push(`• Tactical weakness: ${bowlerWeakness}`);
+                } else {
+                    insights.push('• Conditions-aware performance');
+                }
+                
+                insights.push('• Historical venue data available');
+                
+                return `
+                    <div class="space-y-1">
+                        ${insights.map(insight => `<div>${insight}</div>`).join('')}
+                    </div>
+                `;
+            }
             
             if (Object.keys(venuePerformance).length > 0) {
                 // Find best venue performance
@@ -3057,8 +3101,8 @@
             } else {
                 return `
                     <div class="space-y-1">
-                        <div>• Venue performance data not available</div>
-                        <div>• Adaptable to different conditions</div>
+                        <div>• MOCK: No venue data (0 venues)</div>
+                        <div>• MOCK: Generic conditions text</div>
                     </div>
                 `;
             }
@@ -3078,7 +3122,7 @@
                     <div class="space-y-1">
                         <div>• Economy Rate: ${econ.toFixed(1)}</div>
                         <div>• Wickets: ${wickets}</div>
-                        <div>• Similar players analysis requires GNN</div>
+                        <div id="gnn-similar-${card.playerName || 'unknown'}" class="gnn-similar-placeholder">• Loading similar players...</div>
                     </div>
                 `;
             } else {
@@ -3086,9 +3130,53 @@
                     <div class="space-y-1">
                         <div>• Strike Rate: ${sr.toFixed(1)}</div>
                         <div>• Average: ${avg.toFixed(1)}</div>
-                        <div>• Similar players analysis requires GNN</div>
+                        <div id="gnn-similar-${card.playerName || 'unknown'}" class="gnn-similar-placeholder">• Loading similar players...</div>
                     </div>
                 `;
+            }
+        }
+
+        async function loadGNNSimilarPlayers(playerName) {
+            // Load GNN similar players asynchronously
+            try {
+                const response = await fetch('http://127.0.0.1:5004/api/gnn/similar-players', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        player_name: playerName,
+                        top_k: 2,
+                        min_similarity: 0.7
+                    })
+                });
+                
+                const data = await response.json();
+                const placeholder = document.getElementById(`gnn-similar-${playerName}`);
+                
+                if (data.success && data.similar_players && data.similar_players.length > 0) {
+                    const similarText = data.similar_players
+                        .map(p => `Plays like: ${p.name} (${Math.round(p.similarity * 100)}%)`)
+                        .join(', ');
+                    
+                    if (placeholder) {
+                        placeholder.textContent = `• ${similarText}`;
+                        placeholder.classList.remove('gnn-similar-placeholder');
+                        placeholder.classList.add('gnn-similar-loaded');
+                    }
+                } else {
+                    if (placeholder) {
+                        placeholder.textContent = '• Similar players: GNN analysis pending';
+                        placeholder.classList.remove('gnn-similar-placeholder');
+                        placeholder.classList.add('gnn-similar-fallback');
+                    }
+                }
+            } catch (error) {
+                console.error('GNN similar players failed:', error);
+                const placeholder = document.getElementById(`gnn-similar-${playerName}`);
+                if (placeholder) {
+                    placeholder.textContent = '• Similar players: Analysis unavailable';
+                    placeholder.classList.remove('gnn-similar-placeholder');
+                    placeholder.classList.add('gnn-similar-error');
+                }
             }
         }
 
@@ -3503,9 +3591,16 @@
         }
 
         async function loadTeamPlayers(currentPlayers) {
-            // Start with home team active
-            currentTeamView = 'home';
-            await displayTeamPlayers(currentPlayers.homeTeam, 'home');
+            // Log team info for verification
+            console.log(`🏏 Match: ${currentPlayers.homeTeam?.name} vs ${currentPlayers.awayTeam?.name}`);
+            console.log(`📊 Team sizes: ${currentPlayers.homeTeam?.players?.length} vs ${currentPlayers.awayTeam?.players?.length} players`);
+            
+            // Load both teams simultaneously since we now display them side-by-side
+            currentTeamView = 'both';
+            await Promise.all([
+                displayTeamPlayers(currentPlayers.homeTeam, 'home'),
+                displayTeamPlayers(currentPlayers.awayTeam, 'away')
+            ]);
         }
 
         let currentTeamView = 'home';
@@ -3534,16 +3629,19 @@
         }
 
         async function displayTeamPlayers(team, teamType) {
-            const container = document.getElementById('teamPlayersContainer');
+            // Get the appropriate container based on team type
+            const containerId = teamType === 'home' ? 'homeTeamPlayersContainer' : 'awayTeamPlayersContainer';
+            const container = document.getElementById(containerId);
             if (!container || !team) return;
             
-            container.innerHTML = '<div class="text-xs text-gray-500">Loading team players...</div>';
+            container.innerHTML = '<div class="text-xs text-gray-500 text-center py-4">Loading team players...</div>';
             
             try {
-                // Load cards for team players (excluding current featured players)
-                const currentPlayers = matchContextService.getCurrentPlayers();
-                const featuredPlayers = [currentPlayers.striker, currentPlayers.nonStriker, currentPlayers.bowler];
-                const teamPlayers = team.players.filter(player => !featuredPlayers.includes(player)).slice(0, 4);
+                // Load cards for all team players (show complete team roster)
+                const teamPlayers = team.players.map(p => typeof p === 'string' ? p : p.name);
+                
+                // Log team loading info
+                console.log(`🏏 Loading ${teamType} team: ${team.name} (${teamPlayers ? teamPlayers.length : 0} players)`);
                 
                 const cardPromises = teamPlayers.map(playerName => generateEnhancedPlayerCard(playerName));
                 const cards = await Promise.all(cardPromises);
@@ -3552,8 +3650,16 @@
                 const validCards = cards.filter(card => card && card.cardData);
                 const cardHTML = validCards.map(card => createCompactPlayerCardHTML(card.cardData, card.playerName, 'batsman')).join('');
                 
+                // Log card generation summary
+                console.log(`✅ ${teamType} team: ${validCards.length}/${teamPlayers.length} player cards loaded`);
+                
                 if (cardHTML) {
                     container.innerHTML = cardHTML;
+                    
+                    // Load GNN similar players for all team players asynchronously
+                    validCards.forEach(card => {
+                        loadGNNSimilarPlayers(card.playerName);
+                    });
                 } else {
                     container.innerHTML = '<div class="text-xs text-yellow-600">No player data available</div>';
                 }
@@ -4073,7 +4179,22 @@
                 this.ballCount = 0; // Track total balls played
                 this.enrichmentWarningShown = false; // Track if enrichment warning has been shown
                 
+                // Betting Intelligence Hub state
+                this.agentEvents = [];
+                this.currentOdds = { home: 2.0, away: 2.0 };
+                this.winProbability = { home: 50, away: 50 };
+                this.bettingSignals = [];
+                this.agentRecommendations = [];
+                
+                // Shadow betting state
+                this.shadowBettingActive = false;
+                this.autoBetMode = false;
+                this.portfolioValue = 0;
+                this.activeBets = [];
+                this.modelPredictions = [];
+                
                 this.initializeControls();
+                this.initializeBettingHub();
             }
             
             initializeControls() {
@@ -4121,6 +4242,9 @@
                         
                         // Initialize display
                         this.resetDisplay();
+                        
+                        // Clear betting hub for new simulation
+                        this.clearBettingHubState();
                         
                         console.log(`✅ Simulation started: ${result.total_balls} balls`);
                         
@@ -4240,6 +4364,9 @@
                 
                 // Update ball count for weather optimization
                 this.ballCount = ball_number;
+                
+                // Process agent events for betting hub
+                this.processAgentEvent(result);
                 
                 // Update score
                 const score = match_state.score;
@@ -4364,6 +4491,827 @@
                 }
             }
             
+            async checkAndRestoreSimulationState() {
+                try {
+                    console.log('🔍 Checking for existing simulation state...');
+                    
+                    const response = await fetch('http://localhost:5001/api/simulation/status');
+                    const result = await response.json();
+                    
+                    if (result.status === 'success' && result.simulation.active) {
+                        console.log('🔄 Found active simulation, restoring state...');
+                        
+                        // Restore simulation controller state
+                        this.isActive = true;
+                        this.ballCount = result.simulation.current_ball;
+                        this.lastWeatherUpdate = Math.max(0, this.ballCount - this.weatherUpdateInterval);
+                        
+                        // Update UI to reflect restored state
+                        this.updateControlButtons();
+                        this.updateLiveStatus('SIMULATION', true);
+                        
+                        // Restore display data
+                        const simulation = result.simulation;
+                        
+                        // Update score display
+                        const scoreElement = document.getElementById('currentScore');
+                        if (scoreElement && simulation.current_score) {
+                            const score = simulation.current_score;
+                            scoreElement.textContent = `${score.runs}/${score.wickets} (${score.overs.toFixed(1)} ov)`;
+                        }
+                        
+                        // Update last 6 balls
+                        if (simulation.last_6_balls && simulation.last_6_balls.length > 0) {
+                            this.updateLast6Balls(simulation.last_6_balls);
+                        }
+                        
+                        // Update win probability
+                        if (simulation.win_probability) {
+                            this.updateWinProbability(simulation.win_probability);
+                        }
+                        
+                        // Update team names if available
+                        if (simulation.match_info && simulation.match_info.teams) {
+                            const teamNameElement = document.getElementById('teamName');
+                            if (teamNameElement) {
+                                teamNameElement.textContent = simulation.match_info.teams.home || 'Team A';
+                            }
+                        }
+                        
+                        // Show restoration notification
+                        this.showRestorationNotification(simulation);
+                        
+                        console.log(`✅ Simulation state restored: Ball ${simulation.current_ball}/${simulation.total_balls}`);
+                        
+                    } else {
+                        console.log('📊 No active simulation found');
+                        // Clear betting hub state if no simulation is active
+                        this.clearBettingHubState();
+                    }
+                    
+                } catch (error) {
+                    console.warn('Could not check simulation status:', error);
+                }
+            }
+            
+            showRestorationNotification(simulation) {
+                const notificationDiv = document.createElement('div');
+                notificationDiv.className = 'fixed top-4 right-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded shadow-lg z-50 max-w-md';
+                notificationDiv.innerHTML = `
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium">🔄 Simulation Restored</p>
+                            <p class="text-sm mt-1">Continuing from ball ${simulation.current_ball}/${simulation.total_balls}</p>
+                            <p class="text-xs mt-2 text-blue-600">Score: ${simulation.current_score.runs}/${simulation.current_score.wickets} (${simulation.current_score.overs.toFixed(1)} ov)</p>
+                        </div>
+                        <div class="ml-auto pl-3">
+                            <button onclick="this.parentElement.parentElement.remove()" class="text-blue-400 hover:text-blue-600">
+                                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(notificationDiv);
+                
+                // Auto-remove after 8 seconds
+                setTimeout(() => {
+                    if (notificationDiv.parentNode) {
+                        notificationDiv.remove();
+                    }
+                }, 8000);
+            }
+            
+            initializeBettingHub() {
+                console.log('🎯 Initializing Betting Intelligence Hub...');
+                this.updateAgentStatus('idle');
+                this.updateBettingHubStatus('Waiting for simulation to start...');
+                
+                // Initialize betting controls
+                this.initializeBettingControls();
+                
+                // Restore betting hub state if available
+                this.restoreBettingHubState();
+            }
+            
+            initializeBettingControls() {
+                // Shadow betting toggle
+                const shadowToggle = document.getElementById('shadowBettingToggle');
+                if (shadowToggle) {
+                    shadowToggle.addEventListener('click', () => this.toggleShadowBetting());
+                }
+                
+                // Auto bet toggle
+                const autoBetToggle = document.getElementById('autoBetToggle');
+                if (autoBetToggle) {
+                    autoBetToggle.addEventListener('click', () => this.toggleAutoBet());
+                }
+                
+                console.log('🎰 Betting controls initialized');
+            }
+            
+            toggleShadowBetting() {
+                this.shadowBettingActive = !this.shadowBettingActive;
+                const toggle = document.getElementById('shadowBettingToggle');
+                const autoBetToggle = document.getElementById('autoBetToggle');
+                
+                if (this.shadowBettingActive) {
+                    toggle.className = 'px-2 py-1 bg-yellow-500 text-white text-xs rounded-lg border border-yellow-600 hover:bg-yellow-600 transition-colors';
+                    toggle.textContent = '🎭 Shadow: ON';
+                    autoBetToggle.disabled = false;
+                    autoBetToggle.className = 'px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-lg border border-blue-300 hover:bg-blue-200 transition-colors';
+                    console.log('🎭 Shadow betting activated');
+                } else {
+                    toggle.className = 'px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-lg border border-yellow-300 hover:bg-yellow-200 transition-colors';
+                    toggle.textContent = '🎭 Shadow Mode';
+                    this.autoBetMode = false;
+                    autoBetToggle.disabled = true;
+                    autoBetToggle.className = 'px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-lg border border-gray-300 hover:bg-gray-200 transition-colors';
+                    autoBetToggle.textContent = '🤖 Auto Bet: OFF';
+                    console.log('🎭 Shadow betting deactivated');
+                }
+                
+                this.saveBettingHubState();
+            }
+            
+            toggleAutoBet() {
+                if (!this.shadowBettingActive) return;
+                
+                this.autoBetMode = !this.autoBetMode;
+                const toggle = document.getElementById('autoBetToggle');
+                
+                if (this.autoBetMode) {
+                    toggle.className = 'px-2 py-1 bg-green-500 text-white text-xs rounded-lg border border-green-600 hover:bg-green-600 transition-colors';
+                    toggle.textContent = '🤖 Auto Bet: ON';
+                    console.log('🤖 Auto betting activated');
+                } else {
+                    toggle.className = 'px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-lg border border-blue-300 hover:bg-blue-200 transition-colors';
+                    toggle.textContent = '🤖 Auto Bet: OFF';
+                    console.log('🤖 Auto betting deactivated');
+                }
+                
+                this.saveBettingHubState();
+            }
+            
+            saveBettingHubState() {
+                const hubState = {
+                    agentEvents: this.agentEvents,
+                    currentOdds: this.currentOdds,
+                    winProbability: this.winProbability,
+                    bettingSignals: this.bettingSignals,
+                    agentRecommendations: this.agentRecommendations,
+                    shadowBettingActive: this.shadowBettingActive,
+                    autoBetMode: this.autoBetMode,
+                    portfolioValue: this.portfolioValue,
+                    activeBets: this.activeBets,
+                    modelPredictions: this.modelPredictions,
+                    timestamp: Date.now()
+                };
+                
+                try {
+                    localStorage.setItem('wicketwise_betting_hub_state', JSON.stringify(hubState));
+                    console.log('💾 Betting hub state saved');
+                } catch (error) {
+                    console.warn('Failed to save betting hub state:', error);
+                }
+            }
+            
+            restoreBettingHubState() {
+                try {
+                    const savedState = localStorage.getItem('wicketwise_betting_hub_state');
+                    if (!savedState) return;
+                    
+                    const hubState = JSON.parse(savedState);
+                    
+                    // Check if state is recent (within last 30 minutes)
+                    const stateAge = Date.now() - (hubState.timestamp || 0);
+                    if (stateAge > 30 * 60 * 1000) {
+                        console.log('🗑️ Betting hub state expired, clearing...');
+                        localStorage.removeItem('wicketwise_betting_hub_state');
+                        return;
+                    }
+                    
+                    console.log('🔄 Restoring betting hub state...');
+                    
+                    // Restore state
+                    this.agentEvents = hubState.agentEvents || [];
+                    this.currentOdds = hubState.currentOdds || { home: 2.0, away: 2.0 };
+                    this.winProbability = hubState.winProbability || { home: 50, away: 50 };
+                    this.bettingSignals = hubState.bettingSignals || [];
+                    this.agentRecommendations = hubState.agentRecommendations || [];
+                    this.shadowBettingActive = hubState.shadowBettingActive || false;
+                    this.autoBetMode = hubState.autoBetMode || false;
+                    this.portfolioValue = hubState.portfolioValue || 0;
+                    this.activeBets = hubState.activeBets || [];
+                    this.modelPredictions = hubState.modelPredictions || [];
+                    
+                    // Restore UI elements
+                    this.restoreAgentActivityFeed();
+                    this.restoreBettingSignalsFeed();
+                    this.updateLiveOdds(this.currentOdds.home, this.currentOdds.away);
+                    this.updateWinProbability(this.winProbability.home, this.winProbability.away);
+                    
+                    // Restore betting controls
+                    this.restoreBettingControls();
+                    
+                    if (this.agentEvents.length > 0) {
+                        this.updateAgentStatus('active');
+                        this.updateBettingHubStatus(`Restored ${this.agentEvents.length} agent events`);
+                    }
+                    
+                    console.log(`✅ Restored ${this.agentEvents.length} agent events and ${this.bettingSignals.length} signals`);
+                    
+                } catch (error) {
+                    console.warn('Failed to restore betting hub state:', error);
+                    localStorage.removeItem('wicketwise_betting_hub_state');
+                }
+            }
+            
+            restoreAgentActivityFeed() {
+                const feed = document.getElementById('agentActivityFeed');
+                if (!feed || this.agentEvents.length === 0) return;
+                
+                // Clear placeholder text
+                feed.innerHTML = '';
+                
+                // Restore events (show last 10)
+                const recentEvents = this.agentEvents.slice(-10);
+                recentEvents.reverse().forEach(eventData => {
+                    this.addAgentEventToFeed(eventData, false); // false = don't save state again
+                });
+            }
+            
+            restoreBettingSignalsFeed() {
+                const signalsFeed = document.getElementById('liveSignalsFeed');
+                if (!signalsFeed || this.bettingSignals.length === 0) return;
+                
+                // Clear placeholder text
+                signalsFeed.innerHTML = '';
+                
+                // Restore signals (show last 5)
+                const recentSignals = this.bettingSignals.slice(-5);
+                recentSignals.reverse().forEach(signal => {
+                    this.addSignalToFeed(signal, false); // false = don't save state again
+                });
+            }
+            
+            restoreBettingControls() {
+                // Restore shadow betting toggle
+                const shadowToggle = document.getElementById('shadowBettingToggle');
+                const autoBetToggle = document.getElementById('autoBetToggle');
+                
+                if (shadowToggle && this.shadowBettingActive) {
+                    shadowToggle.className = 'px-2 py-1 bg-yellow-500 text-white text-xs rounded-lg border border-yellow-600 hover:bg-yellow-600 transition-colors';
+                    shadowToggle.textContent = '🎭 Shadow: ON';
+                    
+                    if (autoBetToggle) {
+                        autoBetToggle.disabled = false;
+                        autoBetToggle.className = 'px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-lg border border-blue-300 hover:bg-blue-200 transition-colors';
+                    }
+                }
+                
+                // Restore auto bet toggle
+                if (autoBetToggle && this.autoBetMode && this.shadowBettingActive) {
+                    autoBetToggle.className = 'px-2 py-1 bg-green-500 text-white text-xs rounded-lg border border-green-600 hover:bg-green-600 transition-colors';
+                    autoBetToggle.textContent = '🤖 Auto Bet: ON';
+                }
+                
+                // Restore portfolio display
+                this.updatePortfolioDisplay();
+                
+                console.log(`🎰 Restored betting controls: Shadow=${this.shadowBettingActive}, Auto=${this.autoBetMode}, Portfolio=$${this.portfolioValue}`);
+            }
+            
+            clearBettingHubState() {
+                console.log('🗑️ Clearing betting hub state...');
+                
+                // Clear internal state
+                this.agentEvents = [];
+                this.bettingSignals = [];
+                this.agentRecommendations = [];
+                this.currentOdds = { home: 2.0, away: 2.0 };
+                this.winProbability = { home: 50, away: 50 };
+                this.shadowBettingActive = false;
+                this.autoBetMode = false;
+                this.portfolioValue = 0;
+                this.activeBets = [];
+                this.modelPredictions = [];
+                
+                // Clear localStorage
+                localStorage.removeItem('wicketwise_betting_hub_state');
+                
+                // Reset UI elements
+                const agentFeed = document.getElementById('agentActivityFeed');
+                if (agentFeed) {
+                    agentFeed.innerHTML = '<div class="text-xs text-gray-500 text-center py-4">Start simulation to see live agent decisions</div>';
+                }
+                
+                const signalsFeed = document.getElementById('liveSignalsFeed');
+                if (signalsFeed) {
+                    signalsFeed.innerHTML = '<div class="text-xs text-gray-500 text-center py-2">No active signals - waiting for agent analysis</div>';
+                }
+                
+                const recommendationsFeed = document.getElementById('agentRecommendations');
+                if (recommendationsFeed) {
+                    recommendationsFeed.innerHTML = '<div class="text-xs text-gray-500 text-center py-2">Agents will provide recommendations during simulation</div>';
+                }
+                
+                // Reset odds and probabilities (without saving state)
+                const homeOddsEl = document.getElementById('homeTeamOdds');
+                const awayOddsEl = document.getElementById('awayTeamOdds');
+                const homeProbEl = document.getElementById('homeWinProb');
+                const awayProbEl = document.getElementById('awayWinProb');
+                
+                if (homeOddsEl) homeOddsEl.textContent = '2.0';
+                if (awayOddsEl) awayOddsEl.textContent = '2.0';
+                if (homeProbEl) homeProbEl.textContent = '50%';
+                if (awayProbEl) awayProbEl.textContent = '50%';
+                
+                // Reset agent status
+                this.updateAgentStatus('idle');
+                this.updateBettingHubStatus('Waiting for simulation to start...');
+                
+                console.log('✅ Betting hub state cleared');
+            }
+            
+            updateAgentStatus(status) {
+                const indicator = document.getElementById('agentStatusIndicator');
+                if (!indicator) return;
+                
+                const statusConfig = {
+                    'idle': { color: 'bg-gray-400', text: 'Agents Idle' },
+                    'active': { color: 'bg-green-500 animate-pulse', text: 'Agents Active' },
+                    'analyzing': { color: 'bg-yellow-500 animate-pulse', text: 'Analyzing...' },
+                    'recommending': { color: 'bg-blue-500 animate-pulse', text: 'Generating Signals' }
+                };
+                
+                const config = statusConfig[status] || statusConfig['idle'];
+                indicator.innerHTML = `
+                    <div class="w-2 h-2 ${config.color} rounded-full"></div>
+                    <span class="text-xs text-gray-600">${config.text}</span>
+                `;
+            }
+            
+            updateBettingHubStatus(message) {
+                const lastUpdate = document.getElementById('lastAgentUpdate');
+                if (lastUpdate) {
+                    lastUpdate.textContent = message;
+                }
+            }
+            
+            addAgentEvent(eventData) {
+                // Add to internal state
+                this.agentEvents.push(eventData);
+                
+                // Add to UI feed
+                this.addAgentEventToFeed(eventData, true);
+                
+                // Update status
+                const timestamp = new Date().toLocaleTimeString();
+                this.updateBettingHubStatus(`Last update: ${timestamp}`);
+            }
+            
+            addAgentEventToFeed(eventData, saveState = true) {
+                const feed = document.getElementById('agentActivityFeed');
+                if (!feed) return;
+                
+                // Clear placeholder text
+                if (feed.children.length === 1 && feed.children[0].textContent.includes('Start simulation')) {
+                    feed.innerHTML = '';
+                }
+                
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'bg-blue-50 border border-blue-200 rounded p-2 text-xs';
+                
+                const timestamp = new Date().toLocaleTimeString();
+                const action = eventData.betting_decision?.action || 'monitor';
+                const confidence = Math.round((eventData.betting_decision?.confidence || 0.5) * 100);
+                
+                eventDiv.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-medium text-blue-800">Ball ${eventData.ball_number}: ${action.toUpperCase()}</div>
+                            <div class="text-blue-600">Runs: ${eventData.runs_scored} | Wicket: ${eventData.is_wicket ? 'Yes' : 'No'}</div>
+                            <div class="text-blue-500">Confidence: ${confidence}%</div>
+                        </div>
+                        <span class="text-blue-400">${timestamp}</span>
+                    </div>
+                `;
+                
+                // Add to top of feed
+                feed.insertBefore(eventDiv, feed.firstChild);
+                
+                // Keep only last 10 events
+                while (feed.children.length > 10) {
+                    feed.removeChild(feed.lastChild);
+                }
+                
+                // Save state if requested
+                if (saveState) {
+                    this.saveBettingHubState();
+                }
+            }
+            
+            updateLiveOdds(homeOdds, awayOdds) {
+                this.currentOdds = { home: homeOdds, away: awayOdds };
+                
+                const homeOddsEl = document.getElementById('homeTeamOdds');
+                const awayOddsEl = document.getElementById('awayTeamOdds');
+                
+                if (homeOddsEl) homeOddsEl.textContent = homeOdds.toFixed(2);
+                if (awayOddsEl) awayOddsEl.textContent = awayOdds.toFixed(2);
+                
+                // Save state when odds change
+                this.saveBettingHubState();
+            }
+            
+            updateWinProbability(homeProb, awayProb = null) {
+                if (awayProb === null) {
+                    awayProb = 100 - homeProb;
+                }
+                
+                this.winProbability = { home: homeProb, away: awayProb };
+                
+                const homeProbEl = document.getElementById('homeWinProb');
+                const awayProbEl = document.getElementById('awayWinProb');
+                
+                if (homeProbEl) homeProbEl.textContent = `${Math.round(homeProb)}%`;
+                if (awayProbEl) awayProbEl.textContent = `${Math.round(awayProb)}%`;
+                
+                // Save state when probability changes
+                this.saveBettingHubState();
+            }
+            
+            processAgentEvent(result) {
+                const { ball_event, match_state, ball_number } = result;
+                
+                // Update agent status to active
+                this.updateAgentStatus('active');
+                
+                // Create agent event data based on ball result
+                const agentEventData = {
+                    ball_number: ball_number,
+                    runs_scored: ball_event.runs || 0,
+                    is_wicket: ball_event.wicket || false,
+                    betting_decision: {
+                        action: this.determineAgentAction(ball_event),
+                        confidence: this.calculateConfidence(ball_event, match_state),
+                        market_impact: this.assessMarketImpact(ball_event)
+                    }
+                };
+                
+                // Add to agent activity feed
+                this.addAgentEvent(agentEventData);
+                
+                // Update live market data from simulation
+                this.updateLiveMarketData(match_state, ball_event);
+                
+                // Generate and display model output
+                this.updateModelOutput(ball_event, match_state);
+                
+                // Update team names if available
+                this.updateTeamNames(match_state);
+                
+                // Generate betting signals
+                this.generateBettingSignals(agentEventData, match_state);
+                
+                // Process shadow betting if active
+                if (this.shadowBettingActive) {
+                    this.processShadowBetting(agentEventData, match_state);
+                }
+                
+                // Reset agent status after processing
+                setTimeout(() => {
+                    this.updateAgentStatus('idle');
+                }, 1500);
+            }
+            
+            updateLiveMarketData(match_state, ball_event) {
+                // Calculate dynamic odds based on match situation
+                const score = match_state.score || { runs: 0, wickets: 0, overs: 0 };
+                const winProb = match_state.win_probability || 50;
+                
+                // Dynamic odds calculation (simplified)
+                const homeWinProb = winProb / 100;
+                const awayWinProb = 1 - homeWinProb;
+                
+                // Convert probabilities to decimal odds (with margin)
+                const margin = 0.05; // 5% bookmaker margin
+                const homeOdds = 1 / (homeWinProb * (1 - margin));
+                const awayOdds = 1 / (awayWinProb * (1 - margin));
+                
+                // Update odds display
+                this.updateLiveOdds(homeOdds, awayOdds);
+                this.updateWinProbability(winProb);
+                
+                // Update odds timestamp
+                const timestamp = new Date().toLocaleTimeString();
+                const oddsUpdate = document.getElementById('oddsLastUpdate');
+                if (oddsUpdate) {
+                    oddsUpdate.textContent = timestamp;
+                }
+                
+                console.log(`📊 Market data updated: ${homeOdds.toFixed(2)} | ${awayOdds.toFixed(2)} (${winProb}%)`);
+            }
+            
+            updateModelOutput(ball_event, match_state) {
+                // Generate mock model predictions based on current situation
+                const runs = ball_event.runs || 0;
+                const isWicket = ball_event.wicket || false;
+                const score = match_state.score || { runs: 0, wickets: 0, overs: 0 };
+                
+                // Mock model prediction
+                const prediction = {
+                    nextBallRuns: this.predictNextBallRuns(score, isWicket),
+                    overRuns: this.predictOverRuns(score),
+                    inningsTotal: this.predictInningsTotal(score),
+                    confidence: this.calculateModelConfidence(score, isWicket)
+                };
+                
+                // Update model output display
+                const modelOutput = document.getElementById('modelOutput');
+                const modelPrediction = document.getElementById('modelPrediction');
+                const modelConfidence = document.getElementById('modelConfidence');
+                
+                if (modelOutput) {
+                    modelOutput.innerHTML = `
+                        <div class="text-xs space-y-1">
+                            <div>Next ball: ${prediction.nextBallRuns} runs</div>
+                            <div>This over: ${prediction.overRuns} runs</div>
+                            <div>Innings total: ${prediction.inningsTotal}</div>
+                        </div>
+                    `;
+                }
+                
+                if (modelPrediction) {
+                    modelPrediction.textContent = `${prediction.inningsTotal} total`;
+                }
+                
+                if (modelConfidence) {
+                    modelConfidence.textContent = `${Math.round(prediction.confidence * 100)}%`;
+                }
+                
+                // Store prediction for betting decisions
+                this.modelPredictions.push(prediction);
+                if (this.modelPredictions.length > 20) {
+                    this.modelPredictions = this.modelPredictions.slice(-20);
+                }
+            }
+            
+            predictNextBallRuns(score, isWicket) {
+                // Simple prediction based on current situation
+                if (isWicket) return 0;
+                const runRate = score.overs > 0 ? score.runs / score.overs : 6;
+                if (runRate > 8) return Math.random() > 0.7 ? 4 : 1;
+                if (runRate < 4) return Math.random() > 0.8 ? 2 : 0;
+                return Math.random() > 0.6 ? 2 : 1;
+            }
+            
+            predictOverRuns(score) {
+                const runRate = score.overs > 0 ? score.runs / score.overs : 6;
+                const baseRuns = Math.round(runRate);
+                const variation = Math.floor(Math.random() * 6) - 3; // -3 to +3
+                return Math.max(0, baseRuns + variation);
+            }
+            
+            predictInningsTotal(score) {
+                const currentRunRate = score.overs > 0 ? score.runs / score.overs : 6;
+                const remainingOvers = 20 - score.overs;
+                const projectedRuns = score.runs + (currentRunRate * remainingOvers);
+                
+                // Add some variation based on wickets
+                const wicketPenalty = score.wickets * 5;
+                return Math.round(projectedRuns - wicketPenalty);
+            }
+            
+            calculateModelConfidence(score, isWicket) {
+                let confidence = 0.7; // Base confidence
+                
+                // More data = higher confidence
+                if (score.overs > 5) confidence += 0.1;
+                if (score.overs > 10) confidence += 0.1;
+                
+                // Recent wicket reduces confidence
+                if (isWicket) confidence -= 0.15;
+                
+                // Extreme situations reduce confidence
+                const runRate = score.overs > 0 ? score.runs / score.overs : 6;
+                if (runRate > 12 || runRate < 3) confidence -= 0.1;
+                
+                return Math.max(0.4, Math.min(0.95, confidence));
+            }
+            
+            processShadowBetting(agentEventData, match_state) {
+                if (!this.autoBetMode) return;
+                
+                const action = agentEventData.betting_decision.action;
+                const confidence = agentEventData.betting_decision.confidence;
+                
+                // Auto bet logic - using Betfair terminology
+                if (action === 'analyze_value' && confidence > 0.8) {
+                    this.placeShadowBet('back_bet', confidence, match_state);
+                } else if (action === 'monitor_momentum' && confidence > 0.75) {
+                    this.placeShadowBet('lay_bet', confidence, match_state);
+                }
+                
+                // Update portfolio display
+                this.updatePortfolioDisplay();
+            }
+            
+            placeShadowBet(betType, confidence, match_state) {
+                const betAmount = Math.round(confidence * 50); // $5-50 based on confidence
+                const odds = this.currentOdds.home;
+                
+                const bet = {
+                    id: Date.now(),
+                    type: betType,
+                    amount: betAmount,
+                    odds: odds,
+                    confidence: confidence,
+                    timestamp: new Date().toLocaleTimeString(),
+                    ball: match_state.score?.overs || 0,
+                    status: 'active'
+                };
+                
+                this.activeBets.push(bet);
+                this.portfolioValue -= betAmount; // Stake deducted
+                
+                console.log(`🎰 Shadow bet placed: ${betType} $${betAmount} @ ${odds.toFixed(2)} (${Math.round(confidence * 100)}% confidence)`);
+                
+                // Add to agent activity
+                this.addShadowBetToFeed(bet);
+            }
+            
+            addShadowBetToFeed(bet) {
+                const feed = document.getElementById('agentActivityFeed');
+                if (!feed) return;
+                
+                const betDiv = document.createElement('div');
+                betDiv.className = 'bg-green-50 border border-green-200 rounded p-2 text-xs';
+                
+                const betTypeDisplay = bet.type === 'back_bet' ? 'BACK' : bet.type === 'lay_bet' ? 'LAY' : bet.type.toUpperCase();
+                const betColor = bet.type === 'back_bet' ? 'blue' : bet.type === 'lay_bet' ? 'pink' : 'green';
+                
+                betDiv.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-medium text-${betColor}-800">🎰 ${betTypeDisplay} BET PLACED</div>
+                            <div class="text-${betColor}-600">$${bet.amount} @ ${bet.odds.toFixed(2)}</div>
+                            <div class="text-${betColor}-500">Confidence: ${Math.round(bet.confidence * 100)}%</div>
+                        </div>
+                        <span class="text-${betColor}-400">${bet.timestamp}</span>
+                    </div>
+                `;
+                
+                feed.insertBefore(betDiv, feed.firstChild);
+                
+                // Keep only last 10 events
+                while (feed.children.length > 10) {
+                    feed.removeChild(feed.lastChild);
+                }
+            }
+            
+            updatePortfolioDisplay() {
+                const portfolioEl = document.getElementById('portfolioTotal');
+                if (portfolioEl) {
+                    const totalStaked = this.activeBets.reduce((sum, bet) => sum + bet.amount, 0);
+                    const netValue = this.portfolioValue;
+                    
+                    portfolioEl.textContent = `$${netValue} (${this.activeBets.length} bets)`;
+                    portfolioEl.className = netValue >= 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium';
+                }
+            }
+            
+            determineAgentAction(ball_event) {
+                const runs = ball_event.runs || 0;
+                const isWicket = ball_event.wicket || false;
+                
+                if (isWicket) return 'analyze_value';
+                if (runs >= 4) return 'monitor_momentum';
+                if (runs === 0) return 'assess_pressure';
+                return 'monitor';
+            }
+            
+            calculateConfidence(ball_event, match_state) {
+                const runs = ball_event.runs || 0;
+                const isWicket = ball_event.wicket || false;
+                const winProb = match_state.win_probability || 50;
+                
+                let baseConfidence = 0.6;
+                
+                // Increase confidence for significant events
+                if (isWicket) baseConfidence += 0.2;
+                if (runs >= 4) baseConfidence += 0.15;
+                
+                // Adjust based on win probability certainty
+                const probCertainty = Math.abs(winProb - 50) / 50;
+                baseConfidence += probCertainty * 0.2;
+                
+                return Math.min(0.95, baseConfidence);
+            }
+            
+            assessMarketImpact(ball_event) {
+                const runs = ball_event.runs || 0;
+                const isWicket = ball_event.wicket || false;
+                
+                if (isWicket) return 'high';
+                if (runs >= 4) return 'medium';
+                return 'low';
+            }
+            
+            updateTeamNames(match_state) {
+                // Extract team names from match state if available
+                const homeTeamEl = document.getElementById('homeTeamName');
+                const awayTeamEl = document.getElementById('awayTeamName');
+                
+                if (homeTeamEl && match_state.teams?.home) {
+                    homeTeamEl.textContent = match_state.teams.home;
+                }
+                if (awayTeamEl && match_state.teams?.away) {
+                    awayTeamEl.textContent = match_state.teams.away;
+                }
+            }
+            
+            generateBettingSignals(agentEventData, match_state) {
+                const action = agentEventData.betting_decision.action;
+                const confidence = Math.round(agentEventData.betting_decision.confidence * 100);
+                const impact = agentEventData.betting_decision.market_impact;
+                
+                // Generate signal based on action
+                let signalType = 'info';
+                let signalText = '';
+                
+                if (action === 'analyze_value' && confidence > 75) {
+                    signalType = 'buy';
+                    signalText = `Strong value opportunity detected (${confidence}% confidence)`;
+                } else if (action === 'monitor_momentum' && confidence > 70) {
+                    signalType = 'watch';
+                    signalText = `Momentum shift - monitor for entry points (${confidence}% confidence)`;
+                } else if (impact === 'high') {
+                    signalType = 'alert';
+                    signalText = `High market impact event - reassessing positions`;
+                }
+                
+                if (signalText) {
+                    const signal = {
+                        type: signalType,
+                        text: signalText,
+                        timestamp: Date.now(),
+                        ballNumber: agentEventData.ball_number
+                    };
+                    
+                    // Add to internal state
+                    this.bettingSignals.push(signal);
+                    
+                    // Add to UI feed
+                    this.addSignalToFeed(signal, true);
+                }
+            }
+            
+            addSignalToFeed(signal, saveState = true) {
+                const signalsFeed = document.getElementById('liveSignalsFeed');
+                if (!signalsFeed) return;
+                
+                // Clear placeholder text
+                if (signalsFeed.children.length === 1 && signalsFeed.children[0].textContent.includes('No active signals')) {
+                    signalsFeed.innerHTML = '';
+                }
+                
+                const signalDiv = document.createElement('div');
+                const signalClass = {
+                    'buy': 'bg-green-50 border-green-200 text-green-800',
+                    'watch': 'bg-yellow-50 border-yellow-200 text-yellow-800',
+                    'alert': 'bg-red-50 border-red-200 text-red-800',
+                    'info': 'bg-blue-50 border-blue-200 text-blue-800'
+                }[signal.type];
+                
+                signalDiv.className = `${signalClass} border rounded p-2 text-xs`;
+                signalDiv.innerHTML = `
+                    <div class="font-medium">${signal.type.toUpperCase()} SIGNAL</div>
+                    <div>${signal.text}</div>
+                `;
+                
+                // Add to top of feed
+                signalsFeed.insertBefore(signalDiv, signalsFeed.firstChild);
+                
+                // Keep only last 5 signals
+                while (signalsFeed.children.length > 5) {
+                    signalsFeed.removeChild(signalsFeed.lastChild);
+                }
+                
+                // Save state if requested
+                if (saveState) {
+                    this.saveBettingHubState();
+                }
+            }
+            
             updateControlButtons() {
                 const startBtn = document.getElementById('startSimBtn');
                 const nextBtn = document.getElementById('nextBallBtn');
@@ -4415,6 +5363,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             simulationController = new SimulationController();
             window.simulationController = simulationController; // Make globally accessible
+            
+            // Check for existing simulation state on page load
+            simulationController.checkAndRestoreSimulationState();
         });
 
         console.log('🚀 Enhanced Cricket Intelligence Dashboard loaded successfully!');

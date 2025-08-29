@@ -563,6 +563,12 @@
                     <div id="connectionStatus" class="status-indicator disconnected">
                         🔴 Disconnected
                     </div>
+                    <div id="simulationStatus">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+                            <span class="text-gray-500">No Active Simulation</span>
+                        </div>
+                    </div>
                     <span id="agentCount">0 agents</span>
                     <span id="eventCount">0 events</span>
                 </div>
@@ -775,6 +781,10 @@
                     console.log('🔗 Connected to Agent UI WebSocket');
                     isConnected = true;
                     updateConnectionStatus();
+                    
+                    // Request current simulation status on connect
+                    console.log('📡 Requesting current simulation status...');
+                    socket.emit('request_simulation_status');
                 });
 
                 socket.on('disconnect', () => {
@@ -786,16 +796,50 @@
                 socket.on('initial_state', (data) => {
                     console.log('📊 Received initial state:', data);
                     agents = data.agents || [];
+                    
+                    // Update simulation status if available
+                    if (data.simulation_status) {
+                        updateSimulationStatus(data.simulation_status);
+                    }
+                    
                     updateSystemMap();
                     updateMetrics();
                 });
 
                 socket.on('agent_event', (data) => {
-                    console.log('🎯 Agent event:', data);
+                    console.log('🎯 Agent event received:', data);
+                    console.log('🎯 Event type:', data.event_type);
+                    console.log('🎯 Agents activated:', data.agents_activated);
+                    
                     events.unshift(data);
                     if (events.length > 1000) events = events.slice(0, 1000); // Keep last 1000 events
+                    
+                    // Update event count display
+                    document.getElementById('eventCount').textContent = `${events.length} events`;
+                    
+                    // Update simulation status if this is a ball event
+                    if (data.event_type === 'ball_processed') {
+                        console.log('🏏 Ball processed event - updating status');
+                        updateSimulationStatus({
+                            active: true,
+                            current_ball: data.ball_number,
+                            total_balls: data.total_balls
+                        });
+                        
+                        // Animate agent activity
+                        console.log('🎭 Animating agents:', data.agents_activated);
+                        animateAgentActivity(data.agents_activated);
+                    }
+                    
                     updateFlowline();
                     updateMetrics();
+                });
+
+                socket.on('simulation_status_update', (data) => {
+                    console.log('📊 Simulation status update:', data);
+                    if (data.simulation_status) {
+                        updateSimulationStatus(data.simulation_status);
+                    }
                 });
 
                 socket.on('error', (error) => {
@@ -805,6 +849,59 @@
             } catch (error) {
                 console.error('❌ Failed to initialize WebSocket:', error);
             }
+        }
+
+        // Update simulation status display
+        function updateSimulationStatus(status) {
+            const statusElement = document.getElementById('simulationStatus');
+            if (statusElement) {
+                if (status.active) {
+                    statusElement.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            <span class="text-green-600 font-medium">Simulation Active</span>
+                            <span class="text-gray-500">Ball ${status.current_ball}/${status.total_balls}</span>
+                        </div>
+                    `;
+                } else {
+                    statusElement.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+                            <span class="text-gray-500">No Active Simulation</span>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        // Animate agent activity
+        function animateAgentActivity(activatedAgents) {
+            console.log('🎭 Attempting to animate agents:', activatedAgents);
+            
+            activatedAgents.forEach(agentId => {
+                console.log(`🔍 Looking for agent element: [data-agent-id="${agentId}"]`);
+                const agentElement = document.querySelector(`[data-agent-id="${agentId}"]`);
+                
+                if (agentElement) {
+                    console.log(`✅ Found agent element for ${agentId}, animating...`);
+                    // Add pulse animation
+                    agentElement.classList.add('animate-pulse');
+                    agentElement.style.borderColor = '#10b981'; // Green border
+                    agentElement.style.borderWidth = '2px';
+                    
+                    // Remove animation after 2 seconds
+                    setTimeout(() => {
+                        agentElement.classList.remove('animate-pulse');
+                        agentElement.style.borderColor = '';
+                        agentElement.style.borderWidth = '';
+                    }, 2000);
+                } else {
+                    console.warn(`❌ Could not find agent element for ${agentId}`);
+                    // List all available agent elements for debugging
+                    const allAgentElements = document.querySelectorAll('[data-agent-id]');
+                    console.log('📋 Available agent elements:', Array.from(allAgentElements).map(el => el.getAttribute('data-agent-id')));
+                }
+            });
         }
 
         // Update connection status

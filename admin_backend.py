@@ -1491,10 +1491,105 @@ def get_holdout_matches():
             "match_count": 0
         })
 
+def load_enriched_match_data(match_key: str) -> Optional[Dict]:
+    """Load enriched match data for a specific match"""
+    try:
+        enriched_path = Path("enriched_data/enriched_betting_matches.json")
+        if not enriched_path.exists():
+            return None
+            
+        with open(enriched_path, 'r') as f:
+            enriched_matches = json.load(f)
+        
+        # Try to find matching enriched data
+        for match in enriched_matches:
+            if match.get('enrichment_status') == 'success':
+                # Create a simple match key for comparison
+                match_teams = []
+                for team in match.get('teams', []):
+                    if team.get('players'):  # Only use matches with player data
+                        match_teams.append(team['name'])
+                
+                if len(match_teams) == 2:
+                    return match
+        
+        return None
+    except Exception as e:
+        logger.error(f"Error loading enriched match data: {e}")
+        return None
+
 @app.route('/api/simulation/current-match', methods=['GET'])
 def get_current_simulation_match():
     """Get the currently active simulation match with full context for dashboard"""
     try:
+        # First try to get enriched match data
+        enriched_match = load_enriched_match_data("any")
+        
+        if enriched_match and enriched_match.get('teams'):
+            logger.info("🎯 Using enriched match data with complete team rosters")
+            
+            # Convert enriched data to our format
+            teams = enriched_match['teams']
+            home_team = next((t for t in teams if t.get('is_home', True)), teams[0])
+            away_team = next((t for t in teams if not t.get('is_home', False)), teams[1] if len(teams) > 1 else teams[0])
+            
+            # Convert player format
+            def convert_players(team_players):
+                converted = []
+                for player in team_players:
+                    converted.append({
+                        "name": player['name'],
+                        "role": player['role'],
+                        "batting_style": player.get('batting_style', 'RHB'),
+                        "bowling_style": player.get('bowling_style', 'unknown'),
+                        "captain": player.get('captain', False),
+                        "wicket_keeper": player.get('wicket_keeper', False)
+                    })
+                return converted
+            
+            # Get opening players based on roles
+            home_batters = [p for p in home_team['players'] if p['role'] in ['batter', 'allrounder', 'wk']]
+            away_bowlers = [p for p in away_team['players'] if p['role'] in ['bowler', 'allrounder']]
+            
+            striker = home_batters[0]['name'] if home_batters else "Unknown Player"
+            non_striker = home_batters[1]['name'] if len(home_batters) > 1 else "Unknown Player"
+            bowler = away_bowlers[0]['name'] if away_bowlers else "Unknown Player"
+            
+            return jsonify({
+                "status": "success",
+                "match_id": f"enriched_{enriched_match.get('date', 'unknown')}_{home_team['name']}_vs_{away_team['name']}",
+                "teams": {
+                    "home": {
+                        "name": home_team['name'],
+                        "short_name": home_team.get('short_name', home_team['name'][:3].upper()),
+                        "players": convert_players(home_team['players'])
+                    },
+                    "away": {
+                        "name": away_team['name'], 
+                        "short_name": away_team.get('short_name', away_team['name'][:3].upper()),
+                        "players": convert_players(away_team['players'])
+                    }
+                },
+                "current_state": {
+                    "innings": 1,
+                    "over": 0,
+                    "ball": 0,
+                    "striker": striker,
+                    "non_striker": non_striker,
+                    "bowler": bowler,
+                    "score": 0,
+                    "wickets": 0,
+                    "phase": "powerplay"
+                },
+                "venue": enriched_match.get('venue', {}).get('name', 'Unknown Venue'),
+                "format": enriched_match.get('format', 'T20'),
+                "competition": enriched_match.get('competition', 'Unknown Competition'),
+                "date": enriched_match.get('date', '2024-01-01')
+            })
+        
+        # Fallback to original CSV-based approach
+        logger.info("🔄 Falling back to CSV-based team extraction")
+        
         # Import SIM modules
         sys.path.insert(0, str(Path(__file__).parent / 'sim'))
         from sim.data_integration import HoldoutDataManager
@@ -1571,8 +1666,10 @@ def get_current_simulation_match():
         home_players = []
         away_players = []
         
-        # Extract players from the match data
-        for _, row in match_data.head(50).iterrows():  # Look at first 50 balls to get player variety
+        logger.info(f"🏏 Extracting team rosters from {len(match_data)} balls of match data")
+        
+        # Extract players from the match data - look at entire match to get all players
+        for _, row in match_data.iterrows():  # Look at entire match to capture all players
             batsman = str(row.get('batsman', ''))
             non_striker = str(row.get('nonstriker', ''))
             bowler = str(row.get('bowler', ''))
@@ -1616,6 +1713,8 @@ def get_current_simulation_match():
                         "role": "bowler",
                         "bowling_style": str(row.get('bowlerstyle', 'Right-arm medium'))
                     })
+        
+        logger.info(f"🏏 Team rosters extracted: {home_team}({len(home_players)}) vs {away_team}({len(away_players)})")
         
         # Ensure we have at least some players
         if len(home_players) < 3:
@@ -1968,6 +2067,66 @@ def run_simulation():
             "message": f"Simulation failed: {str(e)}"
         })
 
+@app.route('/api/simulation/status', methods=['GET'])
+def get_simulation_status():
+    """Get current simulation status for state persistence"""
+    global simulation_state
+    
+    try:
+        # Return current simulation state
+        status_info = {
+            "active": simulation_state.get("active", False),
+            "current_ball": simulation_state.get("current_ball", 0),
+            "total_balls": simulation_state.get("total_balls", 0),
+            "current_score": simulation_state.get("current_score", {"runs": 0, "wickets": 0, "overs": 0.0}),
+            "last_6_balls": simulation_state.get("last_6_balls", []),
+            "win_probability": simulation_state.get("win_probability", 50.0),
+            "target": simulation_state.get("target"),
+            "match_info": {}
+        }
+        
+        # Add match context if available
+        if simulation_state.get("match_data") is not None:
+            try:
+                match_data = simulation_state["match_data"]
+                if hasattr(match_data, 'iloc') and len(match_data) > 0:
+                    # Extract match info from first row
+                    first_row = match_data.iloc[0]
+                    status_info["match_info"] = {
+                        "teams": {
+                            "home": first_row.get('batting_team', 'Team A'),
+                            "away": first_row.get('bowling_team', 'Team B')
+                        },
+                        "venue": first_row.get('venue', 'Unknown Venue'),
+                        "date": first_row.get('start_date', 'Unknown Date')
+                    }
+            except Exception as e:
+                logger.warning(f"Could not extract match info: {e}")
+        
+        logger.info(f"📊 Simulation status requested: active={status_info['active']}, ball={status_info['current_ball']}/{status_info['total_balls']}")
+        
+        return jsonify({
+            "status": "success",
+            "simulation": status_info
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting simulation status: {e}")
+        return jsonify({
+            "status": "error",
+            "message": str(e),
+            "simulation": {
+                "active": False,
+                "current_ball": 0,
+                "total_balls": 0,
+                "current_score": {"runs": 0, "wickets": 0, "overs": 0.0},
+                "last_6_balls": [],
+                "win_probability": 50.0,
+                "target": None,
+                "match_info": {}
+            }
+        })
+
 # Ball-by-Ball Simulation API for Dashboard
 simulation_state = {
     "active": False,
@@ -2220,6 +2379,37 @@ def simulate_next_ball():
         
         # Advance to next ball
         simulation_state["current_ball"] += 1
+        
+        # Emit agent events for real-time agent UI updates
+        try:
+            agent_event = {
+                'event_type': 'ball_processed',
+                'timestamp': datetime.now().isoformat(),
+                'ball_number': simulation_state["current_ball"],
+                'total_balls': simulation_state["total_balls"],
+                'runs_scored': runs_scored,
+                'is_wicket': is_wicket,
+                'current_score': simulation_state["current_score"],
+                'win_probability': simulation_state["win_probability"],
+                'agents_activated': [
+                    'market_monitor',
+                    'betting_agent', 
+                    'prediction_agent',
+                    'mispricing_engine'
+                ],
+                'betting_decision': {
+                    'action': 'analyze_value' if runs_scored >= 4 or is_wicket else 'monitor',
+                    'confidence': 0.75 + (runs_scored * 0.05),
+                    'market_impact': 'high' if is_wicket else ('medium' if runs_scored >= 4 else 'low')
+                }
+            }
+            
+            # Broadcast to agent UI clients
+            socketio.emit('agent_event', agent_event, namespace='/agent_ui', room='agent_events')
+            logger.debug(f"📡 Broadcasted agent event for ball {simulation_state['current_ball']}")
+            
+        except Exception as e:
+            logger.warning(f"Failed to broadcast agent event: {e}")
         
         # Determine match phase
         phase = "Powerplay" if current_over < 6 else ("Middle Overs" if current_over < 16 else "Death Overs")
@@ -2482,7 +2672,12 @@ def agent_ui_connect():
             initial_state = {
                 'agents': agent_adapter.generate_agent_definitions(),
                 'handoffs': agent_adapter.generate_handoff_links(),
-                'flows': agent_adapter.generate_flow_definitions()
+                'flows': agent_adapter.generate_flow_definitions(),
+                'simulation_status': {
+                    'active': simulation_state.get('active', False),
+                    'current_ball': simulation_state.get('current_ball', 0),
+                    'total_balls': simulation_state.get('total_balls', 0)
+                }
             }
             emit('initial_state', initial_state)
             logger.info(f"📊 Sent initial state to client {request.sid}")
@@ -2495,6 +2690,33 @@ def agent_ui_disconnect():
     """Handle agent UI WebSocket disconnections"""
     logger.info(f"🔌 Agent UI client disconnected: {request.sid}")
     leave_room('agent_events')
+
+@socketio.on('request_simulation_status', namespace='/agent_ui')
+def handle_simulation_status_request():
+    """Handle requests for current simulation status"""
+    logger.info(f"📡 Agent UI client {request.sid} requesting simulation status")
+    
+    try:
+        # Get current simulation status
+        status_info = {
+            'active': simulation_state.get('active', False),
+            'current_ball': simulation_state.get('current_ball', 0),
+            'total_balls': simulation_state.get('total_balls', 0),
+            'current_score': simulation_state.get('current_score', {"runs": 0, "wickets": 0, "overs": 0.0}),
+            'win_probability': simulation_state.get('win_probability', 50.0)
+        }
+        
+        # Send simulation status to requesting client
+        emit('simulation_status_update', {
+            'simulation_status': status_info,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+        logger.info(f"📊 Sent simulation status to client {request.sid}: active={status_info['active']}")
+        
+    except Exception as e:
+        logger.error(f"❌ Error handling simulation status request: {e}")
+        emit('error', {'message': 'Failed to get simulation status'})
 
 @socketio.on('subscribe_to_agent', namespace='/agent_ui')
 def subscribe_to_agent(data):
