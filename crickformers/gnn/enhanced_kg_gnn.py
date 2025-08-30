@@ -15,6 +15,7 @@ from torch_geometric.data import HeteroData
 import numpy as np
 import networkx as nx
 from typing import Dict, List, Optional, Any, Tuple
+from collections import defaultdict
 import logging
 from dataclasses import dataclass
 
@@ -272,7 +273,8 @@ class EnhancedCricketGNN(nn.Module):
                         edge_type = (node_type, f"interacts_with", target_type)
                         conv_dict[edge_type] = GATv2Conv(
                             hidden_dim, hidden_dim // num_heads, 
-                            heads=num_heads, dropout=dropout, concat=True
+                            heads=num_heads, dropout=dropout, concat=True,
+                            add_self_loops=False  # Critical for heterogeneous graphs
                         )
                 
                 self.gnn_layers.append(HeteroConv(conv_dict, aggr='mean'))
@@ -465,75 +467,67 @@ class EnhancedKGGNNTrainer:
         for node_type, nodes in node_types.items():
             node_id_to_idx[node_type] = {node_id: idx for idx, (node_id, _) in enumerate(nodes)}
         
-        # Process existing edges
+        # Process existing edges - use proper edge type mapping
+        edge_groups = defaultdict(lambda: {'source': [], 'target': []})
+        
         for source, target, attrs in self.kg.edges(data=True):
             source_type = self.kg.nodes[source].get('type', 'player')
-            target_type = self.kg.nodes[target].get('type', 'player')
+            target_type = self.kg.nodes[target].get('type', 'venue')  # Most edges are player->venue
+            relationship = attrs.get('relationship', 'interacts_with')
             
-            edge_type = (source_type, 'interacts_with', target_type)
+            # Skip if nodes not in our type mapping
+            if source_type not in node_id_to_idx or target_type not in node_id_to_idx:
+                continue
+            if source not in node_id_to_idx[source_type] or target not in node_id_to_idx[target_type]:
+                continue
             
-            if edge_type not in data.edge_index_dict:
-                data.edge_index_dict[edge_type] = [[], []]
+            edge_type = (source_type, relationship, target_type)
+            
+            # Map node IDs to indices
+            source_idx = node_id_to_idx[source_type][source]
+            target_idx = node_id_to_idx[target_type][target]
+            
+            edge_groups[edge_type]['source'].append(source_idx)
+            edge_groups[edge_type]['target'].append(target_idx)
+            
+            if edge_type not in edge_counts:
                 edge_counts[edge_type] = 0
-            
-            # Map node IDs to indices safely
-            if source in node_id_to_idx[source_type] and target in node_id_to_idx[target_type]:
-                source_idx = node_id_to_idx[source_type][source]
-                target_idx = node_id_to_idx[target_type][target]
-                
-                data.edge_index_dict[edge_type][0].append(source_idx)
-                data.edge_index_dict[edge_type][1].append(target_idx)
-                edge_counts[edge_type] += 1
+            edge_counts[edge_type] += 1
         
-        # Ensure all node types have at least self-loops for GNN processing
+        # Convert edge groups to tensors and add to HeteroData
+        for edge_type, edges in edge_groups.items():
+            if edges['source'] and edges['target']:
+                # Create edge_index tensor in correct format [2, num_edges]
+                edge_index = torch.tensor([edges['source'], edges['target']], dtype=torch.long)
+                data[edge_type].edge_index = edge_index
+        
+        # Add self-loops for isolated node types (required for GNN message passing)
         for node_type in node_types.keys():
-            self_loop_edge_type = (node_type, 'interacts_with', node_type)
+            if not node_types[node_type]:
+                continue
+                
+            # Check if this node type has any edges
+            has_edges = any(
+                edge_type[0] == node_type or edge_type[2] == node_type 
+                for edge_type in edge_groups.keys()
+            )
             
-            if self_loop_edge_type not in data.edge_index_dict or not data.edge_index_dict[self_loop_edge_type][0]:
-                # Add self-loops for isolated nodes
+            if not has_edges:
+                # Add self-loops
                 num_nodes = len(node_types[node_type])
                 if num_nodes > 0:
-                    self_loops = torch.arange(num_nodes)
-                    data.edge_index_dict[self_loop_edge_type] = torch.stack([self_loops, self_loops])
+                    self_loop_indices = torch.arange(num_nodes)
+                    self_loop_edge_type = (node_type, 'self_loop', node_type)
+                    
+                    data[self_loop_edge_type].edge_index = torch.stack([self_loop_indices, self_loop_indices])
                     edge_counts[self_loop_edge_type] = num_nodes
-        
-        # Convert edge lists to tensors
-        for edge_type in list(data.edge_index_dict.keys()):
-            if isinstance(data.edge_index_dict[edge_type], list):
-                edge_list = data.edge_index_dict[edge_type]
-                # Check if we have a nested list structure [source_list, target_list]
-                if len(edge_list) == 2 and isinstance(edge_list[0], list) and isinstance(edge_list[1], list):
-                    if edge_list[0] and edge_list[1]:  # Both source and target lists have edges
-                        # Convert [source_list, target_list] to tensor
-                        data.edge_index_dict[edge_type] = torch.tensor(edge_list, dtype=torch.long)
-                    else:
-                        # Remove empty edge types
-                        del data.edge_index_dict[edge_type]
-                        if edge_type in edge_counts:
-                            del edge_counts[edge_type]
-                elif edge_list:  # Direct edge list format
-                    data.edge_index_dict[edge_type] = torch.tensor(edge_list, dtype=torch.long)
-                else:
-                    # Remove empty edge types
-                    del data.edge_index_dict[edge_type]
-                    if edge_type in edge_counts:
-                        del edge_counts[edge_type]
         
         logger.info(f"Edge counts: {edge_counts}")
         
-        # Ensure we have at least some edges for GNN processing
-        if not data.edge_index_dict:
-            logger.warning("No edges found in HeteroData, adding minimal self-loops for all node types")
-            for node_type in node_types.keys():
-                num_nodes = len(node_types[node_type])
-                if num_nodes > 0:
-                    self_loops = torch.arange(num_nodes)
-                    edge_type = (node_type, 'self_loop', node_type)
-                    data.edge_index_dict[edge_type] = torch.stack([self_loops, self_loops])
-                    edge_counts[edge_type] = num_nodes
-                    logger.info(f"Added {num_nodes} self-loops for {node_type}")
-        
-        logger.info(f"Final edge types: {list(data.edge_index_dict.keys())}")
+        # Log final edge information
+        logger.info(f"Edge types created: {len(edge_counts)}")
+        for edge_type, count in edge_counts.items():
+            logger.info(f"  {edge_type}: {count} edges")
         
         return data, node_feature_dims
     

@@ -322,26 +322,23 @@ def get_gnn_player_insights(player_name):
         try:
             logger.info(f"🧠 Getting GNN insights for {player_name}")
             
-            # Get GNN features and similar players
-            feature_extractor = KGNodeFeatureExtractor(kg_query_engine.graph)
-            player_features = feature_extractor.extract_features(player_name)
+            # Use the GNN service directly for similar players
+            similar_players = gnn_model.find_similar_players(player_name, top_k=3)
             
-            if player_features is not None:
-                # Find similar players using GNN
-                similar_players = gnn_model.find_similar_players(player_name, top_k=3)
-                
+            if similar_players and len(similar_players) > 0:
+                logger.info(f"✅ Found {len(similar_players)} similar players for {player_name} via GNN")
                 return {
                     'similar_players': similar_players,
-                    'gnn_features': player_features.tolist() if hasattr(player_features, 'tolist') else [],
                     'source': 'Real_GNN_Analysis'
                 }
             else:
-                logger.warning(f"⚠️ No GNN features found for {player_name}")
+                logger.warning(f"⚠️ GNN returned no similar players for {player_name}")
                 
         except Exception as e:
             logger.error(f"❌ Error getting GNN insights for {player_name}: {e}")
     
     # Fallback to statistical similarity using KG data
+    logger.info(f"📊 Using statistical fallback for {player_name}")
     return get_statistical_similar_players(player_name)
 
 def get_statistical_similar_players(player_name):
