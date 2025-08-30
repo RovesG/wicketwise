@@ -360,9 +360,9 @@ def create_holdout_replay_config(strategy_name: str = "edge_kelly_v3") -> Simula
         )
         
     except Exception as e:
-        print(f"Error creating holdout config: {e}")
-        # Fallback to mock data
-        return create_replay_config(["mock_match_1"], strategy_name)
+        print(f"❌ Error creating holdout config: {e}")
+        print("❌ NO MOCK DATA FALLBACK - Real holdout data required for simulation")
+        raise Exception("Simulation requires real holdout data - no mock fallback available")
 
 
 def create_dashboard_replay_config(strategy_name: str = "edge_kelly_v3", match_selection: str = "auto") -> SimulationConfig:

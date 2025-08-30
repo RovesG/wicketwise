@@ -289,6 +289,94 @@ def get_function_tools() -> List[Dict[str, Any]]:
                     "required": ["player"]
                 }
             }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_unified_intelligence",
+                "description": "Get revolutionary unified intelligence for a player including clutch performance, market psychology, partnership compatibility, and 18+ advanced analytics",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "player": {
+                            "type": "string",
+                            "description": "The player's name (e.g., 'Virat Kohli', 'Aiden Markram')"
+                        },
+                        "intelligence_types": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Types of intelligence to analyze",
+                            "default": ["all"]
+                        },
+                        "include_market_psychology": {
+                            "type": "boolean",
+                            "description": "Include betting market psychology analysis",
+                            "default": True
+                        },
+                        "include_predictions": {
+                            "type": "boolean", 
+                            "description": "Include contextual performance predictions",
+                            "default": True
+                        }
+                    },
+                    "required": ["player"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_market_psychology",
+                "description": "Analyze player's impact on betting markets including boundary overreactions, odds shifts, and normalization patterns",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "player": {
+                            "type": "string",
+                            "description": "The player's name"
+                        }
+                    },
+                    "required": ["player"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_clutch_performance",
+                "description": "Analyze player's performance in high-pressure situations including final overs, close matches, and eliminations",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "player": {
+                            "type": "string",
+                            "description": "The player's name"
+                        }
+                    },
+                    "required": ["player"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_partnership_intelligence",
+                "description": "Analyze partnership compatibility and batting synergy between players",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "player1": {
+                            "type": "string",
+                            "description": "First player's name"
+                        },
+                        "player2": {
+                            "type": "string", 
+                            "description": "Second player's name (optional - if not provided, finds best partners for player1)"
+                        }
+                    },
+                    "required": ["player1"]
+                }
+            }
         }
     ]
 
@@ -306,5 +394,9 @@ def get_function_descriptions() -> Dict[str, str]:
         "get_venue_history": "Analyze venue characteristics, match history, and team performance at specific grounds",
         "get_head_to_head": "Get head-to-head records and win-loss statistics between any two cricket teams",
         "find_similar_players": "Find players with similar performance profiles based on statistical metrics",
-        "get_graph_summary": "Get an overview of the cricket knowledge graph database"
+        "get_graph_summary": "Get an overview of the cricket knowledge graph database",
+        "get_unified_intelligence": "Revolutionary cricket intelligence combining 18+ analysis types including clutch performance, market psychology, partnership compatibility, venue mastery, and contextual predictions",
+        "get_market_psychology": "Analyze how a player impacts betting markets - boundary overreactions, odds shifts, normalization patterns, and betting opportunities",
+        "get_clutch_performance": "Deep analysis of player performance under pressure - final overs, close matches, eliminations, and high-stakes situations",
+        "get_partnership_intelligence": "Partnership compatibility analysis - batting synergy, complementary styles, and optimal batting orders"
     }

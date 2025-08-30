@@ -462,18 +462,29 @@ Remember: You're not just showing data, you're providing expert cricket analysis
         try:
             user_lower = user_message.lower()
             
-            # Player name detection (simple keyword matching)
-            common_players = [
-                "virat kohli", "ms dhoni", "rohit sharma", "hardik pandya", "jasprit bumrah",
-                "david warner", "steve smith", "ab de villiers", "chris gayle", "babar azam",
-                "kane williamson", "joe root", "ben stokes", "rashid khan", "andre russell"
-            ]
-            
+            # NO HARDCODED PLAYER LIST - Use KG for player detection
             detected_player = None
-            for player in common_players:
-                if player in user_lower:
-                    detected_player = player.title()
-                    break
+            
+            # Try to extract player names from KG instead of hardcoded list
+            try:
+                if self.kg_engine:
+                    # Use KG to detect players mentioned in the query
+                    # This is a simplified approach - could be enhanced with NER
+                    words = user_lower.split()
+                    for i, word in enumerate(words):
+                        if i < len(words) - 1:
+                            potential_name = f"{word} {words[i+1]}".title()
+                            # Try to query KG for this potential player name
+                            try:
+                                result = self.kg_engine.get_player_stats(potential_name)
+                                if result and not result.get('error'):
+                                    detected_player = potential_name
+                                    break
+                            except:
+                                continue
+            except Exception as e:
+                logger.warning(f"Could not use KG for player detection: {e}")
+                detected_player = None
             
             # Query type detection
             if any(word in user_lower for word in ["stats", "statistics", "performance", "record"]):

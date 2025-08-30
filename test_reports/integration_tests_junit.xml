@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="0.164" timestamp="2025-08-30T12:26:02.955956+02:00" hostname="Shays-MacBook-Pro.local"><testcase classname="" name="tests.integration.test_api_integration" time="0.000"><error message="collection failure">ImportError while importing test module '/Users/shamusrae/Library/Mobile Documents/com~apple~CloudDocs/Cricket /wicketwise/tests/integration/test_api_integration.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/integration/test_api_integration.py:14: in &lt;module&gt;
+    from modern_api_gateway import app
+E   ModuleNotFoundError: No module named 'modern_api_gateway'</error></testcase></testsuite></testsuites>

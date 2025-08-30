@@ -491,6 +491,48 @@
             text-decoration: none !important;
             color: inherit !important;
         }
+        
+        /* Intelligence Insights Styling */
+        .intelligence-section .insight-item {
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            margin-bottom: 2px;
+        }
+        
+        .intelligence-section .insight-item:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        .insight-clutch_rating {
+            border-left: 3px solid #f59e0b;
+        }
+        
+        .insight-market_psychology {
+            border-left: 3px solid #10b981;
+        }
+        
+        .insight-betting_opportunity {
+            border-left: 3px solid #8b5cf6;
+        }
+        
+        .insight-partnership {
+            border-left: 3px solid #06b6d4;
+        }
+        
+        .insight-general {
+            border-left: 3px solid #6b7280;
+        }
+        
+        .tooltip {
+            white-space: normal;
+            word-wrap: break-word;
+            background-color: #1f2937 !important;
+            color: #f9fafb !important;
+            border: 1px solid #374151;
+            font-weight: 500;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-background p-6 space-y-3">
@@ -2819,17 +2861,21 @@
                     // Load team players for the toggle section
                     loadTeamPlayers(currentPlayers);
                 } else {
-                    console.warn('⚠️ No simulation context available, loading fallback players');
-                    // Fallback to legacy loading
-                    const fallbackPlayers = ['Virat Kohli', 'MS Dhoni', 'Rohit Sharma', 'KL Rahul', 'Hardik Pandya', 'Jasprit Bumrah'];
+                    console.error('❌ No simulation context available - NO FALLBACK PLAYERS');
+                    // Show error state instead of fallback
                     const cardContainer = document.getElementById('playerCardsContainer');
                     if (cardContainer) {
                         cardContainer.style.display = 'block';
-                        const cardPromises = fallbackPlayers.slice(0, 6).map(playerName => 
-                            generateEnhancedPlayerCard(playerName)
-                        );
-                        const cards = await Promise.all(cardPromises);
-                        renderEnhancedPlayerCards(cards, cardContainer);
+                        cardContainer.innerHTML = `
+                            <div class="col-span-full bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                                <div class="text-red-600 mb-2">⚠️ Player Cards Unavailable</div>
+                                <p class="text-sm text-red-700 mb-3">No simulation context or player database connection available</p>
+                                <p class="text-xs text-red-600 mb-4">Real player data and match context required for card generation</p>
+                                <button onclick="location.reload()" class="px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors">
+                                    Retry Connection
+                                </button>
+                            </div>
+                        `;
                     }
                 }
                 
@@ -2845,7 +2891,7 @@
                 
                 container.innerHTML = '<div class="text-xs text-gray-500">Loading...</div>';
                 
-                const card = await generateEnhancedPlayerCard(playerName);
+                const card = await generateUnifiedIntelligencePlayerCard(playerName);
                 if (card && card.cardData) {
                     // Determine current role based on container ID
                     const currentRole = containerId === 'bowlerCard' ? 'bowler' : 'batsman';
@@ -2853,6 +2899,12 @@
                     
                     // Load GNN similar players asynchronously
                     loadGNNSimilarPlayers(playerName);
+                    
+                    // Check if intelligence insights need polling
+                    const intelligenceContainer = document.getElementById(`intelligence-${playerName.replace(/\s+/g, '_')}`);
+                    if (intelligenceContainer && intelligenceContainer.textContent.includes('in progress')) {
+                        pollForIntelligenceInsights(playerName);
+                    }
                 } else {
                     console.log('Card response for', playerName, ':', card);
                     container.innerHTML = `<div class="text-xs text-yellow-600">No data for ${playerName}</div>`;
@@ -3010,6 +3062,7 @@
             
             // Try to use real KG data from bowlerTypeMatrix
             const bowlerMatrix = tactical.bowlerTypeMatrix || {};
+            
             if (bowlerMatrix.cells && bowlerMatrix.cells.length > 0) {
                 // Sort by performance - best to worst for batters (by strike rate)
                 const sortedMatchups = bowlerMatrix.cells
@@ -3019,36 +3072,49 @@
                 if (sortedMatchups.length >= 2) {
                     const best = sortedMatchups[0];
                     const worst = sortedMatchups[sortedMatchups.length - 1];
-                    const middle = sortedMatchups[Math.floor(sortedMatchups.length / 2)];
+                    
+                    let insights = [];
+                    insights.push(`• Strong vs ${best.subtype} (SR: ${best.strikeRate}, Avg: ${best.average})`);
+                    insights.push(`• Struggles vs ${worst.subtype} (SR: ${worst.strikeRate}, Avg: ${worst.average})`);
+                    
+                    if (sortedMatchups.length > 2) {
+                        const middle = sortedMatchups[Math.floor(sortedMatchups.length / 2)];
+                        insights.push(`• Balanced vs ${middle.subtype} (SR: ${middle.strikeRate})`);
+                    }
                     
                     return `
                         <div class="space-y-1">
-                            <div>• Strong vs ${best.subtype} (SR: ${best.strikeRate}, Avg: ${best.average})</div>
-                            <div>• Struggles vs ${worst.subtype} (SR: ${worst.strikeRate}, Avg: ${worst.average})</div>
-                            <div>• Balanced vs ${middle.subtype} (SR: ${middle.strikeRate})</div>
+                            ${insights.join('<br>')}
+                        </div>
+                    `;
+                } else if (sortedMatchups.length === 1) {
+                    const only = sortedMatchups[0];
+                    return `
+                        <div class="space-y-1">
+                            <div>• vs ${only.subtype} (SR: ${only.strikeRate}, Avg: ${only.average})</div>
+                            <div class="text-xs text-gray-600">More matchup data available with additional matches</div>
                         </div>
                     `;
                 }
             }
             
-            // Fallback to mock data with clear labeling
-            if (currentRole === 'bowler') {
+            // Check for message indicating data requirements
+            if (bowlerMatrix.message) {
                 return `
-                    <div class="space-y-1">
-                        <div>• MOCK: Right-handers (Econ: 0)</div>
-                        <div>• MOCK: Left-handers (Econ: 0)</div>
-                        <div>• MOCK: Middle overs (0-0)</div>
-                    </div>
-                `;
-            } else {
-                return `
-                    <div class="space-y-1">
-                        <div>• MOCK: Pace bowling (SR: 0)</div>
-                        <div>• MOCK: Spin bowling (SR: 0)</div>
-                        <div>• MOCK: Generic insight</div>
+                    <div class="space-y-1 text-gray-600">
+                        <div>📊 Bowling analysis available</div>
+                        <div class="text-xs">${bowlerMatrix.message}</div>
                     </div>
                 `;
             }
+            
+            // Fallback message
+            return `
+                <div class="space-y-1 text-gray-600">
+                    <div>📊 ${tactical.bowlerTypeWeakness || 'Bowling matchup analysis requires match data'}</div>
+                    <div class="text-xs">Real cricket database provides detailed bowling insights</div>
+                </div>
+            `;
         }
 
         function generateVenueInsights(card) {
@@ -3060,16 +3126,19 @@
             const venueFactor = tactical.venueFactor;
             const bowlerWeakness = tactical.bowlerTypeWeakness;
             
-            if (venueFactor && venueFactor !== 'Unknown') {
+            // If we have real venue factor data, use it
+            if (venueFactor && venueFactor !== 'Unknown' && 
+                !venueFactor.includes('requires') && !venueFactor.includes('unavailable')) {
                 const insights = [`• Venue impact: ${venueFactor}`];
                 
-                if (bowlerWeakness && bowlerWeakness !== 'Unknown') {
+                if (bowlerWeakness && bowlerWeakness !== 'Unknown' && 
+                    !bowlerWeakness.includes('requires') && !bowlerWeakness.includes('unavailable')) {
                     insights.push(`• Tactical weakness: ${bowlerWeakness}`);
                 } else {
-                    insights.push('• Conditions-aware performance');
+                    insights.push('• Phase-specific performance analysis available');
                 }
                 
-                insights.push('• Historical venue data available');
+                // Remove hardcoded venue message - venue data comes from API
                 
                 return `
                     <div class="space-y-1">
@@ -3098,14 +3167,15 @@
                         <div>• Performance varies by conditions</div>
                     </div>
                 `;
-            } else {
-                return `
-                    <div class="space-y-1">
-                        <div>• MOCK: No venue data (0 venues)</div>
-                        <div>• MOCK: Generic conditions text</div>
-                    </div>
-                `;
             }
+            
+            // Show informative message about data requirements
+            return `
+                <div class="space-y-1 text-gray-600">
+                    <div>🏟️ ${venueFactor || 'Venue analysis requires match data'}</div>
+                    <div class="text-xs">Real cricket database provides venue-specific insights</div>
+                </div>
+            `;
         }
 
         function generateSimilarPlayers(card, currentRole) {
@@ -3177,6 +3247,81 @@
                     placeholder.classList.remove('gnn-similar-placeholder');
                     placeholder.classList.add('gnn-similar-error');
                 }
+            }
+        }
+
+        async function loadBettingIntelligence(playerName = 'current_player') {
+            const loadingEl = document.getElementById('betting-loading');
+            const contentEl = document.getElementById('betting-content');
+            const errorEl = document.getElementById('betting-error');
+            
+            // Show loading state
+            if (loadingEl) loadingEl.classList.remove('hidden');
+            if (contentEl) contentEl.classList.add('hidden');
+            if (errorEl) errorEl.classList.add('hidden');
+            
+            try {
+                // Call real betting intelligence API
+                const response = await fetch('http://127.0.0.1:5001/api/betting/intelligence', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        player_name: playerName,
+                        market: 'runs_over_30_5',
+                        context: 'live_match'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.betting_intelligence) {
+                    const intel = data.betting_intelligence;
+                    
+                    // Display real betting intelligence
+                    if (contentEl) {
+                        contentEl.innerHTML = `
+                            <div class="flex justify-between items-center">
+                                <span><strong>Value Opportunity:</strong> ${intel.market_name || 'Runs Over 30.5'}</span>
+                                <span class="px-2 py-1 ${intel.ev_percentage > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'} rounded font-medium">
+                                    ${intel.ev_percentage > 0 ? '+' : ''}EV ${intel.ev_percentage}%
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 text-xs">
+                                <div>
+                                    <p class="font-medium">Market Odds: ${intel.market_odds} (${intel.market_probability}%)</p>
+                                    <p class="text-gray-600">Bookmaker implied probability</p>
+                                </div>
+                                <div>
+                                    <p class="font-medium">Model Odds: ${intel.model_odds} (${intel.model_probability}%)</p>
+                                    <p class="text-gray-600">Our calculated probability</p>
+                                </div>
+                            </div>
+                            <div class="border-t pt-2 mt-2">
+                                <p><strong>Confidence:</strong> ${intel.confidence}% (σ=${intel.std_dev}, n=${intel.sample_size} similar situations)</p>
+                                <p><strong>Reasoning:</strong> ${intel.reasoning}</p>
+                                <p><strong>Risk Level:</strong> ${intel.risk_level} (volatility σ=${intel.volatility}, consistency ${intel.consistency}%)</p>
+                            </div>
+                        `;
+                        contentEl.classList.remove('hidden');
+                    }
+                } else {
+                    throw new Error(data.error || 'Invalid response format');
+                }
+                
+            } catch (error) {
+                console.error('Betting intelligence error:', error);
+                
+                // Show error state
+                if (errorEl) {
+                    errorEl.classList.remove('hidden');
+                }
+            } finally {
+                // Hide loading state
+                if (loadingEl) loadingEl.classList.add('hidden');
             }
         }
 
@@ -3391,7 +3536,7 @@
             // Generate enhanced data for Featured Player Cardboard 2.0
             const formData = generateFormData(coreStats);
             const traits = generatePlayerTraits(card, currentRole);
-            const teamColors = getTeamColors(card.team || 'default');
+            const teamColors = getTeamColors(card.currentTeamId || card.team || 'default');
             
             // Determine what stats to show based on current role
             let stat1Label, stat1Value, stat2Label, stat2Value;
@@ -3431,7 +3576,7 @@
                                 <div class="flex items-center space-x-2 text-xs">
                                     <span class="text-gray-600">${role}</span>
                                     <div class="team-badge px-1.5 py-0.5 rounded text-xs font-medium text-white" style="background-color: ${teamColors.primary}">
-                                        ${getTeamAbbreviation(card.team)}
+                                        ${getTeamAbbreviation(card.currentTeamId || card.team)}
                                     </div>
                                 </div>
                             </div>
@@ -3513,10 +3658,117 @@
                                     ${generateSimilarPlayers(card, currentRole)}
                                 </div>
                             </div>
+                            
+                            <!-- Unified Intelligence Insights -->
+                            <div id="intelligence-${playerName.replace(/\s+/g, '_')}" class="intelligence-section">
+                                <h4 class="text-sm font-semibold text-gray-800 mb-2">🧠 Intelligence Insights</h4>
+                                <div class="text-xs text-gray-600 space-y-1">
+                                    ${generateIntelligenceInsights(card)}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             `;
+        }
+
+        async function pollForIntelligenceInsights(playerName, maxAttempts = 10) {
+            const containerId = `intelligence-${playerName.replace(/\s+/g, '_')}`;
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            let attempts = 0;
+            const pollInterval = setInterval(async () => {
+                attempts++;
+                
+                try {
+                    // Try to get unified intelligence data
+                    const response = await fetch('http://127.0.0.1:5004/api/cards/unified_intelligence', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ player_name: playerName })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.card_data && data.card_data.intelligence) {
+                            // Intelligence data is ready
+                            const insights = generateIntelligenceInsights(data.card_data);
+                            if (insights && !insights.includes('in progress')) {
+                                container.innerHTML = `
+                                    <h4 class="text-sm font-semibold text-purple-800 mb-2">🧠 Intelligence Insights</h4>
+                                    <div class="space-y-2 text-xs text-gray-600">
+                                        ${insights}
+                                    </div>
+                                `;
+                                container.className = 'intelligence-section mt-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200';
+                                clearInterval(pollInterval);
+                                return;
+                            }
+                        }
+                    }
+                    
+                    // If max attempts reached, show timeout message
+                    if (attempts >= maxAttempts) {
+                        container.innerHTML = `
+                            <h4 class="text-sm font-semibold text-gray-600 mb-2">🧠 Intelligence Insights</h4>
+                            <div class="text-sm text-gray-500">
+                                <div class="flex items-center space-x-2">
+                                    <span>⏱️ Analysis taking longer than expected</span>
+                                    <button onclick="pollForIntelligenceInsights('${playerName}', 5)" class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded hover:bg-purple-200">
+                                        Retry
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        clearInterval(pollInterval);
+                    }
+                    
+                } catch (error) {
+                    console.warn(`Intelligence polling attempt ${attempts} failed:`, error);
+                    if (attempts >= maxAttempts) {
+                        container.innerHTML = `
+                            <h4 class="text-sm font-semibold text-gray-600 mb-2">🧠 Intelligence Insights</h4>
+                            <div class="text-sm text-red-500">
+                                ❌ Intelligence analysis failed
+                            </div>
+                        `;
+                        clearInterval(pollInterval);
+                    }
+                }
+            }, 2000); // Poll every 2 seconds
+        }
+
+        function generateIntelligenceInsights(card) {
+            if (!card.insights || !Array.isArray(card.insights)) {
+                return `<div class="text-gray-500">
+                    <div class="flex items-center space-x-2">
+                        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+                        <span>Intelligence analysis in progress...</span>
+                    </div>
+                </div>`;
+            }
+            
+            return card.insights.map(insight => {
+                if (typeof insight === 'string') {
+                    // Legacy string format
+                    return `<div class="insight-item">${insight}</div>`;
+                } else if (insight && insight.text && insight.tooltip) {
+                    // New tooltip format
+                    const typeClass = insight.type ? `insight-${insight.type}` : 'insight-general';
+                    return `
+                        <div class="insight-item ${typeClass} relative group cursor-help" 
+                             title="${insight.tooltip}">
+                            <span class="insight-text">${insight.text}</span>
+                            <div class="tooltip absolute bottom-full left-0 mb-2 p-3 bg-gray-900 text-gray-100 text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 max-w-sm border border-gray-700">
+                                ${insight.tooltip}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `<div class="insight-item text-gray-500">Invalid insight format</div>`;
+                }
+            }).join('');
         }
 
         function formatStatValue(value, statType = 'general') {
@@ -3643,7 +3895,7 @@
                 // Log team loading info
                 console.log(`🏏 Loading ${teamType} team: ${team.name} (${teamPlayers ? teamPlayers.length : 0} players)`);
                 
-                const cardPromises = teamPlayers.map(playerName => generateEnhancedPlayerCard(playerName));
+                const cardPromises = teamPlayers.map(playerName => generateUnifiedIntelligencePlayerCard(playerName));
                 const cards = await Promise.all(cardPromises);
                 
                 // Filter out null/failed cards and create HTML
@@ -3669,7 +3921,7 @@
             }
         }
 
-        async function generateEnhancedPlayerCard(playerName) {
+        async function generateUnifiedIntelligencePlayerCard(playerName) {
             try {
                 const response = await fetch('http://127.0.0.1:5004/api/cards/enhanced', {
                     method: 'POST',
@@ -3683,6 +3935,13 @@
 
                 const data = await response.json();
                 
+                // Debug: Log the enhanced response structure
+                console.log(`🧠 Enhanced API Response for ${playerName}:`, data);
+                console.log(`🔍 Card data structure:`, data.card_data);
+                console.log(`🎯 Core stats:`, data.card_data?.core);
+                console.log(`📊 Role and Team:`, {role: data.card_data?.role, team: data.card_data?.currentTeamId});
+                console.log(`🚨 CACHE BUSTER: ${Date.now()} - If you see N/A values, clear browser cache!`);
+                
                 if (data.success) {
                     return {
                         playerName,
@@ -3691,24 +3950,69 @@
                         gnnInsightsUsed: data.gnn_insights_used
                     };
                 } else {
-                    throw new Error(data.error || 'Failed to generate card');
+                    // Handle specific error types
+                    if (data.error_type === 'database_unavailable') {
+                        throw new Error(`Database unavailable: ${data.message}`);
+                    } else {
+                        throw new Error(data.error || 'Failed to generate card');
+                    }
                 }
             } catch (error) {
                 console.error(`Error generating card for ${playerName}:`, error);
-                return null;
+                
+                // Return error card instead of null for better UX
+                return {
+                    playerName,
+                    cardData: null,
+                    error: error.message,
+                    errorType: error.message.includes('Database unavailable') ? 'database_unavailable' : 'general_error'
+                };
             }
         }
 
         function renderEnhancedPlayerCards(cards, container) {
-            const validCards = cards.filter(card => card !== null);
+            const allCards = cards.filter(card => card !== null);
             
-            if (validCards.length === 0) {
-                container.innerHTML = '<div class="error-message">Failed to load player cards</div>';
+            if (allCards.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                        <div class="text-red-600 mb-2">❌ No Player Cards Available</div>
+                        <p class="text-sm text-red-700">Failed to load any player cards</p>
+                    </div>
+                `;
                 return;
             }
 
-            const cardsHTML = validCards.map(card => createEnhancedPlayerCardHTML(card)).join('');
+            const cardsHTML = allCards.map(card => {
+                if (card.error) {
+                    // Render error card
+                    return createErrorPlayerCardHTML(card);
+                } else {
+                    // Render normal card
+                    return createEnhancedPlayerCardHTML(card);
+                }
+            }).join('');
             container.innerHTML = `<div class="enhanced-cards-grid">${cardsHTML}</div>`;
+        }
+
+        function createErrorPlayerCardHTML(cardInfo) {
+            const { playerName, error, errorType } = cardInfo;
+            
+            const errorIcon = errorType === 'database_unavailable' ? '🔌' : '⚠️';
+            const errorColor = errorType === 'database_unavailable' ? 'red' : 'orange';
+            
+            return `
+                <div class="bg-${errorColor}-50 border border-${errorColor}-200 rounded-lg p-4 text-center">
+                    <div class="text-${errorColor}-600 text-2xl mb-2">${errorIcon}</div>
+                    <h3 class="font-bold text-${errorColor}-800 mb-1">${playerName}</h3>
+                    <p class="text-sm text-${errorColor}-700 mb-2">Card Unavailable</p>
+                    <p class="text-xs text-${errorColor}-600 mb-3">${error}</p>
+                    ${errorType === 'database_unavailable' ? 
+                        '<p class="text-xs text-red-500">Database connection required</p>' : 
+                        '<button onclick="location.reload()" class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs hover:bg-orange-200">Retry</button>'
+                    }
+                </div>
+            `;
         }
 
         function createEnhancedPlayerCardHTML(cardInfo) {
@@ -3985,25 +4289,22 @@
                             
                             <div class="mb-3">
                                 <p class="text-sm font-medium text-gray-600 mb-1">🎰 Betting Intelligence:</p>
-                                <div class="bg-orange-50 p-3 rounded-lg text-sm space-y-2">
-                                    <div class="flex justify-between items-center">
-                                        <span><strong>Value Opportunity:</strong> Runs Over 30.5</span>
-                                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded font-medium">+EV 12.3%</span>
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-4 text-xs">
-                                        <div>
-                                            <p class="font-medium">Market Odds: 1.85 (54.1%)</p>
-                                            <p class="text-gray-600">Bookmaker implied probability</p>
-                                        </div>
-                                        <div>
-                                            <p class="font-medium">Model Odds: 1.52 (65.8%)</p>
-                                            <p class="text-gray-600">Our calculated probability</p>
+                                <div id="betting-intelligence-container" class="bg-orange-50 p-3 rounded-lg text-sm space-y-2">
+                                    <div id="betting-loading" class="text-center py-2">
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+                                            <span class="text-gray-600">Loading market data...</span>
                                         </div>
                                     </div>
-                                    <div class="border-t pt-2 mt-2">
-                                        <p><strong>Confidence:</strong> 78% (σ=0.12, n=847 similar situations)</p>
-                                        <p><strong>Reasoning:</strong> Form trend (+23%), matchup advantage (+18%), venue factor (+8%)</p>
-                                        <p><strong>Risk Level:</strong> Low (volatility σ=18.3, consistency 87%)</p>
+                                    <div id="betting-content" class="hidden">
+                                        <!-- Real betting data will be loaded here via API -->
+                                    </div>
+                                    <div id="betting-error" class="hidden text-center py-3">
+                                        <p class="text-gray-600 mb-2">⚠️ Betting intelligence unavailable</p>
+                                        <p class="text-xs text-gray-500 mb-2">Unable to connect to market data feeds</p>
+                                        <button onclick="loadBettingIntelligence()" class="px-3 py-1 bg-orange-100 text-orange-700 rounded text-xs hover:bg-orange-200 transition-colors">
+                                            Retry Connection
+                                        </button>
                                     </div>
                                 </div>
                             </div>

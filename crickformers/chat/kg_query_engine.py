@@ -621,3 +621,168 @@ class KGQueryEngine:
                 "not_available": ["Real-time data", "Individual match details", "Recent specific performances"],
                 "alternatives": ["Try asking for career statistics or player comparisons"]
             }
+    
+    def get_unified_intelligence(self, player: str, intelligence_types: List[str] = None, 
+                               include_market_psychology: bool = True, include_predictions: bool = True) -> Dict[str, Any]:
+        """
+        Get revolutionary unified intelligence for a player
+        
+        This function calls the unified intelligence API to get comprehensive player analysis
+        including clutch performance, market psychology, partnership compatibility, and more.
+        
+        Args:
+            player: Player name
+            intelligence_types: Types of intelligence to analyze (default: all)
+            include_market_psychology: Include betting market analysis
+            include_predictions: Include contextual predictions
+            
+        Returns:
+            Comprehensive intelligence profile with 18+ analysis types
+        """
+        try:
+            import requests
+            
+            # Call the unified intelligence API
+            response = requests.post(
+                'http://localhost:5004/api/cards/unified_intelligence',
+                json={
+                    'player_name': player,
+                    'intelligence_types': intelligence_types or ['all'],
+                    'include_market_psychology': include_market_psychology,
+                    'include_predictions': include_predictions
+                },
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('success'):
+                    card_data = data.get('card_data', {})
+                    intelligence = card_data.get('intelligence', {})
+                    
+                    return {
+                        "player": player,
+                        "intelligence_type": data.get('intelligence_type', 'unified_complete'),
+                        "confidence": data.get('intelligence_confidence', 0.85),
+                        "completeness": data.get('data_completeness', 0.80),
+                        "insights": card_data.get('insights', []),
+                        "clutch_performance": intelligence.get('clutch_performance', {}),
+                        "market_psychology": intelligence.get('market_psychology', {}),
+                        "partnership_compatibility": intelligence.get('partnership_compatibility', {}),
+                        "venue_mastery": intelligence.get('venue_mastery', {}),
+                        "opposition_matchups": intelligence.get('opposition_matchups', {}),
+                        "contextual_predictions": intelligence.get('contextual_predictions', {}),
+                        "tactical_intelligence": card_data.get('tacticalIntelligence', {}),
+                        "market_opportunities": card_data.get('marketPsychology', {})
+                    }
+                else:
+                    return {"error": data.get('error', 'Failed to generate intelligence')}
+            else:
+                return {"error": f"API call failed with status {response.status_code}"}
+                
+        except Exception as e:
+            logger.error(f"Unified intelligence error for {player}: {e}")
+            return {"error": f"Intelligence analysis failed: {str(e)}"}
+    
+    def get_market_psychology(self, player: str) -> Dict[str, Any]:
+        """
+        Get market psychology analysis for a player
+        
+        Analyzes how the player impacts betting markets including boundary overreactions,
+        odds shifts, and normalization patterns.
+        
+        Args:
+            player: Player name
+            
+        Returns:
+            Market psychology analysis with betting opportunities
+        """
+        intelligence = self.get_unified_intelligence(player, intelligence_types=['market_psychology'])
+        
+        if 'error' in intelligence:
+            return intelligence
+            
+        market_data = intelligence.get('market_psychology', {})
+        
+        return {
+            "player": player,
+            "excitement_rating": market_data.get('excitement_rating', 0),
+            "market_mover": market_data.get('market_mover', False),
+            "overreaction_frequency": market_data.get('overreaction_frequency', 'Unknown'),
+            "betting_psychology": market_data.get('betting_psychology', {}),
+            "market_opportunities": market_data.get('market_opportunities', []),
+            "confidence": market_data.get('confidence', 0.75)
+        }
+    
+    def get_clutch_performance(self, player: str) -> Dict[str, Any]:
+        """
+        Get clutch performance analysis for a player
+        
+        Analyzes performance in high-pressure situations including final overs,
+        close matches, and eliminations.
+        
+        Args:
+            player: Player name
+            
+        Returns:
+            Clutch performance analysis
+        """
+        intelligence = self.get_unified_intelligence(player, intelligence_types=['clutch'])
+        
+        if 'error' in intelligence:
+            return intelligence
+            
+        clutch_data = intelligence.get('clutch_performance', {})
+        
+        return {
+            "player": player,
+            "clutch_factor": clutch_data.get('clutch_factor', 1.0),
+            "clutch_rating": clutch_data.get('clutch_rating', 'Unknown'),
+            "pressure_situations": clutch_data.get('pressure_situations', 0),
+            "data_source": clutch_data.get('data_source', 'Analysis'),
+            "confidence": clutch_data.get('confidence', 0.75)
+        }
+    
+    def get_partnership_intelligence(self, player1: str, player2: str = None) -> Dict[str, Any]:
+        """
+        Get partnership compatibility analysis
+        
+        Analyzes batting synergy and partnership compatibility between players.
+        
+        Args:
+            player1: First player name
+            player2: Second player name (optional)
+            
+        Returns:
+            Partnership compatibility analysis
+        """
+        intelligence = self.get_unified_intelligence(player1, intelligence_types=['partnership'])
+        
+        if 'error' in intelligence:
+            return intelligence
+            
+        partnership_data = intelligence.get('partnership_compatibility', {})
+        
+        if player2:
+            # Look for specific partnership
+            partner_data = partnership_data.get(player2, {})
+            if partner_data:
+                return {
+                    "player1": player1,
+                    "player2": player2,
+                    "compatibility": partner_data,
+                    "analysis_type": "specific_partnership"
+                }
+            else:
+                return {
+                    "player1": player1,
+                    "player2": player2,
+                    "error": f"No partnership data found between {player1} and {player2}"
+                }
+        else:
+            # Return all partnerships for player1
+            return {
+                "player": player1,
+                "partnerships": partnership_data,
+                "analysis_type": "all_partnerships"
+            }

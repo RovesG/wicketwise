@@ -2020,7 +2020,11 @@ def run_simulation():
             if use_holdout_data:
                 config = create_holdout_replay_config(strategy)
             else:
-                config = create_replay_config(["mock_match_1"], strategy)
+                return jsonify({
+                    "status": "error",
+                    "message": "Simulation requires real holdout data - no mock data available",
+                    "error_type": "no_mock_data"
+                }), 400
         
         # Adjust match selection
         if match_selection == "auto":

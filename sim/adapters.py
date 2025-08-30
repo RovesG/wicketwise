@@ -166,7 +166,8 @@ class ReplayAdapter(EnvironmentAdapter):
                     break
             else:
                 # Generate mock events if no file found
-                events.extend(self._generate_mock_match_events(match_id))
+                print(f"❌ No match events found for {match_id} - NO MOCK FALLBACK")
+                print(f"❌ Simulation requires real match event data")
         
         return sorted(events, key=lambda x: x.ts)
     
@@ -403,8 +404,9 @@ class ReplayAdapter(EnvironmentAdapter):
                         snapshots.extend(self._parse_market_file(path))
                         break
                 else:
-                    # Generate mock snapshots if no file found
-                    snapshots.extend(self._generate_mock_market_snapshots(match_id, market))
+                    # NO MOCK SNAPSHOTS - Real market data required
+                    print(f"❌ No market data found for {match_id}_{market} - NO MOCK FALLBACK")
+                    print(f"❌ Simulation requires real market data files or decimal betting data")
         
         return sorted(snapshots, key=lambda x: x.ts)
     

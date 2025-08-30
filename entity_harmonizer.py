@@ -390,31 +390,10 @@ class EntityHarmonizer:
         logger.info(f"✅ Built venue registry: {len(self.venues)} venues, {len(self.venue_mappings)} mappings")
     
     def _build_fallback_player_registry(self):
-        """Build minimal player registry as fallback"""
-        fallback_players = [
-            {'identifier': 'virat_kohli', 'name': 'Virat Kohli', 'unique_name': 'Virat Kohli'},
-            {'identifier': 'ms_dhoni', 'name': 'MS Dhoni', 'unique_name': 'MS Dhoni'},
-            {'identifier': 'rohit_sharma', 'name': 'Rohit Sharma', 'unique_name': 'Rohit Sharma'},
-            {'identifier': 'kl_rahul', 'name': 'KL Rahul', 'unique_name': 'KL Rahul'},
-            {'identifier': 'hardik_pandya', 'name': 'Hardik Pandya', 'unique_name': 'Hardik Pandya'}
-        ]
-        
-        for player_data in fallback_players:
-            aliases = self._generate_player_aliases(player_data['name'], player_data['unique_name'])
-            player = PlayerEntity(
-                identifier=player_data['identifier'],
-                canonical_name=player_data['name'],
-                unique_name=player_data['unique_name'],
-                aliases=aliases
-            )
-            
-            self.players[player.identifier] = player
-            
-            # Build mapping cache
-            for alias in aliases:
-                self.player_mappings[alias.lower()] = player.identifier
-                
-        logger.info(f"✅ Built fallback player registry: {len(self.players)} players")
+        """NO FALLBACK PLAYERS - Require real data sources"""
+        logger.error("❌ NO FALLBACK PLAYER REGISTRY - Real player data sources required")
+        logger.error("❌ Entity harmonization requires connection to actual player database")
+        # No fallback players - system must use real data or fail gracefully
     
     def resolve_player(self, name: str) -> Optional[PlayerEntity]:
         """Resolve a player name to canonical entity"""
